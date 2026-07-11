@@ -8,7 +8,7 @@ Graybox minigame prototype testing whether simple bean movement and bumping prod
 
 ## Objective
 
-Hold the glowing objective to earn points every second. Touch it while loose to pick it up. Bump the holder to knock it loose. Highest score when the ~55 second timer ends wins.
+Hold the glowing objective to earn points every second. Touch it while loose to pick it up. Bump the holder to steal the objective. Highest score when the ~55 second timer ends wins.
 
 ## Controls
 

@@ -12,9 +12,10 @@ const MOVE_SPEED := 260.0
 const MOVE_ACCELERATION := 2200.0
 const MOVE_FRICTION := 1800.0
 const BUMP_SPEED := 520.0
-const BUMP_DURATION := 0.14
+const BUMP_DURATION := 0.18
 const BUMP_COOLDOWN := 1.1
-const BUMP_HIT_RANGE := 42.0
+const BUMP_HIT_RANGE := 58.0
+const STEAL_PICKUP_RANGE := 32.0
 const KNOCKBACK_SPEED := 340.0
 const KNOCKBACK_DURATION := 0.2
 
@@ -34,6 +35,7 @@ var player_count_setting: int = 4
 
 
 func _ready() -> void:
+	process_physics_priority = 100
 	position = Vector2(640, 360)
 	var camera := Camera2D.new()
 	camera.enabled = true
@@ -146,7 +148,7 @@ func _build_ui() -> void:
 	briefing_text.text = (
 		"Keepaway Yard\n\n"
 		+ "Hold the objective to score. Touch it while loose to pick it up.\n"
-		+ "Bump the holder to knock it loose. Highest score when time runs out wins.\n\n"
+		+ "Bump the holder to steal the objective. Highest score when time runs out wins.\n\n"
 		+ "P1: WASD + Space | P2: Arrows + Enter\n"
 		+ "P3: IJKL + U | P4: Numpad 8456 + Numpad 0\n\n"
 		+ "Press Enter or Space to ready up. Esc exits."
@@ -314,7 +316,7 @@ func _check_objective_pickups() -> void:
 		return
 	for player_id in range(player_count_setting):
 		var player: CharacterBody2D = players[player_id]
-		if player.position.distance_to(objective.position) <= 28.0:
+		if player.position.distance_to(objective.position) <= STEAL_PICKUP_RANGE:
 			if rules.try_acquire_possession(player_id):
 				objective.attach_to_holder(player_id)
 				return
@@ -331,14 +333,21 @@ func _update_bump_collisions() -> void:
 		var attacker: CharacterBody2D = players[player_id]
 		if not attacker.is_bump_window_active():
 			continue
+		var reach: float = BUMP_HIT_RANGE + attacker.get_bump_hit_radius()
 		var distance := attacker.position.distance_to(holder.position)
-		if distance > BUMP_HIT_RANGE:
+		if distance > reach:
 			continue
 		if rules.apply_holder_bump(player_id):
-			var knock_dir := (holder.position - attacker.position).normalized()
+			var knock_dir := (holder.position - attacker.position)
+			if knock_dir.length_squared() < 0.01:
+				knock_dir = attacker.bump_direction
+			knock_dir = knock_dir.normalized()
 			holder.apply_knockback(knock_dir)
 			objective.set_loose()
-			objective.position = holder.position + knock_dir * 24.0
+			objective.position = attacker.position + knock_dir * 14.0
+			rules.try_acquire_possession(player_id)
+			objective.attach_to_holder(player_id)
+			return
 
 
 func _on_objective_touched(player_id: int) -> void:

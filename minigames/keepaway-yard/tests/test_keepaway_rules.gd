@@ -34,6 +34,16 @@ func test_possession_loss_after_valid_opposing_bump() -> void:
 	assert_eq(rules.holder_id, -1)
 
 
+func test_bump_enables_immediate_steal_by_attacker() -> void:
+	var rules := _make_rules(2)
+	_start_active_round(rules)
+	rules.try_acquire_possession(0)
+
+	assert_true(rules.apply_holder_bump(1))
+	assert_true(rules.try_acquire_possession(1))
+	assert_eq(rules.holder_id, 1)
+
+
 func test_bump_blocked_for_holder_immunity() -> void:
 	var rules := _make_rules(2)
 	_start_active_round(rules)

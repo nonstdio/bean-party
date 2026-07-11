@@ -22,7 +22,7 @@ var move_speed: float = 260.0
 var move_acceleration: float = 2200.0
 var move_friction: float = 1800.0
 var bump_speed: float = 520.0
-var bump_duration: float = 0.14
+var bump_duration: float = 0.18
 var bump_cooldown: float = 1.1
 var knockback_speed: float = 340.0
 var knockback_duration: float = 0.2
@@ -38,8 +38,17 @@ var _knockback_velocity := Vector2.ZERO
 func setup(new_player_id: int, spawn_position: Vector2) -> void:
 	player_id = new_player_id
 	position = spawn_position
+	_build_collision()
 	_build_visuals()
 	queue_redraw()
+
+
+func _build_collision() -> void:
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 22.0
+	shape.shape = circle
+	add_child(shape)
 
 
 func _build_visuals() -> void:
@@ -116,7 +125,7 @@ func apply_knockback(direction: Vector2) -> void:
 
 
 func get_bump_hit_radius() -> float:
-	return 30.0
+	return 22.0
 
 
 func is_bump_window_active() -> bool:
