@@ -19,9 +19,7 @@ func _make_host_stack() -> Dictionary:
 
 	assert_eq(host_session.host(_test_port), OK)
 	await get_tree().process_frame
-
-	lobby.request_add_local_slot("Host")
-	await get_tree().process_frame
+	# Host lobby auto-adds the first local slot when the session starts.
 
 	return {
 		"session": host_session,
@@ -46,7 +44,6 @@ func test_local_board_mutation_is_overwritten_by_authority_sync() -> void:
 	assert_eq(client_board.board_stub.turn_index, 99)
 
 	authority.try_advance_turn(
-		lobby_authority.slots,
 		lobby_authority.slots[0].owning_peer_id,
 		lobby_authority.slots[0].player_id,
 	)
@@ -89,7 +86,6 @@ func test_board_hash_matches_after_sync_payload() -> void:
 
 	authority.reset_for_slots(lobby_authority.slots)
 	authority.try_advance_turn(
-		lobby_authority.slots,
 		lobby_authority.slots[0].owning_peer_id,
 		lobby_authority.slots[0].player_id,
 	)
@@ -107,7 +103,6 @@ func test_board_hash_matches_after_sync_payload() -> void:
 	assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
 
 	authority.try_advance_turn(
-		lobby_authority.slots,
 		lobby_authority.slots[1].owning_peer_id,
 		lobby_authority.slots[1].player_id,
 	)
@@ -144,7 +139,6 @@ func test_multiple_turns_keep_host_and_client_hashes_aligned() -> void:
 
 		assert_true(
 			authority.try_advance_turn(
-				lobby_authority.slots,
 				active_slot.owning_peer_id,
 				active_id,
 			)
@@ -152,3 +146,66 @@ func test_multiple_turns_keep_host_and_client_hashes_aligned() -> void:
 		host_board._sync_board_from_authority()
 		client_board._apply_remote_board_state(authority.export_board_state(), true)
 		assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
+
+
+func test_host_ignores_second_board_start() -> void:
+	var stack := await _make_host_stack()
+	var board: NetworkBoardSession = stack.board
+	var lobby: NetworkLobbySession = stack.lobby
+
+	lobby.request_add_local_slot("Guest")
+	await get_tree().process_frame
+
+	board.request_start_board()
+	await get_tree().process_frame
+	var hash_after_first_start := board.get_board_state_hash()
+	var turn_after_first_start := board.board_stub.turn_index
+
+	board.request_start_board()
+	await get_tree().process_frame
+
+	assert_true(board.is_board_active())
+	assert_eq(board.get_board_state_hash(), hash_after_first_start)
+	assert_eq(board.board_stub.turn_index, turn_after_first_start)
+	assert_eq(board.get_board_slots().size(), 2)
+
+
+func test_board_uses_frozen_roster_after_lobby_changes() -> void:
+	var stack := await _make_host_stack()
+	var board: NetworkBoardSession = stack.board
+	var lobby: NetworkLobbySession = stack.lobby
+
+	lobby.request_add_local_slot("Guest")
+	await get_tree().process_frame
+
+	board.request_start_board()
+	await get_tree().process_frame
+
+	var active_id := board.get_active_player_id()
+	var frozen_count := board.get_board_slots().size()
+	lobby.request_remove_local_slot(active_id)
+	await get_tree().process_frame
+
+	assert_eq(lobby.slots.size(), 1)
+	assert_eq(board.get_board_slots().size(), frozen_count)
+
+	board.request_advance_turn(active_id)
+	await get_tree().process_frame
+
+	assert_eq(board.board_stub.turn_index, 1)
+
+
+func test_board_roster_ignores_lobby_additions_after_start() -> void:
+	var stack := await _make_host_stack()
+	var board: NetworkBoardSession = stack.board
+	var lobby: NetworkLobbySession = stack.lobby
+
+	board.request_start_board()
+	await get_tree().process_frame
+	var frozen_count := board.get_board_slots().size()
+
+	lobby.request_add_local_slot("Latecomer")
+	await get_tree().process_frame
+
+	assert_eq(lobby.slots.size(), frozen_count + 1)
+	assert_eq(board.get_board_slots().size(), frozen_count)

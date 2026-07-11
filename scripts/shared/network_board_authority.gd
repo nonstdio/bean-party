@@ -2,28 +2,28 @@ class_name NetworkBoardAuthority
 extends RefCounted
 
 var board_stub: BoardStub = BoardStub.new()
+var match_slots: Array[PlayerSlot] = []
 
 
 func reset_for_slots(slots: Array[PlayerSlot]) -> void:
-	board_stub.reset_for_slots(slots)
+	match_slots.clear()
+	for slot in slots:
+		match_slots.append(slot.duplicate_slot())
+	board_stub.reset_for_slots(match_slots)
 
 
-func try_advance_turn(
-		slots: Array[PlayerSlot],
-		requesting_peer_id: int,
-		player_id: String,
-) -> bool:
-	if slots.is_empty():
+func try_advance_turn(requesting_peer_id: int, player_id: String) -> bool:
+	if match_slots.is_empty():
 		return false
 
 	if board_stub.active_player_id != player_id:
 		return false
 
-	var slot := _slot_for_player_id(slots, player_id)
+	var slot := _slot_for_player_id(player_id)
 	if slot == null or slot.owning_peer_id != requesting_peer_id:
 		return false
 
-	board_stub.advance_turn(slots)
+	board_stub.advance_turn(match_slots)
 	return true
 
 
@@ -39,8 +39,8 @@ func state_hash() -> int:
 	return board_stub.state_hash()
 
 
-func _slot_for_player_id(slots: Array[PlayerSlot], player_id: String) -> PlayerSlot:
-	for slot in slots:
+func _slot_for_player_id(player_id: String) -> PlayerSlot:
+	for slot in match_slots:
 		if slot.player_id == player_id:
 			return slot
 	return null

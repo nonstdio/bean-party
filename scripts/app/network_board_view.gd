@@ -46,10 +46,8 @@ func _refresh() -> void:
 	_start_button.disabled = _board_session.is_board_active() or _lobby_session.slots.is_empty()
 
 	_local_active_player_id = ""
-	if _board_session.is_board_active():
-		var active_id := _board_session.get_active_player_id()
-		if _lobby_session.owns_slot(active_id):
-			_local_active_player_id = active_id
+	if _board_session.is_board_active() and _board_session.can_local_player_advance_turn():
+		_local_active_player_id = _board_session.get_active_player_id()
 
 	_turn_button.disabled = _local_active_player_id == ""
 	_board_label.text = _build_board_summary()
@@ -67,7 +65,7 @@ func _build_board_summary() -> String:
 	var parts: PackedStringArray = PackedStringArray()
 	parts.append("Turn %d" % stub.turn_index)
 	parts.append("active %s" % stub.active_player_id)
-	for slot in _lobby_session.slots:
+	for slot in _board_session.get_board_slots():
 		var beans := int(stub.beans_by_player_id.get(slot.player_id, 0))
 		parts.append("%s: %d beans" % [slot.display_name, beans])
 	return " · ".join(parts)

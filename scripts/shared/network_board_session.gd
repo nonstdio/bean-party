@@ -50,21 +50,22 @@ func can_local_player_advance_turn() -> bool:
 	if active_id == "":
 		return false
 
-	var lobby := _lobby_session()
-	if lobby == null:
-		return false
+	for slot in get_board_slots():
+		if slot.player_id == active_id:
+			return slot.owning_peer_id == _local_peer_id()
+	return false
 
-	return lobby.owns_slot(active_id)
+
+func get_board_slots() -> Array[PlayerSlot]:
+	if _authority == null:
+		return []
+	return _authority.match_slots
 
 
 func request_start_board() -> void:
-	if not is_networked():
+	if not is_networked() or not is_authority():
 		return
-
-	if is_authority():
-		_host_start_board()
-	else:
-		_rpc_request_start_board.rpc_id(1)
+	_host_start_board()
 
 
 func request_advance_turn(player_id: String) -> void:
@@ -132,7 +133,7 @@ func _reset_board() -> void:
 
 
 func _host_start_board() -> void:
-	if not is_authority():
+	if not is_authority() or _is_active:
 		return
 
 	var slots := _lobby_slots()
@@ -151,7 +152,7 @@ func _host_apply_advance_turn(peer_id: int, player_id: String) -> void:
 	if not is_authority() or _authority == null or not _is_active:
 		return
 
-	if not _authority.try_advance_turn(_lobby_slots(), peer_id, player_id):
+	if not _authority.try_advance_turn(peer_id, player_id):
 		return
 
 	_sync_board_from_authority()
@@ -185,13 +186,6 @@ func _push_board_sync_to_peer(peer_id: int) -> void:
 	if _authority == null:
 		return
 	_rpc_apply_board_sync.rpc_id(peer_id, _authority.export_board_state(), true)
-
-
-@rpc("any_peer", "call_remote", "reliable")
-func _rpc_request_start_board() -> void:
-	if not is_authority():
-		return
-	_host_start_board()
 
 
 @rpc("any_peer", "call_remote", "reliable")
