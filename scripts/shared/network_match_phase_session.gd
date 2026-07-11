@@ -9,7 +9,8 @@ var minigame_instance_id: String = ""
 var countdown_seconds_remaining: int = 0
 
 var _authority: NetworkMatchPhaseAuthority = null
-var _minigame_session: NetworkMinigameSession = null
+var _snapshot_minigame_session: NetworkMinigameSession = null
+var _action_minigame_session: NetworkActionMinigameSession = null
 
 
 func _ready() -> void:
@@ -25,11 +26,24 @@ func _ready() -> void:
 	if board_session != null:
 		board_session.board_active_changed.connect(_on_board_active_changed)
 
-	_minigame_session = _find_minigame_session()
-	if _minigame_session != null:
-		_minigame_session.minigame_result_ready.connect(_on_minigame_result_ready)
+	_bind_minigame_sessions()
 
 	_on_match_session_state_changed()
+
+
+func _bind_minigame_sessions() -> void:
+	var match_session := _match_session()
+	if match_session == null:
+		return
+	for child in match_session.get_children():
+		if child is NetworkMinigameSession:
+			_snapshot_minigame_session = child
+			if not child.minigame_result_ready.is_connected(_on_minigame_result_ready):
+				child.minigame_result_ready.connect(_on_minigame_result_ready)
+		elif child is NetworkActionMinigameSession:
+			_action_minigame_session = child
+			if not child.minigame_result_ready.is_connected(_on_minigame_result_ready):
+				child.minigame_result_ready.connect(_on_minigame_result_ready)
 
 
 func _process(delta: float) -> void:
@@ -148,13 +162,19 @@ func _board_session() -> NetworkBoardSession:
 
 
 func _find_minigame_session() -> NetworkMinigameSession:
-	var match_session := _match_session()
-	if match_session == null:
-		return null
-	for child in match_session.get_children():
-		if child is NetworkMinigameSession:
-			return child
-	return null
+	return _snapshot_minigame_session
+
+
+func _active_minigame_session() -> Node:
+	if _authority == null:
+		return _snapshot_minigame_session
+	var manifest_path := "res://minigames/%s/minigame.tres" % _authority.selected_minigame_id
+	if not ResourceLoader.exists(manifest_path):
+		return _snapshot_minigame_session
+	var manifest := load(manifest_path) as MinigameManifest
+	if manifest != null and manifest.sync_profile == &"HOST_ACTION":
+		return _action_minigame_session
+	return _snapshot_minigame_session
 
 
 func _local_peer_id() -> int:
@@ -193,8 +213,10 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	for slot in _authority.match_slots:
 		if slot.owning_peer_id == peer_id:
 			_authority.briefing_ready_by_player_id[slot.player_id] = false
-	if _minigame_session != null and _minigame_session.is_active:
-		_minigame_session.mark_peer_inactive(peer_id)
+	var active_minigame := _active_minigame_session()
+	if active_minigame != null and active_minigame.is_active:
+		if active_minigame.has_method("mark_peer_inactive"):
+			active_minigame.mark_peer_inactive(peer_id)
 	_sync_from_authority()
 	_broadcast_phase_sync()
 
@@ -292,8 +314,9 @@ func _host_apply_briefing_ready(peer_id: int, player_id: String, is_ready: bool)
 
 
 func _host_end_minigame_round() -> void:
-	if _minigame_session != null and _minigame_session.is_active:
-		_minigame_session.force_complete_round()
+	var active_minigame := _active_minigame_session()
+	if active_minigame != null and active_minigame.is_active:
+		active_minigame.force_complete_round()
 		return
 	if _authority == null or not _authority.try_end_minigame_round():
 		return
@@ -385,17 +408,21 @@ func _update_minigame_for_phase(previous_phase: MatchPhase.Phase) -> void:
 
 
 func _start_active_minigame() -> void:
-	if _minigame_session == null or _authority == null:
+	if _authority == null:
 		return
-	if _minigame_session.is_active:
+	var minigame_session := _active_minigame_session()
+	if minigame_session == null:
 		return
-	_minigame_session.start_minigame(_authority.match_slots, _authority.minigame_instance_id)
+	if minigame_session.is_active:
+		return
+	minigame_session.start_minigame(_authority.match_slots, _authority.minigame_instance_id)
 
 
 func _stop_active_minigame() -> void:
-	if _minigame_session == null:
-		return
-	_minigame_session.stop_minigame()
+	if _snapshot_minigame_session != null:
+		_snapshot_minigame_session.stop_minigame()
+	if _action_minigame_session != null:
+		_action_minigame_session.stop_minigame()
 
 
 @rpc("any_peer", "call_remote", "reliable")

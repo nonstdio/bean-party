@@ -9,6 +9,7 @@ Related documents:
 - [Networking architecture](../architecture/networking.md) — topology, authority, phases, messages
 - [Minigame integration contract](../architecture/minigame-integration.md) — network-facing minigame rules
 - [Godot project architecture](../architecture/godot-project.md) — repository layout
+- [Godot 3D movement standards](../architecture/godot-3d-movement.md) — player movement engineering standard (spikes may document deviations)
 
 ## Principles
 
@@ -32,7 +33,7 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Implemented proof: Snapshot Arena, `NetworkMinigameSession`, result/hash agreement unit coverage; online lobby enforces one player per peer; durable 4-player and bandwidth evidence not stored | 6 |
 | 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | Implemented proof: client prediction, input replay, blend reconciliation; preliminary manual findings at 0 ms, 50 ms, and 50 ms + 10% drop | 7 |
 | 9 | Disconnect recovery (non-host reconnect, clean host exit) | In progress: session-end signal, inactive slots during match, board-phase reclaim; manual disconnect matrix still open | 2, 6, 7 |
-| 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Not started | 7, 8 |
+| 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Implemented proof (spike): action-netcode kit, `NetworkActionMinigameSession`, Action Spike graybox with tank movement, hitscan combat, ticked input/replay, and tie-aware results; lag compensation, projectiles, physics props, respawn, and full [movement-standard](../architecture/godot-3d-movement.md) compliance deferred; manual latency matrix not stored | 7, 8 |
 | 11 | Steam transport investigation | Not started | 3 |
 | 12 | Formal minigame networking API stabilization | Not started | 7, 9, 10 |
 | 13 | Host migration (Case B) — post-acceptance | Deferred / not started | 9, 12 |
@@ -425,38 +426,64 @@ Non-host disconnect/reconnect tests pass; **every host-departure scenario ends t
 
 ## Milestone 10: 3D combat spike (`HOST_ACTION`) and action-netcode kit
 
+Implementation status: **Implemented proof (accepted spike).** Netcode kit, Action Spike minigame, and automated coverage exist. Full combat scope (projectiles, props, respawn, lag compensation) and [Godot 3D movement standards](../architecture/godot-3d-movement.md) compliance remain follow-up work. Durable manual impairment evidence is not stored.
+
 ### Purpose
 
 Validate the networking contract for Bean Battles-like 3D combat **before** the minigame API is frozen. A movement-only `HOST_SNAPSHOT` minigame (milestone 7) is insufficient to prove hitscan, projectiles, damage, physics props, and entity lifecycles.
 
-### Player-facing proof
+### Player-facing proof (delivered in spike)
 
-2–4 peers play a bounded **45–60 second** graybox combat arena containing:
+2–4 peers play a bounded **90 second** graybox combat arena containing:
 
-- character movement and jumping;
-- one hitscan weapon;
-- one physical projectile;
-- a movable or explosive physics prop;
-- damage and knockback;
+- tank-style character movement and jumping;
+- one host-authoritative hitscan weapon with health and eliminations;
+- last-standing win with tie-aware placements on timeout or equal scores.
+
+Local player movement uses required client prediction with host reconciliation. Remote players use snapshot-driven display interpolation (not yet full movement-standard buffered interpolation).
+
+### Spike deviations from movement standard
+
+Documented per [Godot 3D movement standards](../architecture/godot-3d-movement.md) spike policy:
+
+- clamp-based motor (`HostActionSimulator`) instead of `CharacterBody3D` / `move_and_slide()`;
+- visible cover is cosmetic (no matching collision bodies);
+- simulation pose copied to meshes/camera without separate render interpolation;
+- third-person camera without `SpringArm3D` or exp-damped follow;
+- remote entities use simple snapshot chase rather than buffered interpolation delay.
+
+### Deferred beyond this spike
+
+- physical projectile;
+- movable or explosive physics prop;
+- knockback;
 - death and respawn;
-- authoritative scoring.
+- lag-compensated hitscan rewind;
+- full movement-standard validation matrix (FPS, latency, jitter, cover collision).
 
-Local player movement feels responsive; remote players interpolate smoothly; hits and deaths agree on all peers.
+### Implementation boundary (delivered)
 
-### Implementation boundary
-
-- Shared **action-netcode kit** in `scripts/shared/` (prediction, reconciliation, entity registry, lag-compensated hitscan, projectile authority helpers, debug overlay)
-- One minigame under `minigames/<slug>/` — network-capable, `HOST_ACTION`
-- Shell integration only through approved session interface
+- Shared **action-netcode kit** in `scripts/shared/` (`ActionNetcodeFixedTick`, `ActionNetcodeInputBuffer`, `ActionNetcodeEntityRegistry`, `ActionNetcodeHitscan`, `HostActionSimulator`, `NetworkActionMinigameSession`)
+- `minigames/action-spike/` — network-capable, `HOST_ACTION`
+- Shell integration through `NetworkMatchPhaseSession` phase routing
 - Transport message lanes separated per [networking architecture](../architecture/networking.md#transport-message-lanes)
 
-### Automated tests
+Lag compensation, projectile authority helpers, and debug overlay remain future kit work.
 
-- Result agreement: placements and scores match host vs each client after forced end
-- Entity lifecycle idempotency: duplicate spawn/despawn/damage messages ignored
-- Hit confirmation: host raycast outcome matches client-visible damage event
+### Automated tests (delivered)
 
-### Manual tests (required)
+- Host action simulator: tank movement, hitscan damage, last-standing eligibility, tie placements, snapshot hash round-trip
+- Network action session: tick-ordered input consumption, processed-tick acks, yaw reconciliation replay
+- Input buffer: out-of-order and idempotent frame recording
+- Minigame contract and boundary tests include Action Spike discovery
+
+### Automated tests (original full scope — partial)
+
+- Result agreement across live multiplayer peers after forced end (unit coverage only; multi-peer automation not stored)
+- Entity lifecycle idempotency for spawn/despawn/damage RPCs (registry foundation only)
+- Hit confirmation across network boundary (host raycast unit tests only)
+
+### Manual tests (required — not stored for spike)
 
 | Scenario | Notes |
 | --- | --- |
@@ -474,7 +501,7 @@ Record bandwidth (KB/s, msgs/sec) for 2 and 4 players.
 
 ### Stop condition
 
-Combat spike completes a full round without persistent desync; action-netcode kit APIs are documented in PR; any contract changes needed for shooters are identified **before** milestone 12 freezes the API.
+Spike completes a full round without persistent desync; action-netcode kit APIs are exercised through Action Spike and unit tests; contract gaps for shooters are identified **before** milestone 12 freezes the API. **Met for spike scope** — full combat and movement-standard compliance are explicitly deferred.
 
 ### Open questions before milestone 11
 

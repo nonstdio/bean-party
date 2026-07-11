@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/main.gd" id="1_41s4j"]
 [ext_resource type="Script" path="res://scripts/app/network_session_view.gd" id="4_network"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/shared/network_match_phase_session.gd" id="10_phase"]
 [ext_resource type="Script" path="res://scripts/app/network_match_phase_view.gd" id="11_phase_view"]
 [ext_resource type="Script" path="res://scripts/shared/network_minigame_session.gd" id="12_minigame"]
+[ext_resource type="Script" path="res://scripts/shared/network_action_minigame_session.gd" id="13_action_minigame"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -111,6 +112,10 @@ script = ExtResource("10_phase")
 [node name="NetworkMinigameSession" type="Node" parent="Margin/Scroll/Content/NetworkSession/MatchSession"]
 unique_name_in_owner = true
 script = ExtResource("12_minigame")
+
+[node name="NetworkActionMinigameSession" type="Node" parent="Margin/Scroll/Content/NetworkSession/MatchSession"]
+unique_name_in_owner = true
+script = ExtResource("13_action_minigame")
 
 [node name="NetworkLobby" type="VBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true

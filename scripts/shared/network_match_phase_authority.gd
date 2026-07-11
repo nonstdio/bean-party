@@ -2,6 +2,7 @@ class_name NetworkMatchPhaseAuthority
 extends RefCounted
 
 const SNAPSHOT_ARENA_MINIGAME_ID := "snapshot-arena"
+const ACTION_SPIKE_MINIGAME_ID := "action-spike"
 const COUNTDOWN_SECONDS := 3
 
 const _VALID_TRANSITIONS: Dictionary = {
@@ -195,7 +196,7 @@ func _transition_to(target_phase: MatchPhase.Phase) -> bool:
 func _on_enter_phase(phase: MatchPhase.Phase) -> void:
 	match phase:
 		MatchPhase.Phase.MINIGAME_SELECTION:
-			selected_minigame_id = SNAPSHOT_ARENA_MINIGAME_ID
+			selected_minigame_id = ACTION_SPIKE_MINIGAME_ID
 			minigame_instance_id = _allocate_minigame_instance_id()
 			result_id = ""
 			reward_application_id = ""

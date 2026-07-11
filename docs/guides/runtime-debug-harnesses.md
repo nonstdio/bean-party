@@ -20,7 +20,7 @@ To exercise the network slice on one machine:
 6. Edit display names and toggle lobby readiness per player.
 7. On the host, select `Start board`. Only the peer that owns the active `PlayerSlot` can request `Advance turn`.
 8. On the host, select `Start minigame flow`. Each peer marks briefing readiness for its player. The host drives the three-second countdown.
-9. During `ActiveMinigame`, the shell loads Snapshot Arena with host snapshots and optional client-side movement prediction. The client status line shows snapshot serial/hash and prediction correction stats.
+9. During `ActiveMinigame`, the shell loads **Action Spike** (`HOST_ACTION`) through `NetworkActionMinigameSession`. Required client movement prediction and host reconciliation apply; the status line shows snapshot serial/hash and prediction correction stats. Snapshot Arena (`HOST_SNAPSHOT`) remains available when wired separately.
 10. Select `Disconnect` in each instance when finished.
 
 All lobby, board, and phase synchronization in this slice uses reliable RPCs. The host validates slot ownership, board-turn ownership, and briefing readiness. The board roster is frozen when the host starts the board, so later lobby edits do not alter the active board match.
@@ -28,11 +28,12 @@ All lobby, board, and phase synchronization in this slice uses reliable RPCs. Th
 ### Current network limitations
 
 - This is direct-IP ENet only. It has no discovery, join codes, NAT traversal, matchmaking, or Steam transport.
-- The network placeholder minigame scene is no longer used during `ActiveMinigame`; Snapshot Arena is loaded instead.
+- The network placeholder minigame scene is no longer used during `ActiveMinigame`. The debug shell now loads **Action Spike** (`HOST_ACTION`) through `NetworkActionMinigameSession`; Snapshot Arena (`HOST_SNAPSHOT`) remains available via manifest selection when wired.
+- Action Spike uses the milestone 10 action-netcode kit foundation: 30 Hz fixed-tick host sim, required client movement prediction + reconciliation, 20 Hz snapshots, and jump input on device-slot accept/space/u/numpad-enter keys.
 - Snapshot Arena runs through `NetworkMinigameSession` with host snapshots, client interpolation, and optional local movement prediction (milestone 8 experiment). Latency impairment testing is manual.
 - The debug UI has no match-start readiness gate; lobby ready flags are synchronized but do not block `Start board`.
 - Disconnect recovery is partially implemented (milestone 9). Host departure emits a `session_ended` signal and shows **Host left the match.** Non-host disconnect during an active board marks the frozen roster slot `inactive` instead of removing it; briefing no longer waits on departed players. Reconnect at the **board phase boundary** can reclaim the prior `player_id` when the client rejoins the same host with matching `match_epoch`, recovery session id, host address/port, and a per-slot reconnect token issued at board start. Pending reclaim state survives only a graceful in-process **Disconnect → Join** in the debug shell; it does not survive client crash/restart or link loss classified as host loss. Mid-minigame reconnect and host-loss recovery remain unsupported. Disconnect during an active minigame clears the departed player's input and excludes them from winner/result handling for that round.
-- Rejoining while a minigame is already in progress is unsupported: the host keeps the frozen match roster, so a new connection gets a lobby slot but is treated as a **late joiner** until the host returns to board. The client shows the current phase label but does not load Snapshot Arena or accept inputs for that round.
+- Rejoining while a minigame is already in progress is unsupported: the host keeps the frozen match roster, so a new connection gets a lobby slot but is treated as a **late joiner** until the host returns to board. The client shows the current phase label but does not load the active minigame scene or accept inputs for that round.
 - Network phase state is synchronized live but does not use the offline `MatchSnapshot` serializer. No network phase-boundary recovery snapshot is retained.
 - Manual multi-instance, LAN, internet, impairment, and human-playtest evidence is not stored as a durable repository artifact. Do not infer completion of a plan milestone's manual stop conditions from the presence of code or unit tests.
 

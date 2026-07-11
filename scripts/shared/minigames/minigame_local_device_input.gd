@@ -24,3 +24,29 @@ static func read_move_vector(device_slot: int) -> Vector2:
 			vector.x = float(Input.is_key_pressed(KEY_KP_6)) - float(Input.is_key_pressed(KEY_KP_4))
 			vector.y = float(Input.is_key_pressed(KEY_KP_2)) - float(Input.is_key_pressed(KEY_KP_8))
 	return vector.limit_length(1.0)
+
+
+static func read_jump_just_pressed(device_slot: int) -> bool:
+	match device_slot:
+		0:
+			return Input.is_action_just_pressed("ui_accept")
+		1:
+			return Input.is_key_pressed(KEY_SPACE)
+		2:
+			return Input.is_key_pressed(KEY_U)
+		3:
+			return Input.is_key_pressed(KEY_KP_ENTER)
+	return false
+
+
+static func read_fire_pressed(device_slot: int) -> bool:
+	match device_slot:
+		0:
+			return Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		1:
+			return Input.is_key_pressed(KEY_F)
+		2:
+			return Input.is_key_pressed(KEY_O)
+		3:
+			return Input.is_key_pressed(KEY_KP_0)
+	return false

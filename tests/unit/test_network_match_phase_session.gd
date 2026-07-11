@@ -109,24 +109,27 @@ func _make_active_minigame_phase_setup() -> Dictionary:
 func _make_phase_session_with_minigame() -> Dictionary:
 	var match_session := MatchSession.new()
 	var phase_session := NetworkMatchPhaseSession.new()
-	var minigame_session := NetworkMinigameSession.new()
+	var snapshot_session := NetworkMinigameSession.new()
+	var action_session := NetworkActionMinigameSession.new()
 	match_session.add_child(phase_session)
-	match_session.add_child(minigame_session)
+	match_session.add_child(snapshot_session)
+	match_session.add_child(action_session)
 	add_child_autofree(match_session)
 	return {
 		"match_session": match_session,
 		"phase_session": phase_session,
-		"minigame_session": minigame_session,
+		"snapshot_session": snapshot_session,
+		"action_session": action_session,
 	}
 
 
 func test_active_minigame_starts_when_peer_in_frozen_roster() -> void:
 	var setup := _make_phase_session_with_minigame()
 	var phase_session: NetworkMatchPhaseSession = setup.phase_session
-	var minigame_session: NetworkMinigameSession = setup.minigame_session
+	var action_session: NetworkActionMinigameSession = setup.action_session
 	await get_tree().process_frame
 
-	assert_eq(phase_session._minigame_session, minigame_session)
+	assert_eq(phase_session._action_minigame_session, action_session)
 
 	var active_setup := _make_active_minigame_phase_setup()
 	var authority: NetworkMatchPhaseAuthority = active_setup.authority
@@ -135,16 +138,16 @@ func test_active_minigame_starts_when_peer_in_frozen_roster() -> void:
 	phase_session._update_minigame_for_phase(MatchPhase.Phase.BOARD)
 
 	assert_true(phase_session.can_participate_in_active_minigame())
-	assert_true(minigame_session.is_active)
+	assert_true(action_session.is_active)
 
 
 func test_active_minigame_does_not_start_without_roster_membership() -> void:
 	var setup := _make_phase_session_with_minigame()
 	var phase_session: NetworkMatchPhaseSession = setup.phase_session
-	var minigame_session: NetworkMinigameSession = setup.minigame_session
+	var action_session: NetworkActionMinigameSession = setup.action_session
 	await get_tree().process_frame
 
-	assert_eq(phase_session._minigame_session, minigame_session)
+	assert_eq(phase_session._action_minigame_session, action_session)
 
 	var authority := NetworkMatchPhaseAuthority.new()
 	var lobby := NetworkLobbyAuthority.new()
@@ -164,5 +167,5 @@ func test_active_minigame_does_not_start_without_roster_membership() -> void:
 	phase_session.current_phase = MatchPhase.Phase.ACTIVE_MINIGAME
 	phase_session._update_minigame_for_phase(MatchPhase.Phase.BOARD)
 
-	assert_false(minigame_session.is_active)
+	assert_false(action_session.is_active)
 	assert_false(phase_session.can_participate_in_active_minigame())
