@@ -188,7 +188,7 @@ func _match_session() -> MatchSession:
 
 func _local_peer_id() -> int:
 	var match_session := _match_session()
-	if match_session == null:
+	if match_session == null or not match_session.is_session_established():
 		return MatchConstants.OFFLINE_PEER_ID
 	return match_session.multiplayer.get_unique_id()
 
@@ -376,7 +376,7 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 				_predicted_positions[player_key] = target
 				_replay_unacked_inputs(player_key, acked_input_tick)
 				var predicted_after: Vector2 = _predicted_positions[player_key]
-				_prediction_tracker.record_correction(predicted_before, target)
+				_prediction_tracker.record_correction(predicted_before, predicted_after)
 				var correction := predicted_before - predicted_after
 				if correction.length_squared() >= HostSnapshotPredictionTracker.CORRECTION_EPSILON * HostSnapshotPredictionTracker.CORRECTION_EPSILON:
 					var offset: Vector2 = _correction_offsets.get(player_key, Vector2.ZERO)
@@ -446,10 +446,12 @@ func _rpc_submit_input(player_id: String, move_x: float, move_y: float, input_ti
 func _host_apply_remote_input(peer_id: int, player_id: String, move: Vector2, input_tick: int) -> void:
 	if not _peer_owns_player(peer_id, player_id):
 		return
-	_remote_inputs[player_id] = move
 	var player_key := String(player_id)
 	var latest_tick: int = int(_latest_input_tick_by_player.get(player_key, 0))
-	_latest_input_tick_by_player[player_key] = maxi(latest_tick, input_tick)
+	if input_tick < latest_tick:
+		return
+	_remote_inputs[player_id] = move
+	_latest_input_tick_by_player[player_key] = input_tick
 
 
 func _update_snapshot_input_acks() -> void:

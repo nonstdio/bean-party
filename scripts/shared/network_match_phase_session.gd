@@ -146,7 +146,7 @@ func _find_minigame_session() -> NetworkMinigameSession:
 
 func _local_peer_id() -> int:
 	var match_session := _match_session()
-	if match_session == null:
+	if match_session == null or not match_session.is_session_established():
 		return MatchConstants.OFFLINE_PEER_ID
 	return match_session.multiplayer.get_unique_id()
 

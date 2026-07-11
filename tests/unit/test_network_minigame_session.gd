@@ -224,6 +224,24 @@ func test_prediction_replays_unacked_inputs_after_delayed_snapshot() -> void:
 	var predicted_after: Vector2 = client_session._predicted_positions[player_id]
 	assert_gt(predicted_after.x, auth_x)
 	assert_true(absf(predicted_after.x - predicted_before.x) < 0.01)
+	var stats := client_session.get_prediction_stats()
+	assert_eq(int(stats.get("correction_count", 0)), 0)
+
+
+func test_remote_input_ignores_stale_input_tick() -> void:
+	var minigame_session := NetworkMinigameSession.new()
+	add_child_autofree(minigame_session)
+
+	var slots := _make_slots()
+	assert_true(minigame_session.start_minigame(slots, "minigame_test"))
+
+	var player_id := slots[1].player_id
+	var peer_id := slots[1].owning_peer_id
+	minigame_session._host_apply_remote_input(peer_id, player_id, Vector2.RIGHT, 5)
+	minigame_session._host_apply_remote_input(peer_id, player_id, Vector2.UP, 3)
+
+	assert_eq(minigame_session._remote_inputs[player_id], Vector2.RIGHT)
+	assert_eq(int(minigame_session._latest_input_tick_by_player[String(player_id)]), 5)
 
 
 func test_client_predict_local_moves_display_position() -> void:

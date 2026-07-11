@@ -308,7 +308,7 @@ Validate `HOST_SNAPSHOT` profile end-to-end: input upstream, host sim, snapshots
 
 ### Manual tests
 
-- 4 `PlayerSlot`s, 2 peers × 2 local
+- Up to 4 peers × 1 local `PlayerSlot` each (launch policy); 2-peer loopback runs are acceptable preliminary evidence
 - Record messages/sec and KB/s for results table
 
 ### Stop condition
@@ -370,6 +370,7 @@ Manual testing used two Godot instances on one machine (host + client), Clumsy `
 | ~0 ms | Snap (initial) | ~100+ per short session | ~2–3 px | Responsive; corrections barely visible |
 | ~50 ms | Snap (initial) | Frequent (~20 Hz) | Larger than baseline | Visible jitter and snap-back to prior position |
 | ~50 ms | Blend (error decay) | Similar counts to snap | Similar magnitudes | **Significantly less jitter**; smoother drift-in |
+| ~50 ms + ~10% drop (in/out) | Blend + replay | Not recorded | Not recorded | **Felt good** (loopback preliminary) |
 
 **Working recommendation:** keep client prediction enabled for local movement; on each snapshot apply authoritative position for the acknowledged input tick, replay newer local inputs, and use **blend (error decay)** for display correction rather than hard snap.
 

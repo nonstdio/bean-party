@@ -2,6 +2,7 @@ class_name HostSnapshotPredictionTracker
 extends RefCounted
 
 ## Debug helper for milestone 8 prediction/reconciliation measurement.
+## Records residual error between pre-reconcile prediction and post-replay prediction.
 
 const CORRECTION_EPSILON := 0.5
 
@@ -18,8 +19,8 @@ func reset() -> void:
 	last_correction_distance = 0.0
 
 
-func record_correction(predicted: Vector2, authoritative: Vector2) -> void:
-	var distance := predicted.distance_to(authoritative)
+func record_correction(predicted: Vector2, reconciled: Vector2) -> void:
+	var distance := predicted.distance_to(reconciled)
 	if distance < CORRECTION_EPSILON:
 		return
 
