@@ -225,6 +225,19 @@ function parseMsg(peer, msg) {
   throw new ProtoError(4000, STR_INVALID_CMD);
 }
 
+function messageToString(message) {
+  if (typeof message === "string") {
+    return message;
+  }
+  if (Buffer.isBuffer(message)) {
+    return message.toString("utf8");
+  }
+  if (ArrayBuffer.isView(message)) {
+    return Buffer.from(message.buffer, message.byteOffset, message.byteLength).toString("utf8");
+  }
+  return null;
+}
+
 wss.on("connection", (ws) => {
   if (peersCount >= MAX_PEERS) {
     ws.close(4000, STR_TOO_MANY_PEERS);
@@ -234,12 +247,13 @@ wss.on("connection", (ws) => {
   const id = randomId();
   const peer = new Peer(id, ws);
   ws.on("message", (message) => {
-    if (typeof message !== "string") {
+    const text = messageToString(message);
+    if (text === null) {
       ws.close(4000, STR_INVALID_TRANSFER_MODE);
       return;
     }
     try {
-      parseMsg(peer, message);
+      parseMsg(peer, text);
     } catch (error) {
       const code = error.code || 4000;
       ws.close(code, error.message);
