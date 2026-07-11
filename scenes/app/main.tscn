@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/main.gd" id="1_41s4j"]
 [ext_resource type="Script" path="res://scripts/app/couch_session_view.gd" id="2_couch"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/app/network_lobby_view.gd" id="7_lobby_view"]
 [ext_resource type="Script" path="res://scripts/shared/network_board_session.gd" id="8_board"]
 [ext_resource type="Script" path="res://scripts/app/network_board_view.gd" id="9_board_view"]
+[ext_resource type="Script" path="res://scripts/shared/network_match_phase_session.gd" id="10_phase"]
+[ext_resource type="Script" path="res://scripts/app/network_match_phase_view.gd" id="11_phase_view"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -45,60 +47,68 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="Content" type="VBoxContainer" parent="Margin"]
+[node name="Scroll" type="ScrollContainer" parent="Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="Margin/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="Title" type="Label" parent="Margin/Content"]
+[node name="Title" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.423529, 0.176471, 1)
 theme_override_font_sizes/font_size = 72
 text = "BEAN PARTY"
 horizontal_alignment = 1
 
-[node name="Divider" type="ColorRect" parent="Margin/Content"]
+[node name="Divider" type="ColorRect" parent="Margin/Scroll/Content"]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 color = Color(0.278431, 0.784314, 0.486275, 1)
 
-[node name="Subtitle" type="Label" parent="Margin/Content"]
+[node name="Subtitle" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 26
 text = "Local couch session"
 horizontal_alignment = 1
 
-[node name="Description" type="Label" parent="Margin/Content"]
+[node name="Description" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 20
 text = "Assign players, walk the debug match flow, or host/join an ENet session below."
 horizontal_alignment = 1
 
-[node name="CouchSession" type="VBoxContainer" parent="Margin/Content"]
+[node name="CouchSession" type="VBoxContainer" parent="Margin/Scroll/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 12
 script = ExtResource("2_couch")
 
-[node name="SlotsList" type="VBoxContainer" parent="Margin/Content/CouchSession"]
+[node name="SlotsList" type="VBoxContainer" parent="Margin/Scroll/Content/CouchSession"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Actions" type="HBoxContainer" parent="Margin/Content/CouchSession"]
+[node name="Actions" type="HBoxContainer" parent="Margin/Scroll/Content/CouchSession"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="AddPlayerButton" type="Button" parent="Margin/Content/CouchSession/Actions"]
+[node name="AddPlayerButton" type="Button" parent="Margin/Scroll/Content/CouchSession/Actions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Add player"
 
-[node name="StatusLabel" type="Label" parent="Margin/Content/CouchSession"]
+[node name="StatusLabel" type="Label" parent="Margin/Scroll/Content/CouchSession"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
@@ -106,13 +116,13 @@ theme_override_font_sizes/font_size = 16
 text = "Loading couch session..."
 horizontal_alignment = 1
 
-[node name="MatchFlowDebug" type="VBoxContainer" parent="Margin/Content"]
+[node name="MatchFlowDebug" type="VBoxContainer" parent="Margin/Scroll/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 script = ExtResource("3_flow")
 
-[node name="PhaseLabel" type="Label" parent="Margin/Content/MatchFlowDebug"]
+[node name="PhaseLabel" type="Label" parent="Margin/Scroll/Content/MatchFlowDebug"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
@@ -120,7 +130,7 @@ theme_override_font_sizes/font_size = 18
 text = "Phase: Lobby"
 horizontal_alignment = 1
 
-[node name="BoardLabel" type="Label" parent="Margin/Content/MatchFlowDebug"]
+[node name="BoardLabel" type="Label" parent="Margin/Scroll/Content/MatchFlowDebug"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
@@ -129,7 +139,7 @@ text = "Board stub idle."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="SnapshotLabel" type="Label" parent="Margin/Content/MatchFlowDebug"]
+[node name="SnapshotLabel" type="Label" parent="Margin/Scroll/Content/MatchFlowDebug"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
@@ -137,74 +147,78 @@ theme_override_font_sizes/font_size = 14
 text = "match_epoch 0"
 horizontal_alignment = 1
 
-[node name="FlowActions" type="HBoxContainer" parent="Margin/Content/MatchFlowDebug"]
+[node name="FlowActions" type="HBoxContainer" parent="Margin/Scroll/Content/MatchFlowDebug"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="AdvanceButton" type="Button" parent="Margin/Content/MatchFlowDebug/FlowActions"]
+[node name="AdvanceButton" type="Button" parent="Margin/Scroll/Content/MatchFlowDebug/FlowActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Advance phase"
 
-[node name="BoardTurnButton" type="Button" parent="Margin/Content/MatchFlowDebug/FlowActions"]
+[node name="BoardTurnButton" type="Button" parent="Margin/Scroll/Content/MatchFlowDebug/FlowActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Advance board turn"
 
-[node name="RestoreButton" type="Button" parent="Margin/Content/MatchFlowDebug/FlowActions"]
+[node name="RestoreButton" type="Button" parent="Margin/Scroll/Content/MatchFlowDebug/FlowActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Restore board snapshot"
 
-[node name="NetworkSession" type="VBoxContainer" parent="Margin/Content"]
+[node name="NetworkSession" type="VBoxContainer" parent="Margin/Scroll/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 script = ExtResource("4_network")
 
-[node name="MatchSession" type="Node" parent="Margin/Content/NetworkSession"]
+[node name="MatchSession" type="Node" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 script = ExtResource("5_session")
 
-[node name="NetworkLobbySession" type="Node" parent="Margin/Content/NetworkSession/MatchSession"]
+[node name="NetworkLobbySession" type="Node" parent="Margin/Scroll/Content/NetworkSession/MatchSession"]
 unique_name_in_owner = true
 script = ExtResource("6_lobby")
 
-[node name="NetworkBoardSession" type="Node" parent="Margin/Content/NetworkSession/MatchSession"]
+[node name="NetworkBoardSession" type="Node" parent="Margin/Scroll/Content/NetworkSession/MatchSession"]
 unique_name_in_owner = true
 script = ExtResource("8_board")
 
-[node name="NetworkLobby" type="VBoxContainer" parent="Margin/Content/NetworkSession"]
+[node name="NetworkMatchPhaseSession" type="Node" parent="Margin/Scroll/Content/NetworkSession/MatchSession"]
+unique_name_in_owner = true
+script = ExtResource("10_phase")
+
+[node name="NetworkLobby" type="VBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 script = ExtResource("7_lobby_view")
 
-[node name="NetworkLobbyTitle" type="Label" parent="Margin/Content/NetworkSession/NetworkLobby"]
+[node name="NetworkLobbyTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
 text = "Network lobby"
 horizontal_alignment = 1
 
-[node name="NetworkSlotsList" type="VBoxContainer" parent="Margin/Content/NetworkSession/NetworkLobby"]
+[node name="NetworkSlotsList" type="VBoxContainer" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="NetworkLobbyActions" type="HBoxContainer" parent="Margin/Content/NetworkSession/NetworkLobby"]
+[node name="NetworkLobbyActions" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="NetworkAddPlayerButton" type="Button" parent="Margin/Content/NetworkSession/NetworkLobby/NetworkLobbyActions"]
+[node name="NetworkAddPlayerButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby/NetworkLobbyActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Add local player"
 
-[node name="NetworkLobbyStatusLabel" type="Label" parent="Margin/Content/NetworkSession/NetworkLobby"]
+[node name="NetworkLobbyStatusLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
@@ -212,21 +226,21 @@ theme_override_font_sizes/font_size = 14
 text = "Join or host to open the networked lobby."
 horizontal_alignment = 1
 
-[node name="NetworkBoard" type="VBoxContainer" parent="Margin/Content/NetworkSession"]
+[node name="NetworkBoard" type="VBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 script = ExtResource("9_board_view")
 
-[node name="NetworkBoardTitle" type="Label" parent="Margin/Content/NetworkSession/NetworkBoard"]
+[node name="NetworkBoardTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
 text = "Network board stub"
 horizontal_alignment = 1
 
-[node name="NetworkBoardLabel" type="Label" parent="Margin/Content/NetworkSession/NetworkBoard"]
+[node name="NetworkBoardLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
@@ -235,7 +249,7 @@ text = "Board idle."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="NetworkBoardHashLabel" type="Label" parent="Margin/Content/NetworkSession/NetworkBoard"]
+[node name="NetworkBoardHashLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
@@ -243,71 +257,128 @@ theme_override_font_sizes/font_size = 14
 text = "board hash 0"
 horizontal_alignment = 1
 
-[node name="NetworkBoardActions" type="HBoxContainer" parent="Margin/Content/NetworkSession/NetworkBoard"]
+[node name="NetworkBoardActions" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="NetworkBoardStartButton" type="Button" parent="Margin/Content/NetworkSession/NetworkBoard/NetworkBoardActions"]
+[node name="NetworkBoardStartButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard/NetworkBoardActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Start board"
 
-[node name="NetworkBoardTurnButton" type="Button" parent="Margin/Content/NetworkSession/NetworkBoard/NetworkBoardActions"]
+[node name="NetworkBoardTurnButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard/NetworkBoardActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Advance turn"
 
-[node name="NetworkTitle" type="Label" parent="Margin/Content/NetworkSession"]
+[node name="NetworkPhaseFlow" type="VBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+script = ExtResource("11_phase_view")
+
+[node name="NetworkPhaseTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
+theme_override_font_sizes/font_size = 18
+text = "Network phase flow"
+horizontal_alignment = 1
+
+[node name="NetworkPhaseLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
+theme_override_font_sizes/font_size = 16
+text = "Phase: Board"
+horizontal_alignment = 1
+
+[node name="NetworkPhaseDetailLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
+theme_override_font_sizes/font_size = 14
+text = "Host can start the networked minigame flow from the board phase."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="NetworkBriefingReadyList" type="VBoxContainer" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NetworkPhaseActions" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="NetworkStartMinigameFlowButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow/NetworkPhaseActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start minigame flow"
+
+[node name="NetworkEndMinigameRoundButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow/NetworkPhaseActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "End round"
+
+[node name="NetworkReturnToBoardButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow/NetworkPhaseActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Return to board"
+
+[node name="NetworkTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
 text = "ENet session (debug)"
 horizontal_alignment = 1
 
-[node name="ConnectionFields" type="HBoxContainer" parent="Margin/Content/NetworkSession"]
+[node name="ConnectionFields" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="AddressField" type="LineEdit" parent="Margin/Content/NetworkSession/ConnectionFields"]
+[node name="AddressField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/ConnectionFields"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
 placeholder_text = "Address"
 
-[node name="PortField" type="LineEdit" parent="Margin/Content/NetworkSession/ConnectionFields"]
+[node name="PortField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/ConnectionFields"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(80, 0)
 placeholder_text = "Port"
 
-[node name="NetworkActions" type="HBoxContainer" parent="Margin/Content/NetworkSession"]
+[node name="NetworkActions" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="HostButton" type="Button" parent="Margin/Content/NetworkSession/NetworkActions"]
+[node name="HostButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Host"
 
-[node name="JoinButton" type="Button" parent="Margin/Content/NetworkSession/NetworkActions"]
+[node name="JoinButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Join"
 
-[node name="DisconnectButton" type="Button" parent="Margin/Content/NetworkSession/NetworkActions"]
+[node name="DisconnectButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Disconnect"
 
-[node name="EchoButton" type="Button" parent="Margin/Content/NetworkSession/NetworkActions"]
+[node name="EchoButton" type="Button" parent="Margin/Scroll/Content/NetworkSession/NetworkActions"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Echo test"
 
-[node name="NetworkStatusLabel" type="Label" parent="Margin/Content/NetworkSession"]
+[node name="NetworkStatusLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
@@ -315,7 +386,7 @@ theme_override_font_sizes/font_size = 16
 text = "No active network session."
 horizontal_alignment = 1
 
-[node name="PeersLabel" type="Label" parent="Margin/Content/NetworkSession"]
+[node name="PeersLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
@@ -323,7 +394,7 @@ theme_override_font_sizes/font_size = 14
 text = "Peers: none"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="Margin/Content"]
+[node name="Hint" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 16

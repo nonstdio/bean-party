@@ -197,6 +197,36 @@ func test_host_ignores_second_board_start() -> void:
 	assert_eq(board.get_board_slots().size(), 2)
 
 
+func test_board_rejects_turn_during_minigame_flow() -> void:
+	var stack := await _make_host_stack()
+	var phase := NetworkMatchPhaseSession.new()
+	stack.session.add_child(phase)
+	await get_tree().process_frame
+
+	var board: NetworkBoardSession = stack.board
+	var lobby: NetworkLobbySession = stack.lobby
+
+	lobby.request_add_local_slot("Guest")
+	await get_tree().process_frame
+
+	board.request_start_board()
+	await get_tree().process_frame
+
+	phase.request_start_minigame_flow()
+	await get_tree().process_frame
+
+	assert_false(board.accepts_turn_requests())
+
+	var hash_before := board.get_board_state_hash()
+	var turn_before := board.board_stub.turn_index
+	var active_id := board.get_active_player_id()
+	board.request_advance_turn(active_id)
+	await get_tree().process_frame
+
+	assert_eq(board.get_board_state_hash(), hash_before)
+	assert_eq(board.board_stub.turn_index, turn_before)
+
+
 func test_board_uses_frozen_roster_after_lobby_changes() -> void:
 	var stack := await _make_host_stack()
 	var board: NetworkBoardSession = stack.board
