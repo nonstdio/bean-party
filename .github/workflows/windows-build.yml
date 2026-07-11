@@ -84,9 +84,15 @@ jobs:
             throw "Godot executable was not found at $godot."
           }
           New-Item -ItemType Directory -Path "build\windows" -Force | Out-Null
-          & $godot --headless --path . --export-release "Windows Desktop" "build\windows\BeanParty.exe"
-          if ($LASTEXITCODE -ne 0) {
-            throw "Godot export failed with exit code $LASTEXITCODE."
+          $arguments = @(
+            "--headless",
+            "--path", '"."',
+            "--export-release", '"Windows Desktop"',
+            '"build\windows\BeanParty.exe"'
+          )
+          $process = Start-Process -FilePath $godot -ArgumentList $arguments -Wait -PassThru -NoNewWindow
+          if ($process.ExitCode -ne 0) {
+            throw "Godot export failed with exit code $($process.ExitCode)."
           }
           $executable = "build\windows\BeanParty.exe"
           if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
@@ -136,3 +142,4 @@ jobs:
           else
             gh release create "$tag" BeanParty.exe BeanParty.exe.sha256 --target "$GITHUB_SHA" --title "$title" --notes "$notes" --prerelease --repo "$GITHUB_REPOSITORY"
           fi
+
