@@ -7,19 +7,27 @@ func record_input(player_id: String, input_tick: int, payload: Dictionary) -> vo
 		return
 
 	var history: Array = _history_by_player.get(player_id, [])
-	if not history.is_empty():
-		var last: Dictionary = history[history.size() - 1]
-		if int(last.get("tick", -1)) >= input_tick:
+	for entry in history:
+		if entry is Dictionary and int(entry.get("tick", -1)) == input_tick:
 			return
 
-	history.append(
+	var insert_index := history.size()
+	for index in history.size():
+		var existing_tick: int = int(history[index].get("tick", -1))
+		if existing_tick > input_tick:
+			insert_index = index
+			break
+
+	history.insert(
+		insert_index,
 		{
 			"tick": input_tick,
 			"payload": payload.duplicate(true),
 		}
 	)
 	_history_by_player[player_id] = history
-	_latest_tick_by_player[player_id] = input_tick
+	var latest: int = int(_latest_tick_by_player.get(player_id, 0))
+	_latest_tick_by_player[player_id] = maxi(latest, input_tick)
 
 
 func get_latest_tick(player_id: String) -> int:
@@ -51,6 +59,11 @@ func replay_after_tick(player_id: String, after_tick: int) -> Array:
 func clear() -> void:
 	_history_by_player.clear()
 	_latest_tick_by_player.clear()
+
+
+func clear_player(player_id: String) -> void:
+	_history_by_player.erase(player_id)
+	_latest_tick_by_player.erase(player_id)
 
 
 var _history_by_player: Dictionary = {}

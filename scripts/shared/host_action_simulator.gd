@@ -92,7 +92,7 @@ func tick(
 		if fire_pressed:
 			_try_hitscan(player_id, eligible_participants)
 
-	_check_last_player_standing()
+		_check_last_player_standing(eligible_participants)
 
 
 func is_alive(player_id: String) -> bool:
@@ -218,8 +218,7 @@ static func apply_move(
 
 
 func build_result(participant_ids: PackedStringArray) -> MinigameResult:
-	var ranked := _rank_by_score(participant_ids)
-	return _result_from_ranked(ranked)
+	return _result_from_entries(_score_entries(participant_ids))
 
 
 func should_end_round() -> bool:
@@ -266,13 +265,16 @@ func _try_hitscan(shooter_id: String, eligible_participants: Dictionary) -> void
 		eliminations_by_player_id[shooter_id] = int(eliminations_by_player_id.get(shooter_id, 0)) + 1
 
 
-func _check_last_player_standing() -> void:
-	var alive_ids: Array[String] = []
+func _check_last_player_standing(eligible_participants: Dictionary = {}) -> void:
+	var alive_participating: Array[String] = []
 	for player_id in positions_by_player_id.keys():
-		if is_alive(player_id):
-			alive_ids.append(player_id)
-	if alive_ids.size() == 1:
-		winner_player_id = alive_ids[0]
+		if not is_alive(player_id):
+			continue
+		if not eligible_participants.is_empty() and not eligible_participants.has(player_id):
+			continue
+		alive_participating.append(player_id)
+	if alive_participating.size() == 1:
+		winner_player_id = alive_participating[0]
 
 
 func _decay_fire_cooldowns(delta: float) -> void:
@@ -281,19 +283,39 @@ func _decay_fire_cooldowns(delta: float) -> void:
 		fire_cooldown_by_player_id[player_id] = maxf(0.0, remaining)
 
 
-func _result_from_ranked(ranked: PackedStringArray) -> MinigameResult:
+func _result_from_entries(entries: Array) -> MinigameResult:
 	var placements: Array = []
 	var scores: Dictionary = {}
-	for index in ranked.size():
-		var group := PackedStringArray([ranked[index]])
+	var entry_index := 0
+	while entry_index < entries.size():
+		var base: Dictionary = entries[entry_index]
+		var group := PackedStringArray([String(base.get("player_id", ""))])
+		var base_elims := int(base.get("eliminations", 0))
+		var base_health := int(base.get("health", 0))
+		entry_index += 1
+		while entry_index < entries.size():
+			var next: Dictionary = entries[entry_index]
+			if int(next.get("eliminations", 0)) != base_elims:
+				break
+			if int(next.get("health", 0)) != base_health:
+				break
+			group.append(String(next.get("player_id", "")))
+			entry_index += 1
 		placements.append(group)
-		scores[ranked[index]] = ranked.size() - index
-	if not winner_player_id.is_empty() and ranked.size() > 0:
-		scores[ranked[0]] = ranked.size() + 2
+		var rank_score := entries.size() - placements.size() + 1
+		for player_id in group:
+			scores[player_id] = rank_score
+	if not winner_player_id.is_empty():
+		for group_variant in placements:
+			var group: PackedStringArray = group_variant
+			if group.has(winner_player_id):
+				for player_id in group:
+					scores[player_id] = entries.size() + 2
+				break
 	return MinigameResult.completed(placements, scores)
 
 
-func _rank_by_score(participant_ids: PackedStringArray) -> PackedStringArray:
+func _score_entries(participant_ids: PackedStringArray) -> Array:
 	var entries: Array = []
 	for player_id in participant_ids:
 		entries.append(
@@ -311,10 +333,7 @@ func _rank_by_score(participant_ids: PackedStringArray) -> PackedStringArray:
 				return left_elims > right_elims
 			return int(left.get("health", 0)) > int(right.get("health", 0))
 	)
-	var ranked := PackedStringArray()
-	for entry in entries:
-		ranked.append(String(entry.get("player_id", "")))
-	return ranked
+	return entries
 
 
 func _spawn_points_for_count(player_count: int) -> Array[Vector3]:

@@ -8,6 +8,12 @@ const SNAPSHOT_HZ := 20.0
 const SIM_TICK_HZ := 30.0
 const RECONCILE_DECAY_RATE := 12.0
 const AUTHORITY_BLEND_RATE := 0.3
+const NEUTRAL_ACTION_INPUT := {
+	"move": Vector2.ZERO,
+	"jump": false,
+	"fire": false,
+	"aim_yaw": 0.0,
+}
 
 var is_active: bool = false
 
@@ -19,7 +25,6 @@ var _input_buffer: ActionNetcodeInputBuffer = ActionNetcodeInputBuffer.new()
 var _input_source: MinigameInputSource
 var _slots: Array[PlayerSlot] = []
 var _local_player_ids: PackedStringArray = PackedStringArray()
-var _remote_inputs: Dictionary = {}
 var _display_positions: Dictionary = {}
 var _display_state: Dictionary = {}
 var _target_positions: Dictionary = {}
@@ -29,8 +34,7 @@ var _predicted_vertical_velocity: Dictionary = {}
 var _correction_offsets: Dictionary = {}
 var _local_input_ticks: Dictionary = {}
 var _local_input_history: Dictionary = {}
-var _latest_input_tick_by_player: Dictionary = {}
-var _acked_input_tick_by_player: Dictionary = {}
+var _processed_input_tick_by_player: Dictionary = {}
 var _prediction_tracker: HostSnapshotPredictionTracker = HostSnapshotPredictionTracker.new()
 var _snapshot_accumulator: float = 0.0
 var _snapshot_serial: int = 0
@@ -38,6 +42,7 @@ var _authoritative_snapshot_serial: int = 0
 var _authoritative_snapshot_hash: int = 0
 var _minigame_instance_id: String = ""
 var _owns_local_player_ids: Dictionary = {}
+var _acked_input_tick_by_player: Dictionary = {}
 
 
 func _ready() -> void:
@@ -56,7 +61,6 @@ func _process(delta: float) -> void:
 		return
 
 	_poll_local_device_input()
-	_send_local_inputs_to_host()
 
 	if is_authority():
 		_host_tick(delta)
@@ -90,14 +94,14 @@ func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> b
 		player_ids.append(slot.player_id)
 
 	_input_source = MinigameInputSource.new(player_ids)
-	_remote_inputs.clear()
+	_display_positions.clear()
 	_predicted_positions.clear()
 	_predicted_yaw.clear()
 	_predicted_vertical_velocity.clear()
 	_correction_offsets.clear()
 	_local_input_ticks.clear()
 	_local_input_history.clear()
-	_latest_input_tick_by_player.clear()
+	_processed_input_tick_by_player.clear()
 	_acked_input_tick_by_player.clear()
 	_prediction_tracker.reset()
 	_input_buffer.clear()
@@ -142,7 +146,6 @@ func stop_minigame() -> void:
 	_input_source = null
 	_slots.clear()
 	_local_player_ids = PackedStringArray()
-	_remote_inputs.clear()
 	_display_positions.clear()
 	_display_state.clear()
 	_target_positions.clear()
@@ -152,7 +155,7 @@ func stop_minigame() -> void:
 	_correction_offsets.clear()
 	_local_input_ticks.clear()
 	_local_input_history.clear()
-	_latest_input_tick_by_player.clear()
+	_processed_input_tick_by_player.clear()
 	_acked_input_tick_by_player.clear()
 	_owns_local_player_ids.clear()
 	_prediction_tracker.reset()
@@ -257,7 +260,8 @@ func mark_peer_inactive(peer_id: int) -> void:
 	for slot in _slots:
 		if slot.owning_peer_id != peer_id:
 			continue
-		_remote_inputs.erase(slot.player_id)
+		_input_buffer.clear_player(slot.player_id)
+		_processed_input_tick_by_player.erase(slot.player_id)
 		if _simulator.winner_player_id == slot.player_id:
 			_simulator.winner_player_id = ""
 
@@ -344,20 +348,6 @@ func _lobby_session() -> NetworkLobbySession:
 	return null
 
 
-func _send_local_inputs_to_host() -> void:
-	if not is_networked() or is_authority():
-		return
-
-	for player_id in _local_player_ids:
-		var player_key := String(player_id)
-		var move := _input_source.get_move_vector(player_id)
-		var jump := _input_source.get_action_strength(player_id, MinigameInputSource.ACTION_PRIMARY) > 0.5
-		var fire := _input_source.get_action_strength(player_id, MinigameInputSource.ACTION_SECONDARY) > 0.5
-		var aim_yaw := _resolve_aim_yaw(player_key, move)
-		var input_tick: int = int(_local_input_ticks.get(player_key, 0))
-		_rpc_submit_input.rpc_id(1, player_id, move.x, move.y, jump, fire, aim_yaw, input_tick)
-
-
 func _sample_local_inputs_for_sim_step(sim_step: float) -> void:
 	if _input_source == null:
 		return
@@ -373,9 +363,55 @@ func _sample_local_inputs_for_sim_step(sim_step: float) -> void:
 		_input_buffer.record_input(player_key, input_tick, payload)
 		if not is_authority():
 			_record_local_input(player_key, input_tick, payload, sim_step)
-		if is_authority():
-			_latest_input_tick_by_player[player_key] = input_tick
-			_remote_inputs[player_key] = payload
+			_send_sampled_input_to_host(player_key, input_tick, payload)
+
+
+func _send_sampled_input_to_host(player_key: String, input_tick: int, payload: Dictionary) -> void:
+	if not is_networked() or is_authority():
+		return
+
+	var move: Vector2 = payload.get("move", Vector2.ZERO)
+	if not move is Vector2:
+		move = Vector2.ZERO
+	_rpc_submit_input.rpc_id(
+		1,
+		player_key,
+		move.x,
+		move.y,
+		bool(payload.get("jump", false)),
+		bool(payload.get("fire", false)),
+		float(payload.get("aim_yaw", 0.0)),
+		input_tick,
+	)
+
+	var history: Array = _local_input_history.get(player_key, [])
+	var redundant_sent := 0
+	for index in range(history.size() - 2, -1, -1):
+		if redundant_sent >= 2:
+			break
+		var entry: Variant = history[index]
+		if entry is not Dictionary:
+			continue
+		var redo_tick: int = int(entry.get("tick", 0))
+		if redo_tick >= input_tick:
+			continue
+		var redo_payload: Dictionary = entry.get("payload", {})
+		if redo_payload.is_empty():
+			continue
+		var redo_move: Vector2 = redo_payload.get("move", Vector2.ZERO)
+		if not redo_move is Vector2:
+			redo_move = Vector2.ZERO
+		_rpc_submit_input.rpc_id(
+			1,
+			player_key,
+			redo_move.x,
+			redo_move.y,
+			bool(redo_payload.get("jump", false)),
+			bool(redo_payload.get("fire", false)),
+			float(redo_payload.get("aim_yaw", 0.0)),
+			redo_tick,
+		)
+		redundant_sent += 1
 
 
 func _host_tick(delta: float) -> void:
@@ -383,7 +419,7 @@ func _host_tick(delta: float) -> void:
 	var step := 1.0 / SIM_TICK_HZ
 	for _i in tick_count:
 		_sample_local_inputs_for_sim_step(step)
-		var inputs := _collect_host_inputs()
+		var inputs := _consume_simulation_inputs()
 		var eligible_winners: Dictionary = {}
 		for slot in _slots:
 			if PlayerSlotConnectivity.is_participating(slot):
@@ -411,33 +447,21 @@ func _host_tick(delta: float) -> void:
 		_submit_host_result()
 
 
-func _collect_host_inputs() -> Dictionary:
+func _consume_simulation_inputs() -> Dictionary:
 	var inputs: Dictionary = {}
 	for slot in _slots:
-		var player_id := slot.player_id
+		var player_key := String(slot.player_id)
 		if not PlayerSlotConnectivity.is_participating(slot):
-			inputs[player_id] = {"move": Vector2.ZERO, "jump": false, "fire": false, "aim_yaw": 0.0}
+			inputs[slot.player_id] = NEUTRAL_ACTION_INPUT.duplicate(true)
 			continue
-		if _owns_local_player_ids.has(player_id) and _input_source != null:
-			var move := _input_source.get_move_vector(player_id)
-			inputs[player_id] = {
-				"move": move,
-				"jump": _input_source.get_action_strength(
-					player_id,
-					MinigameInputSource.ACTION_PRIMARY,
-				) > 0.5,
-				"fire": _input_source.get_action_strength(
-					player_id,
-					MinigameInputSource.ACTION_SECONDARY,
-				) > 0.5,
-				"aim_yaw": _resolve_aim_yaw(player_id, move),
-			}
+		var next_tick: int = int(_processed_input_tick_by_player.get(player_key, 0)) + 1
+		var payload: Dictionary = _input_buffer.get_input_at_tick(player_key, next_tick)
+		if payload.is_empty():
+			payload = NEUTRAL_ACTION_INPUT.duplicate(true)
 		else:
-			var remote: Variant = _remote_inputs.get(player_id, {})
-			if remote is Dictionary:
-				inputs[player_id] = remote
-			else:
-				inputs[player_id] = {"move": Vector2.ZERO, "jump": false, "fire": false, "aim_yaw": 0.0}
+			payload = payload.duplicate(true)
+		_processed_input_tick_by_player[player_key] = next_tick
+		inputs[slot.player_id] = payload
 	return inputs
 
 
@@ -577,6 +601,7 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 		if _predicts_local_player(player_key):
 			var predicted_before: Vector3 = _predicted_positions.get(player_key, target)
 			var acked_input_tick := int(entry.get("acked_input_tick", 0))
+			var auth_yaw := float(entry.get("yaw", 0.0))
 			var auth_vy := float(entry.get("vertical_velocity", 0.0))
 			var client_vy := float(_predicted_vertical_velocity.get(player_key, auth_vy))
 			var client_airborne := HostActionSimulator.is_airborne(predicted_before, client_vy)
@@ -585,6 +610,7 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 			else:
 				_predicted_positions[player_key] = target
 				_predicted_vertical_velocity[player_key] = auth_vy
+			_predicted_yaw[player_key] = auth_yaw
 			_replay_unacked_inputs(player_key, acked_input_tick)
 			var predicted_after: Vector3 = _predicted_positions.get(player_key, target)
 			var after_vy := float(_predicted_vertical_velocity.get(player_key, auth_vy))
@@ -692,17 +718,22 @@ func _host_apply_remote_input(
 	if not _player_id_is_participating(player_id):
 		return
 	var player_key := String(player_id)
-	var latest_tick: int = int(_latest_input_tick_by_player.get(player_key, 0))
-	if input_tick < latest_tick:
-		return
-	_remote_inputs[player_id] = {"move": move, "jump": jump, "fire": fire, "aim_yaw": aim_yaw}
-	_latest_input_tick_by_player[player_key] = input_tick
+	_input_buffer.record_input(
+		player_key,
+		input_tick,
+		{
+			"move": move,
+			"jump": jump,
+			"fire": fire,
+			"aim_yaw": aim_yaw,
+		},
+	)
 
 
 func _update_snapshot_input_acks() -> void:
 	for slot in _slots:
 		var player_key := String(slot.player_id)
-		_acked_input_tick_by_player[player_key] = _latest_input_tick_by_player.get(player_key, 0)
+		_acked_input_tick_by_player[player_key] = _processed_input_tick_by_player.get(player_key, 0)
 
 
 func _advance_local_input_tick(player_key: String) -> int:
