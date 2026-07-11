@@ -6,6 +6,8 @@ This repository is pre-production work for Bean Party, a collaborative party gam
 
 Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/godot-agent-setup.md](docs/godot-agent-setup.md), [docs/godot-architecture.md](docs/godot-architecture.md), and the relevant document in `docs/` before changing project direction. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
 
+When participating in the GPT ↔ Cursor collaboration loop, also read [docs/agent-collaboration-loop.md](docs/agent-collaboration-loop.md) and the current contents of [agent_loop/assistant_feedback.md](agent_loop/assistant_feedback.md) and [agent_loop/cursor_handoff.md](agent_loop/cursor_handoff.md) before implementing or reviewing.
+
 ## Working rules
 
 - Keep a change focused. Do not bundle a minigame, broad refactor, engine migration, and design rewrite in one pull request.

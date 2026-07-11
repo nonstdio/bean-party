@@ -37,6 +37,7 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Godot project architecture](docs/godot-architecture.md) — repository layout and Godot conventions.
 - [Engine evaluation](docs/engine-evaluation.md) — the evaluation that led to the Godot decision.
 - [Project governance](docs/project-governance.md) — pull requests and the `main` branch rules.
+- [Agent collaboration loop](docs/agent-collaboration-loop.md) — GPT, Cursor, and human coordination for implementation branches.
 - [Agent guide](AGENTS.md) — instructions for AI-assisted work in this repository.
 
 - [Godot setup for agents](docs/godot-agent-setup.md) — exact installation, validation, and test commands on Windows, macOS, and Linux.
