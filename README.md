@@ -25,6 +25,12 @@ These are contributor and architecture proofs, not a playable game or validated 
 
 Agents should first follow [Godot setup for agents](docs/guides/godot-setup.md), which installs the pinned editor and runs the terminal-first validation and test commands on Windows, macOS, and Linux.
 
+### Download the latest Windows test build
+
+Windows playtesters can download [BeanParty.exe](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty.exe) and run the current `main` branch without installing Godot. This is an automated, unsigned development build, so Windows SmartScreen may ask the player to confirm that they want to run it. The download is replaced only after a new `main` build exports successfully.
+
+This convenience build does not establish Windows as the project's final supported release target. Contributors who need the editor, tests, or local minigame harness should use the source workflow below.
+
 1. Install [Godot 4.7 stable](https://godotengine.org/download/archive/).
 2. Import the repository’s `project.godot` file in the Godot Project Manager.
 3. Select the project and press `F5`, or run `godot --editor --path .` from the repository root and run the main scene.
