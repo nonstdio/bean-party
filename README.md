@@ -17,13 +17,13 @@ The project is in pre-production. We have selected **Godot 4.7 stable** with **G
 
 ## Run the starter project
 
-Agents should first follow [Godot setup for agents](docs/godot-agent-setup.md), which installs the pinned editor and runs the terminal-first validation and test commands on Windows, macOS, and Linux.
+Agents should first follow [Godot setup for agents](docs/guides/godot-setup.md), which installs the pinned editor and runs the terminal-first validation and test commands on Windows, macOS, and Linux.
 
 1. Install [Godot 4.7 stable](https://godotengine.org/download/archive/).
 2. Import the repository’s `project.godot` file in the Godot Project Manager.
 3. Select the project and press `F6`/`F5`, or run `godot --editor --path .` from the repository root.
 
-The starter scene is deliberately small: it proves that the project loads and gives contributors a safe place to begin. See the [Godot project architecture](docs/godot-architecture.md) before adding shared systems or a minigame.
+The starter scene is deliberately small: it proves that the project loads and gives contributors a safe place to begin. See the [Godot project architecture](docs/architecture/godot-project.md) before adding shared systems or a minigame.
 
 ## Contributing
 
@@ -31,17 +31,18 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 
 ## Project guides
 
-- [Game design target](docs/game-design.md) — what “Mario Party-style” means for this project.
-- [Creative direction](docs/creative-direction.md) — how to evoke Bean Battles without copying it.
-- [Minigame contribution contract](docs/minigame-contract.md) — the intended shape of an independently developed minigame.
-- [Networking architecture](docs/networking-architecture.md) — proposed online topology, authority, and phase machine.
-- [Networking implementation plan](docs/networking-implementation-plan.md) — milestones and test matrix for future netcode work.
-- [Godot project architecture](docs/godot-architecture.md) — repository layout and Godot conventions.
-- [Engine evaluation](docs/engine-evaluation.md) — the evaluation that led to the Godot decision.
-- [Project governance](docs/project-governance.md) — pull requests and the `main` branch rules.
+- [Documentation index](docs/README.md) — where project documentation belongs and how it evolves.
+- [Game design target](docs/design/game.md) — what “Mario Party-style” means for this project.
+- [Creative direction](docs/design/creative-direction.md) — how to evoke Bean Battles without copying it.
+- [Minigame contribution contract](docs/architecture/minigame-integration.md) — the intended shape of an independently developed minigame.
+- [Networking architecture](docs/architecture/networking.md) — proposed online topology, authority, and phase machine.
+- [Networking implementation plan](docs/plans/networking.md) — milestones and test matrix for future netcode work.
+- [Godot project architecture](docs/architecture/godot-project.md) — repository layout and Godot conventions.
+- [Engine evaluation](docs/research/engine-evaluation.md) — the evaluation that led to the Godot decision.
+- [Project governance](docs/project/governance.md) — pull requests and the `main` branch rules.
 - [Agent guide](AGENTS.md) — instructions for AI-assisted work in this repository.
 
-- [Godot setup for agents](docs/godot-agent-setup.md) — exact installation, validation, and test commands on Windows, macOS, and Linux.
+- [Godot setup for agents](docs/guides/godot-setup.md) — exact installation, validation, and test commands on Windows, macOS, and Linux.
 
 ## Open decisions
 

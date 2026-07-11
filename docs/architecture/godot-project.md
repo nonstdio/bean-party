@@ -26,7 +26,7 @@ project.godot           # Godot project configuration and main-scene setting
 
 The foundation intentionally does not create a board manager, global singleton, networking layer, or minigame API. Those systems must earn their complexity through the vertical slice.
 
-When online play is implemented, the shared **session layer** (proposed `MatchSession` / `TransportAdapter`) should live in `scripts/shared/` behind the boundary described in [networking architecture](networking-architecture.md). Prefer an app-owned session with explicit teardown over an automatic networking singleton.
+When online play is implemented, the shared **session layer** (proposed `MatchSession` / `TransportAdapter`) should live in `scripts/shared/` behind the boundary described in [networking architecture](networking.md). Prefer an app-owned session with explicit teardown over an automatic networking singleton.
 
 ## Conventions
 
@@ -39,7 +39,7 @@ When online play is implemented, the shared **session layer** (proposed `MatchSe
 
 ## Running and validating
 
-Follow [Godot setup for agents](godot-agent-setup.md) for the pinned engine and terminal-first workflow. Run `powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS and Linux; `all` imports the project headlessly and then runs the GUT suite. Use `validate` or `test` in place of `all` when only one action is needed.
+Follow [Godot setup for agents](../guides/godot-setup.md) for the pinned engine and terminal-first workflow. Run `powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS and Linux; `all` imports the project headlessly and then runs the GUT suite. Use `validate` or `test` in place of `all` when only one action is needed.
 
 Install Godot 4.7 stable, then either import `project.godot` through the Project Manager or run:
 

@@ -4,11 +4,11 @@ Thank you for helping make Bean Party. We want the project to feel like a party 
 
 ## Before you begin
 
-Read the [game design target](docs/game-design.md), [creative direction](docs/creative-direction.md), and [minigame contribution contract](docs/minigame-contract.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template first. A short proposal saves everyone from building the same idea twice or discovering an integration problem late.
+Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame contribution contract](docs/architecture/minigame-integration.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template first. A short proposal saves everyone from building the same idea twice or discovering an integration problem late.
 
 ## Godot setup
 
-The project standard is **Godot 4.7 stable** with **GDScript**. Follow [Godot setup for agents](docs/godot-agent-setup.md) for the exact Windows, macOS, or Linux installation and non-interactive validation commands. Run `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS or Linux before opening a pull request. See [docs/godot-architecture.md](docs/godot-architecture.md) for the repository layout and `res://` paths.
+The project standard is **Godot 4.7 stable** with **GDScript**. Follow [Godot setup for agents](docs/guides/godot-setup.md) for the exact Windows, macOS, or Linux installation and non-interactive validation commands. Run `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS or Linux before opening a pull request. See the [Godot project architecture](docs/architecture/godot-project.md) for the repository layout and `res://` paths.
 
 Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`, and do not add exported builds to the repository. Use a decision record before upgrading the engine, adding C#, changing renderer defaults, or adding a project-wide Godot plugin.
 
@@ -30,7 +30,7 @@ The first supported target is a minigame that is understandable at a glance, fai
 - How does the game avoid an early mistake making the rest of the round pointless?
 - What makes it feel at home in Bean Party rather than a generic party-game scene?
 
-Use Godot scenes and GDScript, but do not assume a shared API beyond what [docs/minigame-contract.md](docs/minigame-contract.md) documents. The concrete code-level minigame API is still an open design task.
+Use Godot scenes and GDScript, but do not assume a shared API beyond what the [minigame contribution contract](docs/architecture/minigame-integration.md) documents. The concrete code-level minigame API is still an open design task.
 
 ## Art, audio, and third-party material
 
