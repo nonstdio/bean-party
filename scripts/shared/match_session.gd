@@ -28,6 +28,7 @@ var _peer: MultiplayerPeer = null
 var _transport_adapter: TransportAdapter = TransportAdapterRegistry.create(
 	TransportAdapterRegistry.default_transport_id(),
 )
+var _injected_transport_adapter: TransportAdapter = null
 var _state: SessionState = SessionState.IDLE
 var _pending_echoes: Dictionary = {}
 var _ping_ms_by_peer_id: Dictionary = {}
@@ -68,33 +69,42 @@ func get_transport_id() -> String:
 func set_transport_adapter(adapter: TransportAdapter) -> void:
 	if is_active():
 		return
-	_transport_adapter = adapter
-
-
-func host(port: int = MatchConstants.DEFAULT_ENET_PORT) -> Error:
-	return host_with_transport(TransportAdapterRegistry.default_transport_id(), {"port": port})
+	_injected_transport_adapter = adapter
+	if adapter != null:
+		_transport_adapter = adapter
 
 
 func host_with_transport(transport_id: String, options: Dictionary = {}) -> Error:
 	disconnect_session()
 
-	var adapter := TransportAdapterRegistry.create(transport_id)
+	var adapter := _resolve_transport_adapter(transport_id)
 	if adapter == null:
 		return ERR_UNAVAILABLE
-	_transport_adapter = adapter
 
 	if transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
-		return _begin_webrtc_session(options, true)
+		var error := _begin_webrtc_session(options, true)
+		if error != OK:
+			_reset_transport_adapter()
+			return error
+		_transport_adapter = adapter
+		return OK
 
-	_peer = _transport_adapter.create_server_peer(options)
-	if _peer == null:
+	var peer := adapter.create_server_peer(options)
+	if peer == null:
+		_reset_transport_adapter()
 		return ERR_CANT_CREATE
 
+	_transport_adapter = adapter
+	_peer = peer
 	multiplayer.multiplayer_peer = _peer
 	_state = SessionState.HOSTING
 	_bind_multiplayer_signals()
 	session_state_changed.emit()
 	return OK
+
+
+func host(port: int = MatchConstants.DEFAULT_ENET_PORT) -> Error:
+	return host_with_transport(TransportAdapterRegistry.default_transport_id(), {"port": port})
 
 
 func join(
@@ -110,22 +120,29 @@ func join(
 func join_with_transport(transport_id: String, options: Dictionary = {}) -> Error:
 	disconnect_session()
 
-	var adapter := TransportAdapterRegistry.create(transport_id)
+	var adapter := _resolve_transport_adapter(transport_id)
 	if adapter == null:
 		return ERR_UNAVAILABLE
-	_transport_adapter = adapter
 
-	_last_join_address = String(options.get("address", ""))
+	_last_join_address = String(options.get("address", options.get("signaling_url", "")))
 	_last_join_port = int(options.get("port", MatchConstants.DEFAULT_ENET_PORT))
 	_last_join_room_code = String(options.get("room_code", ""))
 
 	if transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
-		return _begin_webrtc_session(options, false)
+		var error := _begin_webrtc_session(options, false)
+		if error != OK:
+			_reset_transport_adapter()
+			return error
+		_transport_adapter = adapter
+		return OK
 
-	_peer = _transport_adapter.create_client_peer(options)
-	if _peer == null:
+	var peer := adapter.create_client_peer(options)
+	if peer == null:
+		_reset_transport_adapter()
 		return ERR_CANT_CREATE
 
+	_transport_adapter = adapter
+	_peer = peer
 	multiplayer.multiplayer_peer = _peer
 	_state = SessionState.CONNECTING
 	_connect_started_msec = Time.get_ticks_msec()
@@ -199,9 +216,6 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	if _webrtc_coordinator != null:
-		_webrtc_coordinator.poll_peer_connections()
-
 	if _state == SessionState.CONNECTING:
 		var timeout_msec := _connect_timeout_msec()
 		if Time.get_ticks_msec() - _connect_started_msec > timeout_msec:
@@ -414,7 +428,20 @@ func _end_session(reason: SessionEndReason, message: String) -> void:
 		session_ended.emit(reason, message)
 	_teardown_peer()
 	_state = SessionState.IDLE
+	_reset_transport_adapter()
 	session_state_changed.emit()
+
+
+func _resolve_transport_adapter(transport_id: String) -> TransportAdapter:
+	if _injected_transport_adapter != null:
+		return _injected_transport_adapter
+	return TransportAdapterRegistry.create(transport_id)
+
+
+func _reset_transport_adapter() -> void:
+	_transport_adapter = TransportAdapterRegistry.create(
+		TransportAdapterRegistry.default_transport_id(),
+	)
 
 
 func _default_end_message(reason: SessionEndReason) -> String:
@@ -429,20 +456,20 @@ func _default_end_message(reason: SessionEndReason) -> String:
 			return ""
 
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "call_remote", "reliable", 0)
 func _rpc_session_ended(reason: int, message: String) -> void:
 	if _state != SessionState.CONNECTED:
 		return
 	_end_session(reason as SessionEndReason, message)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_echo(message: String, nonce: int) -> void:
 	var sender_id := multiplayer.get_remote_sender_id()
 	_rpc_echo_reply.rpc_id(sender_id, message, nonce)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_echo_reply(message: String, nonce: int) -> void:
 	_apply_echo_reply(multiplayer.get_remote_sender_id(), message, nonce)
 

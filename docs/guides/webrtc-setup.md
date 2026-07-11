@@ -1,6 +1,6 @@
 # WebRTC setup
 
-Bean Party's internet transport uses Godot's `WebRTCMultiplayerPeer` with a small WebSocket signaling server and public STUN for NAT traversal.
+Bean Party's internet transport uses Godot's `WebRTCMultiplayerPeer` with a small WebSocket signaling server and ICE (STUN/TURN) for NAT traversal.
 
 ## Prerequisites
 
@@ -33,18 +33,32 @@ npm start
 
 Default signaling URL: `ws://127.0.0.1:9080` (`MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL`).
 
-## Manual spike (Phase 0)
+## Host or join (debug shell)
 
-1. Start the signaling server on one machine.
-2. Launch two game instances with webrtc-native installed.
-3. Host with `webrtc` transport (debug UI join-code flow lands in Phase 1).
-4. Join with the assigned room code.
-5. Confirm `MatchSession` echo RPC succeeds between instances.
+1. Start the signaling server.
+2. Launch Godot with webrtc-native installed and run the main scene (`F5`).
+3. Select transport **WebRTC (internet)**.
+4. **Host:** leave room code empty, select **Host**, copy the displayed room code.
+5. **Join:** enter the signaling URL and room code, select **Join**.
+6. Use **Echo test**, then run the lobby → board → minigame flow.
 
-STUN-only (`stun:stun.l.google.com:19302`) is enough for many LAN/home networks. Production play requires TURN relay configuration (Phase 2).
+See [README hosting steps](../../README.md#host-a-multiplayer-session) for a concise checklist.
+
+## ICE and TURN (Phase 2)
+
+By default only public STUN is used (`stun:stun.l.google.com:19302`). Restrictive NATs need a TURN relay.
+
+Configure ICE servers via:
+
+- `config/webrtc_ice_servers.json` (copy from [config/webrtc_ice_servers.example.json](../../config/webrtc_ice_servers.example.json))
+- `user://webrtc_ice_servers.json`
+- Environment variables (`BEAN_PARTY_ICE_SERVERS_JSON` or `BEAN_PARTY_TURN_*`)
+
+Full deployment, NAT matrix, and troubleshooting: [WebRTC operations runbook](webrtc-ops.md).
 
 ## Related documents
 
+- [WebRTC operations runbook](webrtc-ops.md)
 - [WebRTC transport investigation](../research/webrtc-transport-investigation.md)
 - [Networking architecture](../architecture/networking.md)
 - [Runtime debug harnesses](runtime-debug-harnesses.md) — ENet LAN path remains available

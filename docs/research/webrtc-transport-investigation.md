@@ -1,6 +1,6 @@
 # WebRTC transport investigation
 
-Status: **In progress (Phase 0)**
+Status: **In progress (Phase 2)**
 
 ## Question
 
@@ -14,23 +14,36 @@ Steam transport follow-up is **backlogged**. WebRTC is the active internet trans
 - `MatchSession.host_with_transport` / `join_with_transport`
 - `WebRtcTransportAdapter`, `WebRtcMultiplayerCoordinator`, `WebRtcSignalingClient`
 - Node signaling server in `tools/signaling/`
+- `WebRtcIceConfig` for STUN/TURN resolution
 
-## Phase 0 scope (current)
+## Phase 0–1 (done)
 
 - webrtc-native GDExtension (developer-installed, not vendored in git)
 - Star topology (`use_mesh = false`) with host relay via `WebRTCMultiplayerPeer`
-- Public STUN only (`stun:stun.l.google.com:19302`)
 - Async connect through `MatchSession` (`WEBRTC_CONNECT_TIMEOUT_MSEC = 20000`)
+- Join-code debug UI and reconnect keys (`signaling_url` + `room_code`)
+- ICE polling before lobby RPCs; manual 2-peer lobby/board/minigame validated
 
-## Proposed WebRTC channel map
+## WebRTC channel map (implemented)
 
-| Channel | Lanes |
+| Channel | Lanes | RPC delivery |
+| --- | --- | --- |
+| 0 reliable | `SESSION_CONTROL`, `ENTITY_LIFECYCLE` | Lobby, board, phase, echo |
+| 1 unreliable ordered | `PLAYER_INPUT` | Minigame input RPCs |
+| 2 unreliable | `WORLD_SNAPSHOT`, `COSMETIC` | Snapshot RPCs |
+
+Constants: `TransportMessageLanes.CHANNEL_*` and `WEBRTC_CHANNEL_BY_LANE`.
+
+## Phase 2 (current)
+
+| Item | Status |
 | --- | --- |
-| 0 reliable | `SESSION_CONTROL`, `ENTITY_LIFECYCLE` |
-| 1 unreliable ordered | `PLAYER_INPUT` |
-| 2 unreliable | `WORLD_SNAPSHOT`, `COSMETIC` |
+| TURN / ICE config (`WebRtcIceConfig`, example JSON, env vars) | Done |
+| Shell/minigame RPC `transfer_channel` wiring | Done |
+| Operations runbook + NAT matrix | Done ([webrtc-ops.md](../guides/webrtc-ops.md)) |
+| Formal 4-peer NAT matrix execution | **Open** (manual; template in runbook) |
 
-Constants live in `TransportMessageLanes.WEBRTC_CHANNEL_BY_LANE`. RPC wiring is follow-up work.
+Default STUN remains enabled when no TURN is configured.
 
 ## Go / no-go gates
 
@@ -40,17 +53,20 @@ Constants live in `TransportMessageLanes.WEBRTC_CHANNEL_BY_LANE`. RPC wiring is 
 | Signaling protocol client | Done |
 | Signaling server (dev) | Done |
 | webrtc-native install docs | Done |
-| 2-peer internet echo (manual) | **Open** |
+| 2-peer lobby/board/minigame (manual) | Done |
 | Join-code production UI | Done (debug shell) |
-| TURN relay | Phase 2 |
-| 4-peer NAT matrix | Phase 2 |
+| TURN relay configuration path | Done |
+| RPC lane channels | Done |
+| 4-peer NAT matrix | Open (manual) |
 
 ## Backlog (not in scope)
 
 - Steam / GodotSteam transport integration — see [steam transport investigation](steam-transport-investigation.md)
+- Production signaling auth, rate limits, and matchmaking
+- Automated NAT matrix in CI
 
-## Follow-up
+## Related documents
 
-- Phase 1: join-code UX in `network_session_view`, reconnect keys by `room_code` — **done**
-- Phase 2: TURN, lane RPC wiring, ops runbook
-- Update [networking plan](../plans/networking.md) milestone table when Phase 0 manual spike completes
+- [WebRTC setup](../guides/webrtc-setup.md)
+- [WebRTC operations runbook](../guides/webrtc-ops.md)
+- [Networking plan](../plans/networking.md)

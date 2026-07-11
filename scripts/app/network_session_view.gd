@@ -40,7 +40,35 @@ func _ready() -> void:
 	_match_session.session_ended.connect(_on_session_ended)
 	_match_session.echo_completed.connect(_on_echo_completed)
 	_on_transport_selected(0)
+	_apply_pending_reconnect_target()
 	_refresh()
+
+
+func _apply_pending_reconnect_target() -> void:
+	if not NetworkReconnectState.has_pending():
+		return
+
+	if NetworkReconnectState.pending_transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		_select_transport_mode(TransportMode.WEBRTC)
+		if NetworkReconnectState.pending_signaling_url != "":
+			_signaling_url_field.text = NetworkReconnectState.pending_signaling_url
+		if NetworkReconnectState.pending_room_code != "":
+			_room_code_field.text = NetworkReconnectState.pending_room_code
+		return
+
+	_select_transport_mode(TransportMode.ENET)
+	if NetworkReconnectState.pending_host_address != "":
+		_address_field.text = NetworkReconnectState.pending_host_address
+	if NetworkReconnectState.pending_host_port > 0:
+		_port_field.text = str(NetworkReconnectState.pending_host_port)
+
+
+func _select_transport_mode(mode: TransportMode) -> void:
+	for index in range(_transport_field.item_count):
+		if _transport_field.get_item_id(index) == mode:
+			_transport_field.select(index)
+			_on_transport_selected(index)
+			return
 
 
 func _on_transport_selected(_index: int) -> void:
@@ -128,15 +156,18 @@ func _join_webrtc() -> void:
 
 func _on_session_ended(reason: MatchSession.SessionEndReason, message: String) -> void:
 	_status_label.text = message
+	_apply_pending_reconnect_target()
 	_refresh()
 
 
 func _on_disconnect_pressed() -> void:
 	_match_session.disconnect_session()
+	_apply_pending_reconnect_target()
 	_refresh()
 
 
 func _on_connection_failed() -> void:
+	_apply_pending_reconnect_target()
 	_refresh()
 
 

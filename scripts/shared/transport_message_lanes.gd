@@ -2,7 +2,7 @@ class_name TransportMessageLanes
 extends RefCounted
 
 ## Logical message lanes from [Networking architecture](../../docs/architecture/networking.md#transport-message-lanes).
-## ENet channel assignments are spike assumptions until RPCs are explicitly mapped.
+## RPC `@rpc(..., transfer_channel)` annotations use the channel constants below.
 
 enum Lane {
 	SESSION_CONTROL,
@@ -20,13 +20,18 @@ const LANE_NAMES := {
 	Lane.COSMETIC: "cosmetic",
 }
 
-## Proposed ENet channel map. Current RPCs still default to channel 0.
+## Transfer channels referenced by shell/minigame `@rpc` decorators.
+const CHANNEL_SESSION_CONTROL := 0
+const CHANNEL_PLAYER_INPUT := 1
+const CHANNEL_WORLD_SNAPSHOT := 2
+const CHANNEL_COSMETIC_ENET := 3
+
 const ENET_CHANNEL_BY_LANE := {
-	Lane.SESSION_CONTROL: 0,
-	Lane.ENTITY_LIFECYCLE: 0,
-	Lane.PLAYER_INPUT: 1,
-	Lane.WORLD_SNAPSHOT: 2,
-	Lane.COSMETIC: 3,
+	Lane.SESSION_CONTROL: CHANNEL_SESSION_CONTROL,
+	Lane.ENTITY_LIFECYCLE: CHANNEL_SESSION_CONTROL,
+	Lane.PLAYER_INPUT: CHANNEL_PLAYER_INPUT,
+	Lane.WORLD_SNAPSHOT: CHANNEL_WORLD_SNAPSHOT,
+	Lane.COSMETIC: CHANNEL_COSMETIC_ENET,
 }
 
 static func lane_name(lane: Lane) -> String:
@@ -37,13 +42,13 @@ static func enet_channel_for_lane(lane: Lane) -> int:
 	return int(ENET_CHANNEL_BY_LANE.get(lane, 0))
 
 
-## Proposed WebRTC data-channel map (3 channels per peer).
+## WebRTC data-channel map (3 channels per peer).
 const WEBRTC_CHANNEL_BY_LANE := {
-	Lane.SESSION_CONTROL: 0,
-	Lane.ENTITY_LIFECYCLE: 0,
-	Lane.PLAYER_INPUT: 1,
-	Lane.WORLD_SNAPSHOT: 2,
-	Lane.COSMETIC: 2,
+	Lane.SESSION_CONTROL: CHANNEL_SESSION_CONTROL,
+	Lane.ENTITY_LIFECYCLE: CHANNEL_SESSION_CONTROL,
+	Lane.PLAYER_INPUT: CHANNEL_PLAYER_INPUT,
+	Lane.WORLD_SNAPSHOT: CHANNEL_WORLD_SNAPSHOT,
+	Lane.COSMETIC: CHANNEL_WORLD_SNAPSHOT,
 }
 
 

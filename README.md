@@ -76,7 +76,7 @@ ENet requires every peer to reach the host directly on the LAN. It does not trav
 5. Leave **room code** empty and select **Host**. Copy the room code shown in the status line.
 6. Share the signaling URL and room code with joiners. They enter both fields and select **Join**.
 
-To test on one PC, run two Godot instances against `ws://127.0.0.1:9080`. STUN hole-punch works on many home networks; restrictive NAT still needs TURN relay (not configured yet). See [WebRTC setup](docs/guides/webrtc-setup.md) and [runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) for troubleshooting and the lobby → board → minigame flow.
+To test on one PC, run two Godot instances against `ws://127.0.0.1:9080`. STUN hole-punch works on many home networks; restrictive NAT needs TURN relay — see [WebRTC operations runbook](docs/guides/webrtc-ops.md). See [WebRTC setup](docs/guides/webrtc-setup.md) and [runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) for troubleshooting and the lobby → board → minigame flow.
 
 ## Contributing
 
@@ -91,6 +91,7 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Create a minigame](docs/guides/create-a-minigame.md) — scaffold, implement, run, test, and prepare a local minigame for review.
 - [Runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) — exercise the implemented local and ENet architecture proofs and understand their limits.
 - [WebRTC setup](docs/guides/webrtc-setup.md) — webrtc-native install, signaling server, and internet transport spikes.
+- [WebRTC operations runbook](docs/guides/webrtc-ops.md) — TURN/ICE config, signaling deployment, NAT test matrix.
 - [Minigame integration contract](docs/architecture/minigame-integration.md) — runtime, ownership, result, cleanup, and networking boundaries.
 - [Networking architecture](docs/architecture/networking.md) — implemented debug boundaries plus the proposed online topology, authority, and phase machine.
 - [Networking implementation plan](docs/plans/networking.md) — current milestone status, future sequence, and test matrix.

@@ -384,7 +384,7 @@ This reinforces the decision against universal rollback: rewinding an arena full
 | `TransportAdapter` / `TransportAdapterRegistry` | Implemented | Transport selection boundary for `MatchSession` |
 | `EnetTransportAdapter` | Implemented | ENet server/client peers behind `TransportAdapter` |
 | `SteamTransportAdapter` | Stub only | Fails closed; see [steam transport investigation](../research/steam-transport-investigation.md) |
-| `TransportMessageLanes` | Implemented constants | Proposed ENet channel map for five logical lanes |
+| `TransportMessageLanes` | Implemented | ENet/WebRTC channel map; shell/minigame RPCs use `transfer_channel` |
 | `MatchSession` | Implemented debug session | Direct address/port or transport id, connection state, peer events, reliable echo, peer teardown |
 | `NetworkLobbySession`, `NetworkBoardSession`, `NetworkMatchPhaseSession` | Implemented debug shell slices | Host-authoritative lobby, board stub, and placeholder phase synchronization |
 | Shell phase coordinator | Partial | Offline and network debug controllers exist, but no unified production coordinator |
@@ -401,7 +401,7 @@ This reinforces the decision against universal rollback: rewinding an arena full
 
 Shooters and action minigames produce constant inputs and snapshots alongside critical lifecycle messages. These must not block one another.
 
-**Architectural direction:** conceptually separate traffic on distinct channels or logical lanes (exact channel map is a **spike assumption**):
+**Architectural direction:** separate traffic on distinct channels or logical lanes (implemented for shell RPCs via `TransportMessageLanes`):
 
 | Lane | Delivery | Examples |
 | --- | --- | --- |

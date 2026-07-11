@@ -29,7 +29,7 @@ WebRTC requires the [webrtc-native GDExtension](webrtc-setup.md) and a running s
 5. Join: enter the signaling URL and room code, then select `Join`.
 6. Use `Echo test` once connected.
 
-STUN-only connectivity works on many networks; restrictive NATs need TURN (Phase 2).
+STUN-only connectivity works on many networks; restrictive NATs need TURN. Configure ICE servers via [WebRTC setup](webrtc-setup.md) and [WebRTC operations runbook](webrtc-ops.md).
 
 ### Shared lobby → board → minigame flow
 
@@ -45,7 +45,8 @@ All lobby, board, and phase synchronization in this slice uses reliable RPCs. Th
 
 ### Current network limitations
 
-- ENet remains direct-IP LAN only (no NAT traversal). WebRTC adds signaling + STUN hole-punch; TURN relay is not configured yet (Phase 2).
+- ENet remains direct-IP LAN only (no NAT traversal). WebRTC adds signaling + STUN hole-punch; TURN relay is operator-configured via `WebRtcIceConfig` (see [webrtc-ops.md](webrtc-ops.md)).
+- Shell and minigame RPCs use `TransportMessageLanes` transfer channels (session on 0, inputs on 1, snapshots on 2).
 - The network placeholder minigame scene is no longer used during `ActiveMinigame`. The debug shell now loads **Action Spike** (`HOST_ACTION`) through `NetworkActionMinigameSession`; Snapshot Arena (`HOST_SNAPSHOT`) remains available via manifest selection when wired.
 - Action Spike uses the milestone 10 action-netcode kit foundation: 30 Hz fixed-tick host sim, required client movement prediction + reconciliation, 20 Hz snapshots, and jump input on device-slot accept/space/u/numpad-enter keys.
 - Snapshot Arena runs through `NetworkMinigameSession` with host snapshots, client interpolation, and optional local movement prediction (milestone 8 experiment). Latency impairment testing is manual.

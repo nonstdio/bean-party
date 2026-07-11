@@ -68,6 +68,7 @@ func test_match_session_webrtc_fails_without_extension() -> void:
 		ERR_CANT_CREATE,
 	)
 	assert_eq(session.get_session_state(), MatchSession.SessionState.IDLE)
+	assert_eq(session.get_transport_id(), TransportAdapterRegistry.TRANSPORT_ENET)
 
 
 func test_enet_adapter_creates_server_and_client_peers() -> void:
@@ -108,30 +109,70 @@ func test_match_session_steam_transport_fails_closed() -> void:
 		ERR_CANT_CREATE,
 	)
 	assert_eq(session.get_session_state(), MatchSession.SessionState.IDLE)
+	assert_eq(session.get_transport_id(), TransportAdapterRegistry.TRANSPORT_ENET)
+
+
+func test_match_session_unknown_transport_returns_unavailable() -> void:
+	var session := MatchSession.new()
+	add_child_autofree(session)
+	assert_eq(
+		session.host_with_transport("unknown-transport", {}),
+		ERR_UNAVAILABLE,
+	)
+	assert_eq(session.get_transport_id(), TransportAdapterRegistry.TRANSPORT_ENET)
+
+
+func test_match_session_join_with_enet_transport() -> void:
+	var host_session := MatchSession.new()
+	var client_session := MatchSession.new()
+	add_child_autofree(host_session)
+	add_child_autofree(client_session)
+	assert_eq(
+		host_session.host_with_transport(
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			{"port": _test_port},
+		),
+		OK,
+	)
+	assert_eq(
+		client_session.join_with_transport(
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			{"address": "127.0.0.1", "port": _test_port},
+		),
+		OK,
+	)
+	assert_eq(client_session.get_transport_id(), TransportAdapterRegistry.TRANSPORT_ENET)
+	assert_eq(client_session.get_session_state(), MatchSession.SessionState.CONNECTING)
+	host_session.disconnect_session()
+	client_session.disconnect_session()
+
+
+func test_set_transport_adapter_is_used_by_host_with_transport() -> void:
+	var session := MatchSession.new()
+	var adapter := EnetTransportAdapter.new()
+	add_child_autofree(session)
+	session.set_transport_adapter(adapter)
+	assert_eq(
+		session.host_with_transport(
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			{"port": _test_port},
+		),
+		OK,
+	)
+	assert_eq(session.get_transport_id(), TransportAdapterRegistry.TRANSPORT_ENET)
+	session.disconnect_session()
 
 
 func test_lane_channel_map_matches_architecture_lanes() -> void:
 	assert_eq(
+		TransportMessageLanes.CHANNEL_SESSION_CONTROL,
 		TransportMessageLanes.enet_channel_for_lane(TransportMessageLanes.Lane.SESSION_CONTROL),
-		0,
 	)
 	assert_eq(
-		TransportMessageLanes.enet_channel_for_lane(TransportMessageLanes.Lane.PLAYER_INPUT),
-		1,
-	)
-	assert_eq(
-		TransportMessageLanes.enet_channel_for_lane(TransportMessageLanes.Lane.WORLD_SNAPSHOT),
-		2,
-	)
-	assert_eq(
-		TransportMessageLanes.webrtc_channel_for_lane(TransportMessageLanes.Lane.SESSION_CONTROL),
-		0,
-	)
-	assert_eq(
+		TransportMessageLanes.CHANNEL_PLAYER_INPUT,
 		TransportMessageLanes.webrtc_channel_for_lane(TransportMessageLanes.Lane.PLAYER_INPUT),
-		1,
 	)
 	assert_eq(
+		TransportMessageLanes.CHANNEL_WORLD_SNAPSHOT,
 		TransportMessageLanes.webrtc_channel_for_lane(TransportMessageLanes.Lane.COSMETIC),
-		2,
 	)

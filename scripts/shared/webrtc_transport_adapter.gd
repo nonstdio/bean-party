@@ -47,8 +47,5 @@ static func normalize_options(options: Dictionary) -> Dictionary:
 	}
 
 
-static func default_ice_servers(options: Dictionary) -> Array:
-	var configured: Variant = options.get("ice_servers")
-	if configured is Array and not configured.is_empty():
-		return configured
-	return [{"urls": ["stun:stun.l.google.com:19302"]}]
+static func default_ice_servers(options: Dictionary = {}) -> Array:
+	return WebRtcIceConfig.resolve_ice_servers(options)

@@ -14,6 +14,8 @@ npm start
 
 Default URL: `ws://127.0.0.1:9080` (override with `PORT`).
 
+Dev limits: 4 peers per lobby (`MAX_PEERS_PER_LOBBY`), 64 KiB max signaling payload.
+
 ## Client configuration
 
 Use `MatchSession.host_with_transport("webrtc", {"signaling_url": "ws://127.0.0.1:9080"})` to host, or pass `room_code` when joining.

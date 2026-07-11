@@ -28,3 +28,6 @@ tools/signaling/node_modules/
 # Local exports and builds
 exports/
 build/
+
+# Local WebRTC ICE/TURN credentials (copy from config/webrtc_ice_servers.example.json)
+config/webrtc_ice_servers.json

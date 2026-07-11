@@ -35,6 +35,7 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 9 | Disconnect recovery (non-host reconnect, clean host exit) | In progress: session-end signal, inactive slots during match, board-phase reclaim; manual disconnect matrix still open | 2, 6, 7 |
 | 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Implemented proof (spike): action-netcode kit, `NetworkActionMinigameSession`, Action Spike graybox with tank movement, hitscan combat, ticked input/replay, and tie-aware results; lag compensation, projectiles, physics props, respawn, and full [movement-standard](../architecture/godot-3d-movement.md) compliance deferred; manual latency matrix not stored | 7, 8 |
 | 11 | Steam transport investigation | Implemented proof (investigation): `TransportAdapter` boundary, ENet refactor, Steam stub, lane map, [research note](../research/steam-transport-investigation.md) with **conditional go**; live Steam peer + channel parity spike deferred pending legal review | 3 |
+| — | WebRTC internet transport | In progress: Phase 0–1 host/join, signaling, join-code UI, ICE polling ([research note](../research/webrtc-transport-investigation.md)); Phase 2 TURN config + RPC lane channels + [ops runbook](../guides/webrtc-ops.md) landed; formal 4-peer NAT matrix open | 11 |
 | 12 | Formal minigame networking API stabilization | Not started | 7, 9, 10 |
 | 13 | Host migration (Case B) — post-acceptance | Deferred / not started | 9, 12 |
 

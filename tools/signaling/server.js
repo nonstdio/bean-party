@@ -3,6 +3,8 @@ const crypto = require("crypto");
 
 const MAX_PEERS = 4096;
 const MAX_LOBBIES = 1024;
+const MAX_PEERS_PER_LOBBY = 4;
+const MAX_SIGNALING_PAYLOAD_BYTES = 65536;
 const PORT = Number(process.env.PORT || 9080);
 const ALFNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -24,6 +26,8 @@ const STR_SERVER_ERROR = "Server error, lobby not found";
 const STR_INVALID_DEST = "Invalid destination";
 const STR_INVALID_CMD = "Invalid command";
 const STR_TOO_MANY_PEERS = "Too many peers connected";
+const STR_LOBBY_FULL = "Lobby is full";
+const STR_PAYLOAD_TOO_LARGE = "Signaling payload too large";
 const STR_INVALID_TRANSFER_MODE = "Invalid transfer mode, must be text";
 
 const CMD = {
@@ -170,6 +174,9 @@ function joinLobby(peer, pLobby, mesh) {
   if (lobby.sealed) {
     throw new ProtoError(4000, STR_LOBBY_IS_SEALED);
   }
+  if (lobby.peers.length >= MAX_PEERS_PER_LOBBY) {
+    throw new ProtoError(4000, STR_LOBBY_FULL);
+  }
   peer.lobby = lobbyName;
   lobby.join(peer);
   peer.ws.send(protoMessage(CMD.JOIN, 0, lobbyName));
@@ -186,6 +193,9 @@ function parseMsg(peer, msg) {
   const type = typeof json.type === "number" ? Math.floor(json.type) : -1;
   const id = typeof json.id === "number" ? Math.floor(json.id) : -1;
   const data = typeof json.data === "string" ? json.data : "";
+  if (data.length > MAX_SIGNALING_PAYLOAD_BYTES) {
+    throw new ProtoError(4000, STR_PAYLOAD_TOO_LARGE);
+  }
 
   if (type < 0 || id < 0) {
     throw new ProtoError(4000, STR_INVALID_FORMAT);
@@ -250,6 +260,10 @@ wss.on("connection", (ws) => {
     const text = messageToString(message);
     if (text === null) {
       ws.close(4000, STR_INVALID_TRANSFER_MODE);
+      return;
+    }
+    if (text.length > MAX_SIGNALING_PAYLOAD_BYTES) {
+      ws.close(4000, STR_PAYLOAD_TOO_LARGE);
       return;
     }
     try {
