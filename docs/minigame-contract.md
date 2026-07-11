@@ -16,18 +16,19 @@ Every minigame should have five stages:
 
 ## Intended repository layout
 
-Once implementation begins, keep each minigame self-contained under its own stable slug:
+Keep each Godot minigame self-contained under its own stable slug:
 
 ```text
 minigames/
   <minigame-slug>/
     README.md       # design brief, controls, player counts, asset credits
-    src/            # engine-specific gameplay source
+    scenes/         # Godot scenes owned by this minigame
+    scripts/        # GDScript owned by this minigame
     assets/         # only assets needed by this minigame
     tests/          # automated or manual test notes
 ```
 
-The selected engine may add required files, but do not place minigame-specific logic in the board or shared-system area without an accepted shared-interface change.
+Do not place minigame-specific logic in the board or shared-system area without an accepted shared-interface change. Follow the broader conventions in [Godot project architecture](godot-architecture.md).
 
 ## What the shared shell should own
 
