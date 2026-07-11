@@ -79,6 +79,6 @@ Godot will create `.godot/` when it imports the project. That directory is ignor
 
 ## Adding tests
 
-GUT 9.7.1 is the project test framework. Add deterministic GDScript tests beneath `tests/`, using `extends GutTest`; test minigame-local behavior inside that minigame's `tests/` directory when practical. Every behavior change should run the full `all` command and include tests or explain why automated coverage is not appropriate.
+GUT 9.7.1 is the project test framework. Add deterministic GDScript tests beneath `tests/`, using `extends GutTest`; put minigame-local behavior inside that minigame's `tests/` directory. The standard configuration discovers both locations and also validates minigame boundaries and relative Markdown links. Every behavior change should run the full `all` command and include tests or explain why automated coverage is not appropriate.
 
 The vendored add-on and its MIT license are recorded in [the third-party notices](../../THIRD_PARTY_NOTICES.md) and [Decision 0002](../decisions/0002-gut-testing.md).

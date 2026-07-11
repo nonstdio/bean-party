@@ -5,8 +5,19 @@ What does this change add or improve for players or contributors?
 ## Design and integration
 
 - Related issue or proposal:
+- Proposal status (`Approved for implementation`, experiment, or not applicable):
 - Player count / game mode (if applicable):
+- Local minigame contract version (if applicable):
 - Shared interfaces or project decisions changed:
+
+### Minigame integration (when applicable)
+
+- [ ] The manifest, folder slug, root scene, and supported player counts agree.
+- [ ] Placements include every participant exactly once and tie behavior is tested.
+- [ ] The minigame returns no beans, items, or board-economy mutations.
+- [ ] I tested normal completion, retry, early exit, forced abort, and two consecutive runs.
+- [ ] I tested every claimed player count and documented keyboard/controller coverage.
+- [ ] The minigame does not access another minigame, physical device assignments, or raw networking transports.
 
 ## Validation
 

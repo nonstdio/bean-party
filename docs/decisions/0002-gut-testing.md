@@ -16,7 +16,7 @@ Bean Party needs a repeatable, headless way for contributors and agents to valid
 
 ## Decision
 
-Vendor GUT 9.7.1 from commit `aeb5d4f` under `addons/gut/`, retain its included MIT license, and enable its editor plugin in `project.godot`. Tests live beneath `tests/` and run through the repository's platform runners. A GitHub Actions matrix verifies the official Godot 4.7 archive and runs the same validation and test commands on Windows, macOS, and Linux.
+Vendor GUT 9.7.1 from commit `aeb5d4f` under `addons/gut/`, retain its included MIT license, and enable its editor plugin in `project.godot`. Project-level tests live beneath `tests/`; minigame-local tests live beneath `minigames/<slug>/tests/`. Both run through the repository's platform runners. A GitHub Actions matrix verifies the official Godot 4.7 archive and runs the same validation and test commands on Windows, macOS, and Linux.
 
 ## Consequences
 
