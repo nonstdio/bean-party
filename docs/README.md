@@ -53,6 +53,18 @@ Subjects can appear in more than one directory. For example, Godot installation 
 
 If a document answers more than one of these questions, split it when each part can stand on its own and has a different lifecycle. Otherwise place it according to its primary purpose and link to related material.
 
+## Contributor documentation responsibilities
+
+Documentation is part of the implementation, not a follow-up task. Contributors should:
+
+- Begin with the repository entry points and read as many linked design, architecture, guide, plan, research, decision, and project documents as reasonably necessary for the task before changing behavior or project direction.
+- Create or update the canonical document in the same change when work adds or changes durable behavior, interfaces, conventions, setup requirements, decisions, or other knowledge future contributors will need. Keep transient experiments and work-in-progress findings in their issue or pull request unless they become durable guidance.
+- Correct inaccurate, stale, broken, misleading, or contradictory documentation encountered during the work. Fix a small incidental gap when the correction is supported by clear evidence and remains focused; record a substantial, uncertain, or unrelated gap in the pull request or raise it with a maintainer rather than silently ignoring it or widening the change without review.
+- Investigate disagreements among documentation, code, tests, and recorded decisions instead of assuming that any one source automatically overrides the others. Distinguish the intended behavior from the currently implemented behavior, and consider accepted decisions, active canonical documents, executable code and tests, document status, and relevant project history.
+- Reconcile inconsistent sources when the intended resolution is clear and within scope. When evidence is incomplete, sources remain ambiguous, or a resolution would establish new project direction, describe the discrepancy and ask a maintainer before choosing an interpretation.
+
+Research, plans, proposals, and draft documents can provide evidence, but they do not silently establish project policy. Use their recorded status and the lifecycle below to determine their authority.
+
 ## Document lifecycle
 
 A substantial question may move through the following lifecycle:

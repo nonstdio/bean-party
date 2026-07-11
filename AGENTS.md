@@ -4,7 +4,7 @@ This repository is pre-production work for Bean Party, a collaborative party gam
 
 ## Start here
 
-Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), the [documentation index](docs/README.md), [Godot setup guide](docs/guides/godot-setup.md), [Godot project architecture](docs/architecture/godot-project.md), and the relevant document in `docs/` before changing project direction. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
+Begin with [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [documentation index](docs/README.md). Before changing code, documentation, behavior, or project direction, follow their links and read as many task-relevant design, architecture, guide, plan, research, decision, and project documents as reasonably necessary. Read the [Godot setup guide](docs/guides/godot-setup.md) and [Godot project architecture](docs/architecture/godot-project.md) before changing the project foundation or shared runtime structure. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
 
 ## Working rules
 
@@ -16,6 +16,12 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), the [documentat
 - Never commit `.godot/`, `.import/`, `.mono/`, exported builds, or other generated editor files.
 - Keep Godot scenes (`.tscn`) and scripts (`.gd`) in the documented repository layout. Use `res://` paths and pair a scene with its controller script when that makes ownership clearer.
 - Update the relevant guide when a change establishes a new shared convention.
+
+## Documentation responsibilities
+
+- Follow the [documentation responsibilities and lifecycle](docs/README.md#contributor-documentation-responsibilities). Treat documentation as part of the implementation: create or update the canonical document in the same change when work adds or changes durable behavior, interfaces, conventions, setup requirements, or project decisions.
+- Correct clear documentation errors relevant to the work and small, evidence-backed gaps found along the way. Report substantial, uncertain, or unrelated gaps to the user or maintainer instead of silently ignoring them or expanding a focused change into a broad rewrite.
+- When documentation, code, tests, or recorded decisions disagree, distinguish intended behavior from currently implemented behavior and investigate the available evidence. Reconcile the sources when the answer is clear and within scope; otherwise describe the discrepancy and ask the user or a maintainer before choosing an interpretation. Do not treat research, plans, or proposals as accepted project policy.
 
 ## Validation
 

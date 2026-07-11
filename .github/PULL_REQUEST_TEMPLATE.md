@@ -10,6 +10,11 @@ What does this change add or improve for players or contributors?
 - Local minigame contract version (if applicable):
 - Shared interfaces or project decisions changed:
 
+## Documentation
+
+- Documentation created or updated:
+- Unresolved documentation gaps or discrepancies:
+
 ### Minigame integration (when applicable)
 
 - [ ] The manifest, folder slug, root scene, and supported player counts agree.
@@ -24,7 +29,8 @@ What does this change add or improve for players or contributors?
 - [ ] I tested the documented behavior.
 - [ ] I tested with the intended player count, or explained why that was not possible.
 - [ ] I ran `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS/Linux.
-- [ ] I updated documentation affected by this change.
+- [ ] I created or updated the canonical documentation for durable behavior, interfaces, conventions, setup requirements, or decisions affected by this change, or explained why no documentation change is needed.
+- [ ] I corrected relevant documentation errors I found and disclosed any unresolved gaps or discrepancies above.
 
 ## Assets and credits
 
