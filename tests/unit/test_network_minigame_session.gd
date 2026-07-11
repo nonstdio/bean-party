@@ -1,0 +1,89 @@
+extends GutTest
+
+var _test_port: int
+
+
+func before_each() -> void:
+	_test_port = 19000 + int(Time.get_ticks_msec() % 1000)
+
+
+func _make_slots() -> Array[PlayerSlot]:
+	var lobby := NetworkLobbyAuthority.new()
+	lobby.try_add_slot(1, "Host")
+	lobby.try_add_slot(2, "Client")
+	return lobby.slots
+
+
+func test_apply_host_minigame_result_stores_winner() -> void:
+	var authority := NetworkMatchPhaseAuthority.new()
+	var slots := _make_slots()
+	var participant_ids := PackedStringArray([slots[0].player_id, slots[1].player_id])
+	var result := HostSnapshotSimulator.new().build_result(participant_ids)
+	result.placements[0] = PackedStringArray([slots[1].player_id])
+
+	assert_true(authority.apply_host_minigame_result(result))
+	assert_eq(authority.minigame_winner_player_id, slots[1].player_id)
+
+
+func test_host_minigame_session_submits_matching_result() -> void:
+	var match_session := MatchSession.new()
+	add_child_autofree(match_session)
+
+	var minigame_session := NetworkMinigameSession.new()
+	match_session.add_child(minigame_session)
+	assert_eq(match_session.host(_test_port), OK)
+	await get_tree().process_frame
+
+	var slots := _make_slots()
+	var received: Array = []
+	minigame_session.minigame_result_ready.connect(
+		func(result: MinigameResult) -> void:
+			received.append(result)
+	)
+
+	assert_true(minigame_session.start_minigame(slots, "minigame_test"))
+	minigame_session._simulator.winner_player_id = slots[0].player_id
+	minigame_session._simulator.positions_by_player_id[slots[0].player_id] = (
+		HostSnapshotSimulator.GOAL_CENTER
+	)
+	minigame_session.force_complete_round()
+	await get_tree().process_frame
+
+	assert_eq(received.size(), 1)
+	var result: MinigameResult = received[0]
+	assert_eq(result.status, MinigameResult.Status.COMPLETED)
+	assert_eq(result.placements[0], PackedStringArray([slots[0].player_id]))
+
+
+func test_local_device_slot_uses_lobby_assignment() -> void:
+	var match_session := MatchSession.new()
+	add_child_autofree(match_session)
+
+	var lobby_session := NetworkLobbySession.new()
+	match_session.add_child(lobby_session)
+
+	var minigame_session := NetworkMinigameSession.new()
+	match_session.add_child(minigame_session)
+	assert_eq(match_session.host(_test_port), OK)
+	await get_tree().process_frame
+
+	var local_slots := lobby_session.get_local_slots()
+	assert_false(local_slots.is_empty())
+	var player_id := local_slots[0].player_id
+	assert_true(lobby_session.set_local_device_slot(player_id, 2))
+	assert_eq(minigame_session._local_device_slot_for_player(player_id), 2)
+
+
+func test_authoritative_snapshot_hash_matches_after_apply() -> void:
+	var host_session := NetworkMinigameSession.new()
+	var client_session := NetworkMinigameSession.new()
+	var payload := {
+		"player_a": {"x": 120.0, "y": 88.0},
+		"player_b": {"x": 500.0, "y": 360.0},
+	}
+
+	host_session._publish_authoritative_snapshot(3, payload)
+	client_session._apply_snapshot_payload(3, payload)
+
+	assert_eq(host_session.get_snapshot_serial(), client_session.get_snapshot_serial())
+	assert_eq(host_session.get_snapshot_hash(), client_session.get_snapshot_hash())

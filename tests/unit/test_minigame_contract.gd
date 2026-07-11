@@ -7,8 +7,12 @@ func test_registry_discovers_valid_minigames_and_ignores_authoring_folders() -> 
 	var registry := MinigameRegistry.new()
 
 	assert_true(registry.discover(), "; ".join(registry.errors))
-	assert_eq(registry.get_minigame_ids(), [&"reference-tap"])
+	var ids := registry.get_minigame_ids()
+	assert_eq(ids.size(), 2)
+	assert_true(ids.has(&"reference-tap"))
+	assert_true(ids.has(&"snapshot-arena"))
 	assert_not_null(registry.get_manifest(&"reference-tap"))
+	assert_not_null(registry.get_manifest(&"snapshot-arena"))
 
 
 func test_manifest_rejects_invalid_metadata() -> void:

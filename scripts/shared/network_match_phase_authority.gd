@@ -1,7 +1,7 @@
 class_name NetworkMatchPhaseAuthority
 extends RefCounted
 
-const STUB_MINIGAME_ID := "network-stub"
+const SNAPSHOT_ARENA_MINIGAME_ID := "snapshot-arena"
 const COUNTDOWN_SECONDS := 3
 
 const _VALID_TRANSITIONS: Dictionary = {
@@ -26,6 +26,7 @@ var briefing_ready_by_player_id: Dictionary = {}
 var pending_board_rewards: Array = []
 var minigame_outcome_applied: bool = false
 var countdown_seconds_remaining: int = 0
+var minigame_winner_player_id: String = ""
 
 var _applied_result_ids: Dictionary = {}
 var _applied_reward_ids: Dictionary = {}
@@ -102,6 +103,20 @@ func tick_countdown(delta: float) -> bool:
 var _countdown_elapsed: float = 0.0
 
 
+func apply_host_minigame_result(result: MinigameResult) -> bool:
+	if result == null or result.status != MinigameResult.Status.COMPLETED:
+		return false
+	if result.placements.is_empty():
+		return false
+
+	var first_group: Variant = result.placements[0]
+	if not (first_group is PackedStringArray) or first_group.is_empty():
+		return false
+
+	minigame_winner_player_id = String(first_group[0])
+	return true
+
+
 func try_end_minigame_round() -> bool:
 	if current_phase != MatchPhase.Phase.ACTIVE_MINIGAME:
 		return false
@@ -130,6 +145,7 @@ func export_state() -> Dictionary:
 		"match_slots": _export_slots(),
 		"minigame_instance_id": minigame_instance_id,
 		"minigame_outcome_applied": minigame_outcome_applied,
+		"minigame_winner_player_id": minigame_winner_player_id,
 		"pending_board_rewards": pending_board_rewards.duplicate(true),
 		"phase": MatchPhase.to_key(current_phase),
 		"result_id": result_id,
@@ -146,6 +162,7 @@ func load_state(payload: Dictionary) -> void:
 	result_id = String(payload.get("result_id", ""))
 	reward_application_id = String(payload.get("reward_application_id", ""))
 	minigame_outcome_applied = bool(payload.get("minigame_outcome_applied", false))
+	minigame_winner_player_id = String(payload.get("minigame_winner_player_id", ""))
 	pending_board_rewards = payload.get("pending_board_rewards", []).duplicate(true)
 	countdown_seconds_remaining = int(payload.get("countdown_seconds_remaining", 0))
 	briefing_ready_by_player_id = payload.get("briefing_ready_by_player_id", {}).duplicate(true)
@@ -176,7 +193,7 @@ func _transition_to(target_phase: MatchPhase.Phase) -> bool:
 func _on_enter_phase(phase: MatchPhase.Phase) -> void:
 	match phase:
 		MatchPhase.Phase.MINIGAME_SELECTION:
-			selected_minigame_id = STUB_MINIGAME_ID
+			selected_minigame_id = SNAPSHOT_ARENA_MINIGAME_ID
 			minigame_instance_id = _allocate_minigame_instance_id()
 			result_id = ""
 			reward_application_id = ""
@@ -190,7 +207,7 @@ func _on_enter_phase(phase: MatchPhase.Phase) -> void:
 		MatchPhase.Phase.ACTIVE_MINIGAME:
 			minigame_outcome_applied = false
 		MatchPhase.Phase.RESULTS:
-			_apply_stub_minigame_results()
+			_apply_minigame_results()
 		MatchPhase.Phase.RETURN_TO_BOARD:
 			_apply_pending_board_rewards()
 		MatchPhase.Phase.BOARD:
@@ -201,7 +218,7 @@ func _on_exit_phase(_phase: MatchPhase.Phase) -> void:
 	pass
 
 
-func _apply_stub_minigame_results() -> void:
+func _apply_minigame_results() -> void:
 	if result_id == "":
 		result_id = "result_%s" % minigame_instance_id
 	if _applied_result_ids.has(result_id):
@@ -214,11 +231,14 @@ func _apply_stub_minigame_results() -> void:
 	if match_slots.is_empty():
 		return
 
-	var winner := match_slots[_rng.randi_range(0, match_slots.size() - 1)]
+	var winner_id := minigame_winner_player_id
+	if winner_id == "" or _slot_for_player_id(winner_id) == null:
+		winner_id = match_slots[_rng.randi_range(0, match_slots.size() - 1)].player_id
+
 	pending_board_rewards.append(
 		{
 			"beans": 3,
-			"player_id": winner.player_id,
+			"player_id": winner_id,
 			"reason": "minigame_win",
 		}
 	)
@@ -258,6 +278,7 @@ func _reset_minigame_run_state() -> void:
 	briefing_ready_by_player_id.clear()
 	pending_board_rewards.clear()
 	minigame_outcome_applied = false
+	minigame_winner_player_id = ""
 	countdown_seconds_remaining = 0
 	_countdown_elapsed = 0.0
 
