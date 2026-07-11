@@ -11,6 +11,7 @@ Desktop.ini
 *.log
 *.tmp
 *.bak
+*.zip
 
 # Godot-generated files
 .godot/
