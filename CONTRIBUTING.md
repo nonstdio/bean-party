@@ -4,7 +4,7 @@ Thank you for helping make Bean Party. We want the project to feel like a party 
 
 ## Before you begin
 
-Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame design guide](docs/design/minigames.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template first. A short proposal saves everyone from building the same idea twice or discovering an integration problem late. Before implementation, review the separate [minigame integration contract](docs/architecture/minigame-integration.md).
+Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame design guide](docs/design/minigames.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template and receive `Approved for implementation` before substantial integration-focused work. Small experiments may proceed in personal branches or draft pull requests, but they do not establish shared conventions. Follow [Create a minigame](docs/guides/create-a-minigame.md) and review the separate [minigame integration contract](docs/architecture/minigame-integration.md) before implementation.
 
 ## Godot setup
 
@@ -24,7 +24,7 @@ Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`
 
 The [minigame design guide](docs/design/minigames.md) is the canonical source for proposal contents and design review criteria. The GitHub issue remains canonical while an idea is being discussed; once implementation begins, keep the current brief in `minigames/<slug>/README.md` and link it back to the proposal.
 
-Use Godot scenes and GDScript, but do not assume a shared API beyond what the [minigame integration contract](docs/architecture/minigame-integration.md) documents. The concrete code-level minigame API is still an open design task.
+Use Godot scenes and GDScript through local minigame contract version 1, documented in the [minigame integration contract](docs/architecture/minigame-integration.md). Networking extensions remain provisional until their planned spikes and stabilization milestone complete.
 
 ## Art, audio, and third-party material
 

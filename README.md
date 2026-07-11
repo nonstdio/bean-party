@@ -35,6 +35,7 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Game design target](docs/design/game.md) — what “Mario Party-style” means for this project.
 - [Creative direction](docs/design/creative-direction.md) — how to evoke Bean Battles without copying it.
 - [Minigame design guide](docs/design/minigames.md) — how proposals become clear, testable minigame briefs.
+- [Create a minigame](docs/guides/create-a-minigame.md) — scaffold, implement, run, test, and prepare a local minigame for review.
 - [Minigame integration contract](docs/architecture/minigame-integration.md) — runtime, ownership, result, cleanup, and networking boundaries.
 - [Networking architecture](docs/architecture/networking.md) — proposed online topology, authority, and phase machine.
 - [Networking implementation plan](docs/plans/networking.md) — milestones and test matrix for future netcode work.

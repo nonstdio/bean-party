@@ -1,0 +1,109 @@
+name: Minigame proposal
+description: Propose a new independently developed minigame
+title: "Minigame: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read `docs/design/minigames.md` before completing this proposal. Wait for a maintainer to record **Approved for implementation** before substantial integration-focused work. Small experiments may proceed in personal branches or draft pull requests.
+  - type: textarea
+    id: pitch
+    attributes:
+      label: Elevator pitch
+      description: Describe the game in two sentences and identify its memorable moment.
+    validations:
+      required: true
+  - type: input
+    id: player_count
+    attributes:
+      label: Supported player count
+      placeholder: "2-4"
+    validations:
+      required: true
+  - type: dropdown
+    id: format
+    attributes:
+      label: Format
+      options:
+        - Free-for-all
+        - 2v2
+        - 1v3
+        - Cooperative
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective, scoring, and ties
+      description: Explain the rules, win condition, score, placement order, and tie behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: timing
+    attributes:
+      label: Timing
+      description: Give expected briefing, active-play, and results durations.
+    validations:
+      required: true
+  - type: textarea
+    id: controls
+    attributes:
+      label: Controls, camera, and teaching
+      description: List inputs and camera, what a new player must understand, and how the briefing teaches it.
+    validations:
+      required: true
+  - type: textarea
+    id: involvement
+    attributes:
+      label: Continued involvement and accessibility
+      description: Explain recovery or spectator interest, input accommodations, readable timing cues, and non-color signals.
+    validations:
+      required: true
+  - type: textarea
+    id: fit
+    attributes:
+      label: Bean Party fit
+      description: Describe the original setting, props, hazards, and comic tone. Do not propose copied material.
+    validations:
+      required: true
+  - type: dropdown
+    id: capability
+    attributes:
+      label: Capability
+      description: Networking declarations remain provisional.
+      options:
+        - local_only
+        - network_capable
+    validations:
+      required: true
+  - type: textarea
+    id: integration
+    attributes:
+      label: Integration and shared-system needs
+      description: Identify board-state dependencies, requested shared systems, and a proposed sync profile if network-capable.
+    validations:
+      required: true
+  - type: textarea
+    id: assets
+    attributes:
+      label: Asset plan and provenance
+      description: List needed art/audio, expected creators or sources, and licenses for non-original material.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: Explain intended-player-count testing and observations that would cause a design revision.
+    validations:
+      required: true
+  - type: checkboxes
+    id: originality
+    attributes:
+      label: Contribution boundary
+      options:
+        - label: I will use only original or appropriately licensed code, art, audio, text, and designs.
+          required: true
+        - label: I understand that approval is required before substantial implementation intended for integration.
+          required: true

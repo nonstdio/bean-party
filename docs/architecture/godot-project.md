@@ -15,16 +15,18 @@ docs/                   # Design, architecture, and decision records
 minigames/              # One self-contained folder per contributed minigame
 scenes/
   app/                  # Game entry scene and future app-level flow
+  dev/                  # Contributor-only harness scenes, not shipped game flow
   shared/               # Shared scenes only after a reviewed need exists
 scripts/
   app/                  # Controllers for app-level scenes
+  dev/                  # Controllers for contributor-only harnesses
   shared/               # Shared GDScript only after a reviewed need exists
 tests/                  # Project-level GUT tests; minigames may keep local tests
 tools/                  # Platform runners for agent setup, validation, and tests
 project.godot           # Godot project configuration and main-scene setting
 ```
 
-The foundation intentionally does not create a board manager, global singleton, networking layer, or minigame API. Those systems must earn their complexity through the vertical slice.
+The foundation does not create a board manager or global singleton. It now contains the accepted local minigame v1 contract and the first proposed networking session spikes; neither should be bypassed with minigame-specific shell or transport code.
 
 When online play is implemented, the shared **session layer** (proposed `MatchSession` / `TransportAdapter`) should live in `scripts/shared/` behind the boundary described in [networking architecture](networking.md). Prefer an app-owned session with explicit teardown over an automatic networking singleton.
 
