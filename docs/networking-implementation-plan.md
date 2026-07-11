@@ -27,9 +27,10 @@ Related documents:
 | 6 | Networked scene flow (briefing → results) | 2, 4, 5 |
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | 6 |
 | 8 | Prediction / reconciliation experiment | 7 |
-| 9 | Disconnect + phase-boundary recovery | 2, 6, 7 |
+| 9 | Disconnect recovery (non-host, Case A, clean host exit) | 2, 6, 7 |
 | 10 | Steam transport investigation | 3 |
 | 11 | Formal minigame networking API | 7, 9 |
+| 12 | Host migration (Case B) — post-acceptance | 9, 11 |
 
 ---
 
@@ -53,7 +54,7 @@ From the starter app, two to four local players can join a couch session with di
 
 - Cannot exceed 4 `PlayerSlot`s
 - `player_id` stable when toggling ready
-- Multiple `local_device_slot` values on one offline “peer”
+- Multiple `local_player_index` values on one offline “peer”; controller mapping stays local
 
 ### Manual tests
 
@@ -62,7 +63,7 @@ From the starter app, two to four local players can join a couch session with di
 
 ### Stop condition
 
-Shell can enumerate `PlayerSlot`s and map inputs by `local_device_slot` in a headless or minimal scene test.
+Shell can enumerate `PlayerSlot`s and map inputs by `local_player_index` → local controller on the owning machine in a headless or minimal scene test.
 
 ### Open questions before milestone 2
 
@@ -164,7 +165,7 @@ Peer A joins with 2 local players; Peer B joins with 1; lobby shows 3 `PlayerSlo
 
 ### Automated tests
 
-- Host rejects `PlayerSlot` claim for another peer's `local_device_slot`
+- Host rejects `PlayerSlot` claim for another peer's `local_player_index`
 - Host rejects match start when over `MAX_PLAYERS` (fifth player)
 
 ### Manual tests
@@ -178,7 +179,7 @@ All peers display identical lobby `PlayerSlot` list and ready flags after each c
 
 ### Open questions before milestone 5
 
-- Lobby host migration needed before match start? (**deferred** until 9)
+- Lobby host migration needed before match start? (**deferred** until 12)
 - Display name profanity/trust (**deferred**)
 
 ---
@@ -238,7 +239,7 @@ From board stub, host starts minigame flow: all peers load placeholder, ready up
 ### Automated tests
 
 - Phase agreement: all peers report same phase after each transition (test harness with N mock peers if feasible)
-- Results applied exactly once (host counter / flag in test)
+- Results applied once per `result_id` / `reward_application_id` (idempotency test)
 
 ### Manual tests
 
@@ -328,44 +329,44 @@ Documented table: latency vs correction frequency vs player verdict; recommendat
 
 ---
 
-## Milestone 9: Disconnect and phase-boundary recovery
+## Milestone 9: Disconnect recovery (v1 scope)
 
 ### Purpose
 
-Implement and measure **Case A** (abort/replay) and **Case B** (continue from snapshot at phase boundaries). Primary home for **host migration** design.
+Implement **non-host disconnect**, **Case A** host-loss during minigames (abort/replay), **phase-boundary reconnect**, and **clean session end when the host leaves** at a safe phase. **Host migration (Case B) is out of scope**—see milestone 12.
 
 ### Player-facing proof
 
 - **Case A:** Host Alt+F4 during active minigame → round aborts, board restored, minigame replayable
-- **Case B:** Host leaves on board or results → remaining peers elect host and continue without new lobby (or fail loudly with clear error if not yet possible)
+- **Host leaves on board or in lobby:** remaining peers see a clear “host left” message and return to menu/lobby—not a silent stall
+- **Non-host disconnect:** slot becomes inactive; match can continue
 
 ### Implementation boundary
 
-- `scripts/shared/` — detection, election (proposal), snapshot handoff, `match_epoch` bump
+- `scripts/shared/` — disconnect detection, Case A restore, reconnect at phase boundaries, idempotency keys for reliable side effects
 - Disconnect matrix tests in `tests/`
 
 ### Automated tests
 
 - Non-host disconnect during board: slot `inactive`, board hash still matches
-- Host disconnect during `ActiveMinigame`: phase returns to `Briefing` or `MinigameSelection` with restored snapshot hash
-- Host disconnect during `Board`: remaining peers same `match_epoch`, phase, board hash within N seconds (**Case B**)
+- Host disconnect during `ActiveMinigame`: phase returns to `Briefing` or `MinigameSelection` with restored snapshot hash (Case A)
+- Host disconnect during `Board` or `Lobby`: all clients transition to ended/lobby state within N seconds
+- Duplicate `result_id` / `reward_application_id` ignored (no double apply)
 - No duplicate minigame start in soak test
 
 ### Manual tests
 
 - Host disconnect during each major phase (matrix below)
-- 4-peer Case B sessions
 - Reconnecting client at phase boundary restores correct slot
 
 ### Stop condition
 
-Case B automated tests pass OR documented failure with explicit “not supported yet” UI; Case A passes reliably. **Decision 0003 may move toward Accepted only when Case B stop conditions pass.**
+Case A and non-host disconnect tests pass; host departure at phase boundaries ends the session cleanly with explicit UI. **Decision 0003 may move toward Accepted after milestones 1–7 and this milestone pass review**—Case B is not required.
 
 ### Open questions before milestone 10
 
-- Election algorithm finalized
-- Snapshot source on host crash
-- Cold vs in-place `MultiplayerPeer` handoff
+- Reconnect grace period at phase boundaries
+- Whether inactive slots block match start
 
 ---
 
@@ -440,6 +441,39 @@ Two minigames (or one minigame + stub) use identical integration path; API revie
 
 ---
 
+## Milestone 12: Host migration (Case B) — post-acceptance
+
+### Purpose
+
+Explore **continuing a match after host loss at a phase boundary** without requiring everyone to re-host manually. This is **deferred** and does not block Decision 0003 **Accepted** or milestones 1–11.
+
+### Player-facing proof
+
+Host leaves on board or results → remaining peers elect a new host and continue from the last phase-boundary snapshot (or fail loudly with a documented limitation).
+
+### Implementation boundary
+
+- `scripts/shared/` — election (proposal), snapshot handoff, `match_epoch` bump, RPC authority rebind
+
+### Automated tests
+
+- Remaining peers reach same `match_epoch`, phase, and board-state hash within N seconds after host loss at `Board`
+- No duplicate minigame start or double reward after migration soak
+
+### Manual tests
+
+- 4-peer Case B sessions; host Alt+F4 on board and on results
+
+### Stop condition
+
+Case B matrix passes or is explicitly deferred again with maintainer sign-off.
+
+### Open questions
+
+- Election algorithm, snapshot source on crash, cold vs in-place `MultiplayerPeer` handoff
+
+---
+
 ## Network testing plan
 
 Run these environments in addition to per-milestone manual tests. Record measurements in the PR or a test log.
@@ -469,7 +503,7 @@ Apply to milestones 7–9 at minimum:
 
 ### Disconnect recovery matrix
 
-Mark each cell: **pass**, **fail**, **abort replay (Case A)**, or **continue (Case B)**. Host disconnect during minigame active window uses Case A; host disconnect at listed boundary phases uses Case B goal.
+Mark each cell: **pass**, **fail**, **abort replay (Case A)**, **session end (v1)**, or **continue (Case B — milestone 12 only)**. Host disconnect during minigame active window uses Case A. Host disconnect at phase boundaries in milestones 1–11 should **end the session cleanly**; Case B is validated separately in milestone 12.
 
 | Phase | Non-host disconnect | Host disconnect |
 | --- | --- | --- |
@@ -487,6 +521,7 @@ Mark each cell: **pass**, **fail**, **abort replay (Case A)**, or **continue (Ca
 
 - Conflicting move requests same tick
 - Client claims extra `PlayerSlot` or fifth player
+- Duplicate `command_id`, `result_id`, or `reward_application_id` ignored (no double apply)
 - Client sends results RPC (must be ignored)
 - Host and client at different render frame rates
 - Two local players on one peer: both inputs in same upstream frame
@@ -500,7 +535,7 @@ Mark each cell: **pass**, **fail**, **abort replay (Case A)**, or **continue (Ca
 | Board-state hash | Canonical snapshot hash at phase boundaries | Match on all connected peers |
 | Correction frequency | Prediction overlay / logs (milestone 8) | Documented per latency tier |
 | Correction magnitude | Max position error after reconcile | Documented per latency tier |
-| Disconnect recovery | Matrix above | Case A reliable; Case B same epoch + hash |
+| Disconnect recovery | Matrix above | Case A reliable; host phase-boundary exit clean; Case B tracked separately in milestone 12 |
 | Bandwidth | KB/s and msgs/sec sampled | Recorded for 2 and 4 players; no fixed cap yet |
 | Input responsiveness | Human playtest | Subjective notes **plus** one of: input-to-ack latency sample, correction rate |
 
@@ -520,4 +555,4 @@ Required for milestones 6–9 before merge. Minimum: two people on two machines 
 - Third-party networking addons
 - Production Steam release integration (milestone 10 is investigation)
 
-Update [Decision 0003](decisions/0003-peer-hosted-networking.md) to **Accepted** only after milestones 1–7 and milestone 9 Case B criteria are met and reviewed.
+Update [Decision 0003](decisions/0003-peer-hosted-networking.md) to **Accepted** after milestones 1–7 and milestone 9 pass review. **Host migration (milestone 12) is not a gate** for accepting the peer-hosted architecture decision.

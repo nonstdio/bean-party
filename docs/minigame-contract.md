@@ -75,8 +75,8 @@ The shell provides at setup time:
 
 | Input | Description |
 | --- | --- |
-| Logical players | Ordered `PlayerSlot` list with stable `player_id`, `owning_peer_id`, `local_device_slot`, display identity, team, cosmetics |
-| Peer ownership map | Which `peer_id` owns which local slots |
+| Logical players | Ordered `PlayerSlot` list with stable `player_id`, `owning_peer_id`, `local_player_index`, display identity, team, cosmetics |
+| Peer ownership map | Which `peer_id` owns which `local_player_index` values |
 | Team assignments | Format-specific teams for 2v2, 1v3, cooperative modes |
 | Authoritative RNG | Seed or stream handle owned by the host; minigame must not reseed unilaterally |
 | Synchronized start | Host-approved start tick or wall-clock time for countdown alignment |
@@ -109,7 +109,7 @@ Profiles are conceptual names until implementation validates them in milestone 1
 
 | Profile | Intended use | Client simulation |
 | --- | --- | --- |
-| `TURN_OR_EVENT` | Discrete turns, button presses, timing windows | Wait for host events; minimal prediction |
+| `TURN_OR_EVENT` | Discrete turns, button presses, timing windows | Tick-numbered input frames (unreliable + short redundant history); host adjudicates; reliable messages only for idempotent side effects |
 | `HOST_SNAPSHOT` | Continuous movement, physics, bump interactions | Input upstream; interpolate remote entities; optional local prediction |
 | `CUSTOM_APPROVED` | Rollback, special replication, experimental sync | Design review required; stricter test plan |
 

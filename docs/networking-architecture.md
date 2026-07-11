@@ -62,15 +62,17 @@ A **network peer** represents a connection endpoint. A **`PlayerSlot`** represen
 Documentation only—not a requirement to implement this GDScript class yet.
 
 ```text
-player_id:           stable match-scoped ID (e.g. UUID)
-owning_peer_id:      int — network peer that submits inputs for this slot
-local_device_slot:   int — 0..N-1 controller index on owning peer
-display_name:        string
-team_id:             optional int or string
-character_id:        optional resource ID or cosmetic bundle ref
-ready:               bool — briefing / lobby readiness
-connection_status:   connected | disconnected | migrating | inactive
+player_id:            stable match-scoped ID (e.g. UUID)
+owning_peer_id:       int — network peer that submits inputs for this slot
+local_player_index:   int — stable 0..N-1 index for this slot on the owning peer (replicated)
+display_name:         string
+team_id:              optional int or string
+character_id:         optional resource ID or cosmetic bundle ref
+ready:                bool — briefing / lobby readiness
+connection_status:    connected | disconnected | migrating | inactive
 ```
+
+**Architectural direction:** `local_player_index` is the only couch identity replicated across the network. The mapping from `local_player_index` to physical controller/device (`local_device_slot`) stays **local to the owning peer** and is never replicated.
 
 **Spike assumption:** `player_id` is assigned at lobby join and never reused within a match even if the player reconnects (reconnect binds to the same `player_id`).
 
@@ -169,7 +171,7 @@ Use Godot's [MultiplayerAPI](https://docs.godotengine.org/en/4.7/classes/class_m
 
 | Category | Delivery | Use for | Examples |
 | --- | --- | --- | --- |
-| **Reliable ordered** | `rpc` reliable | State that must converge exactly once | Lobby ready, board move accepted, phase change, RNG outcome, minigame results, snapshot epoch |
+| **Reliable ordered** | `rpc` reliable | State whose **side effects** must not double-apply | Lobby ready, board move accepted, phase change, RNG outcome, minigame results, snapshot epoch |
 | **Unreliable ordered state** | `rpc` unreliable | Frequent sim state; newer replaces older | Entity transforms, velocity, animation phase, periodic minigame state |
 | **Unreliable cosmetic** | `rpc` unreliable, drop OK | Non-gameplay feedback | One-shot VFX/SFX triggers, emotes, non-scoring particles |
 
@@ -186,6 +188,19 @@ Representative mapping:
 | Final results | Reliable ordered |
 | Cosmetic bump sparkle | Unreliable cosmetic |
 
+### Reliable side effects and idempotency
+
+Godot reliable RPCs provide **at-most-once delivery** from the transport's perspective; duplicates or retries are still possible after reconnect or session churn. **Architectural direction:** the host must treat reliable messages that change state as idempotent using application-level keys:
+
+| Idempotency key (proposal) | Used for |
+| --- | --- |
+| `command_id` | Client board/move requests, lobby actions |
+| `minigame_instance_id` | One run of briefing → results for a selected minigame |
+| `result_id` | Final minigame placement/score payload |
+| `reward_application_id` | Board economy updates on `ReturnToBoard` |
+
+The host keeps a bounded **processed-operation** set (or per-category high-water marks) and ignores duplicates. Tests should prove double-delivery does not double-apply rewards or results.
+
 ### Spike defaults (not permanent requirements)
 
 | Parameter | Starting range to validate | Label |
@@ -201,8 +216,8 @@ Measure and revise in milestones 7–8. Do not lock packet sizes or rates in thi
 
 ### Input pipeline (**architectural direction**)
 
-1. Each owning peer samples local input per `PlayerSlot` on a fixed or render-aligned cadence.
-2. Clients send **timestamped or tick-numbered input frames** to the host (unreliable ordered; repeat last frames if needed).
+1. Each owning peer samples local input per `PlayerSlot`, mapping `local_player_index` → physical controller **locally** on the owning machine.
+2. Clients send **tick-numbered input frames** to the host on **unreliable ordered** channels, including a short **redundant history** (repeat the last few ticks) so packet loss does not wait on reliable retransmission.
 3. Host validates inputs (allowed actions, player alive, phase correct).
 4. Host advances authoritative simulation.
 5. Host broadcasts state snapshots or deltas to clients.
@@ -223,9 +238,9 @@ Measure and revise in milestones 7–8. Do not lock packet sizes or rates in thi
 
 | Style | Typical sync profile | Network notes |
 | --- | --- | --- |
-| Movement / physics | `HOST_SNAPSHOT` | Input + snapshots; interpolation required |
-| Timing / button press | `TURN_OR_EVENT` | Reliable events; short windows |
-| Turn-based microgame | `TURN_OR_EVENT` | Host validates discrete actions |
+| Movement / physics | `HOST_SNAPSHOT` | Tick-numbered input upstream (unreliable + redundant history); snapshots downstream; interpolation required |
+| Timing / button press | `TURN_OR_EVENT` | Tick-numbered press/hold frames (unreliable + redundant history); host adjudicates windows—**not** reliable per-button RPCs |
+| Turn-based microgame | `TURN_OR_EVENT` | Host validates discrete actions; reliable messages only for phase/result side effects with idempotency keys |
 | Latency-critical custom | `CUSTOM_APPROVED` | May add rollback; requires design review |
 
 Short timing minigames may emphasize event timestamps and host adjudication rather than continuous transform sync.
@@ -294,8 +309,8 @@ Treat **two disconnect cases** separately.
 
 | Case | Phases | Intended first-version behavior | Label |
 | --- | --- | --- | --- |
-| **A. Host loss during minigame** | `Countdown`, `ActiveMinigame` | Abort round; restore last phase-boundary snapshot; elect new host if possible; **replay** minigame | **Spike assumption** |
-| **B. Host loss at phase boundary** | `Lobby`, `Board`, `MinigameSelection`, `Briefing`, `Results`, `ReturnToBoard`, `MatchResults` | Remaining peers **continue** from stored snapshot | **Open question** until milestone 9 |
+| **A. Host loss during minigame** | `Countdown`, `ActiveMinigame` | Abort round; restore last phase-boundary snapshot; **replay** minigame | **Spike assumption** |
+| **B. Host loss at phase boundary** | `Lobby`, `Board`, `MinigameSelection`, `Briefing`, `Results`, `ReturnToBoard`, `MatchResults` | End session cleanly; return peers to lobby | **Architectural direction** (v1) |
 
 ### First-version disconnect rules
 
@@ -305,16 +320,19 @@ Treat **two disconnect cases** separately.
 | Non-host disconnect | `PlayerSlot` → `inactive` (or `disconnected`); minigame may declare bot replacement | **Spike assumption** for inactive default |
 | Reconnect | At phase boundaries only; restore from snapshot + `match_epoch` | **Architectural direction** |
 | Host loss mid-minigame | Case A: abort + replay | **Spike assumption** |
-| Host migration | Case B handoff at phase boundaries | **Open question** |
+| Host loss at phase boundary | End session cleanly | **Architectural direction** (v1) |
+| Host migration (Case B continuity) | Remaining peers continue without re-hosting | **Deferred** (milestone 12) |
 | Malformed client requests | Host rejects; no authority grant | **Architectural direction** |
 
-### Host migration sub-problems (milestone 9)
+### Host migration sub-problems (**deferred** — milestone 12)
 
-1. **Detection and match pause** — disconnect vs heartbeat timeout; grace period for brief drops (**open question**).
-2. **Host election** — deterministic rule across remaining peers; cannot use `PlayerSlot` index alone when multiple slots share a peer (**open question**: join order, lowest `peer_id`, backup-host flag).
-3. **Snapshot handoff** — canonical blob on crash/Alt+F4 (**open question**: best-effort host push vs last client copy).
-4. **RPC continuity** — rebind `is_server()` caches; in-flight reliable RPC policy (**open question**).
-5. **Player-facing continuity** — resync UI; preserve couch `local_device_slot` mapping (**open question**).
+Case B host migration is documented for future work and is **not** required to accept Decision 0003 or ship milestones 1–11.
+
+1. **Detection and match pause** — disconnect vs heartbeat timeout; grace period for brief drops.
+2. **Host election** — deterministic rule across remaining peers; cannot use `PlayerSlot` index alone when multiple slots share a peer.
+3. **Snapshot handoff** — canonical blob on crash/Alt+F4.
+4. **RPC continuity** — rebind `is_server()` caches; in-flight reliable RPC policy with idempotency keys.
+5. **Player-facing continuity** — resync UI; preserve couch `local_player_index` → controller mapping locally on the owning peer.
 
 ```mermaid
 sequenceDiagram
@@ -345,4 +363,4 @@ See [networking implementation plan](networking-implementation-plan.md) for the 
 
 ## Player-count scale note
 
-**Secondary open question:** whether peer-hosted `HOST_SNAPSHOT` sync remains acceptable at 4 players without interest management or per-tick aggregation. Measure in milestones 7 and 10. This affects bandwidth and minigame authoring but does not determine whether a match survives host loss—that is the migration problem above.
+**Secondary open question:** whether peer-hosted `HOST_SNAPSHOT` sync remains acceptable at 4 players without interest management or per-tick aggregation. Measure in milestones 7 and 10.
