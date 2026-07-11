@@ -23,4 +23,4 @@ Verify Markdown links, keep documents internally consistent, and run `godot --he
 
 ## Pull requests
 
-Use the pull-request template. Explain the player-facing effect, list assets and their provenance, and call out any change to a shared interface or design decision. The `main` branch is protected; work from a branch and merge through a reviewed pull request.
+Use the pull-request template. Explain the player-facing effect, list assets and their provenance, and call out any change to a shared interface or design decision. The `main` branch is protected; work from a branch and merge through a documented pull request. Independent approval is temporarily optional while the project has one active contributor.

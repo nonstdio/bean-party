@@ -7,11 +7,13 @@
 The current protection baseline for `main` is:
 
 - pull requests are required before merging;
-- one approving review is required;
-- approvals are dismissed when new commits are pushed;
+- zero approving reviews are temporarily required, so an author can merge their own pull request;
+- approvals are dismissed when new commits are pushed, if a review has been given;
 - all review conversations must be resolved;
 - force pushes and branch deletion are blocked;
 - repository administrators can bypass the rule in an emergency.
+
+Restore one required independent approval when at least two active contributors are available. This preserves a lightweight pull-request record now without treating an unavailable reviewer as a permanent merge blocker.
 
 No code owner or required status check exists yet. Add those only after the project has a stable directory layout and a repeatable build. At that point, require formatting, tests, and a build before merge.
 
@@ -19,7 +21,7 @@ No code owner or required status check exists yet. Add those only after the proj
 
 Reviewers should check gameplay clarity, minigame integration boundaries, asset provenance, accessibility, and whether the change matches its proposal. A reviewer does not need to be an expert in the chosen engine to spot unclear setup instructions, missing credits, scope creep, or a confusing player experience.
 
-Authors should not approve their own work. If a change affects the shared shell, minigame contract, engine version, or project-wide art conventions, request review from a maintainer and update the appropriate document.
+GitHub does not permit pull-request authors to approve their own work. While no approval is required, authors should still request feedback when another contributor is available. If a change affects the shared shell, minigame contract, engine version, or project-wide art conventions, request review from a maintainer when possible and update the appropriate document.
 
 ## Decision records
 

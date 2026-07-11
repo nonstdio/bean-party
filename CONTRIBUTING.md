@@ -40,7 +40,9 @@ The project has not selected a software or content license yet. Until one is add
 
 ## Review and branch rules
 
-`main` is the default and protected branch. Direct pushes, force pushes, and branch deletion are blocked. Merges require a pull request, one approval, and all review conversations resolved. Stale approvals are dismissed when the pull request changes. Maintainers retain an emergency bypass for recovery; it should not be the normal path.
+`main` is the default and protected branch. Direct pushes, force pushes, and branch deletion are blocked. Merges require a pull request and all review conversations resolved. The required-approval count is temporarily **zero** while the project has one active contributor, so a contributor may merge their own pull request. Stale approvals are still dismissed when the pull request changes. Maintainers retain an emergency bypass for recovery; it should not be the normal path.
+
+When the project has at least two active contributors, restore one required independent approval before merge.
 
 Continuous integration is not configured yet, so no automated checks are required today. When build and test workflows exist, they will become part of the merge requirements.
 
