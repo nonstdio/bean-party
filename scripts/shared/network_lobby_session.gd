@@ -427,6 +427,14 @@ func _host_apply_reclaim(
 	phase_session._sync_from_authority()
 	phase_session._broadcast_phase_sync()
 
+	var new_token := board_session.rotate_reconnect_token(player_id)
+	_push_reconnect_credential_to_peer(
+		peer_id,
+		player_id,
+		board_session.get_recovery_session_id(),
+		new_token,
+	)
+
 
 func _reject_reclaim(peer_id: int) -> void:
 	if peer_id != _local_peer_id():

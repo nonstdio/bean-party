@@ -10,7 +10,7 @@ var _authority: NetworkBoardAuthority = null
 var _board_slots: Array[PlayerSlot] = []
 var _is_active: bool = false
 var _recovery_session_id: String = ""
-var _reconnect_tokens_by_player_id: Dictionary = {}
+var _reconnect_token_hashes_by_player_id: Dictionary = {}
 var _client_recovery_session_id: String = ""
 
 
@@ -157,9 +157,7 @@ func _issue_recovery_credentials_for_peer(peer_id: int) -> void:
 	for slot in _authority.match_slots:
 		if slot.owning_peer_id != peer_id:
 			continue
-		var token := String(_reconnect_tokens_by_player_id.get(slot.player_id, ""))
-		if token == "":
-			continue
+		var token := _issue_token_for_player(slot.player_id)
 		lobby_session._push_reconnect_credential_to_peer(
 			peer_id,
 			slot.player_id,
@@ -188,7 +186,7 @@ func host_mark_peer_inactive(peer_id: int) -> bool:
 		return false
 
 	if was_active_turn:
-		board_stub.advance_turn(_authority.match_slots)
+		_authority.board_stub.advance_turn(_authority.match_slots)
 
 	_sync_board_from_authority()
 	_broadcast_board_sync()
@@ -232,9 +230,19 @@ func verify_reconnect_token(player_id: String, reconnect_token: String) -> bool:
 	if not is_authority():
 		return false
 	return NetworkMatchRecovery.tokens_match(
-		String(_reconnect_tokens_by_player_id.get(player_id, "")),
+		String(_reconnect_token_hashes_by_player_id.get(player_id, "")),
 		reconnect_token,
 	)
+
+
+func rotate_reconnect_token(player_id: String) -> String:
+	return _issue_token_for_player(player_id)
+
+
+func _issue_token_for_player(player_id: String) -> String:
+	var token := NetworkMatchRecovery.generate_reconnect_token()
+	_reconnect_token_hashes_by_player_id[player_id] = NetworkMatchRecovery.hash_token(token)
+	return token
 
 
 func can_reclaim_slot(player_id: String, _peer_id: int) -> bool:
@@ -256,7 +264,7 @@ func _reset_board() -> void:
 	_board_slots.clear()
 	_is_active = false
 	_recovery_session_id = ""
-	_reconnect_tokens_by_player_id.clear()
+	_reconnect_token_hashes_by_player_id.clear()
 	_client_recovery_session_id = ""
 	board_stub = BoardStub.new()
 	board_state_changed.emit()
@@ -283,9 +291,7 @@ func _host_start_board() -> void:
 
 func _begin_recovery_session() -> void:
 	_recovery_session_id = NetworkMatchRecovery.generate_session_id()
-	_reconnect_tokens_by_player_id.clear()
-	for slot in _authority.match_slots:
-		_reconnect_tokens_by_player_id[slot.player_id] = NetworkMatchRecovery.generate_reconnect_token()
+	_reconnect_token_hashes_by_player_id.clear()
 	_issue_recovery_credentials_to_peers()
 
 
@@ -296,9 +302,7 @@ func _issue_recovery_credentials_to_peers() -> void:
 	for slot in _authority.match_slots:
 		if slot.owning_peer_id == MatchConstants.OFFLINE_PEER_ID:
 			continue
-		var token := String(_reconnect_tokens_by_player_id.get(slot.player_id, ""))
-		if token == "":
-			continue
+		var token := _issue_token_for_player(slot.player_id)
 		lobby_session._push_reconnect_credential_to_peer(
 			slot.owning_peer_id,
 			slot.player_id,

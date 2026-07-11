@@ -460,14 +460,15 @@ Local player movement feels responsive; remote players interpolate smoothly; hit
 
 | Scenario | Notes |
 | --- | --- |
-| 4 `PlayerSlot`s | e.g. 2 peers × 2 local |
-| 2 local players on one peer | Both inputs in same upstream frame |
+| 4 `PlayerSlot`s | 4 peers × 1 player (launch policy) |
 | Latency 50, 100, 150 ms | Clumsy, `tc netem`, or OS QoS |
 | Jitter + 1–2% loss | Document tools used |
 | Different host vs client frame rates | 30 vs 60 vs 120 render |
 | Simultaneous shots and kills | No double-death or missed scoring |
 | Lost, duplicated, delayed, reordered inputs | Adversarial or simulated |
 | Host vs client responsiveness | Subjective notes + correction rate / input-to-ack sample |
+
+**Deferred (multi-local online couch):** 2 peers × 2 local `PlayerSlot`s on one host PC; 2 local players on one peer submitting both inputs in the same upstream frame. Offline milestone 1 still supports multiple local players on one offline peer.
 
 Record bandwidth (KB/s, msgs/sec) for 2 and 4 players.
 
@@ -601,8 +602,9 @@ Run these environments in addition to per-milestone manual tests. Record measure
 | Two LAN machines | Real NIC latency, MTU |
 | Four LAN machines | Phase agreement under N>2 (**when milestone requires**) |
 | Two internet machines | NAT, variable RTT |
-| 2 peers × 2 local `PlayerSlot`s | Couch + online on one host PC (4 players total) |
-| 4 single-player peers | `MAX_PLAYERS` stress |
+| 4 single-player peers | `MAX_PLAYERS` stress (**launch validation layout**) |
+
+**Deferred:** 2 peers × 2 local `PlayerSlot`s (couch + online on one host PC).
 
 ### Latency and impairment profiles
 

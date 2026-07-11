@@ -139,9 +139,26 @@ func test_board_verify_reconnect_token() -> void:
 	match_session.add_child(board_session)
 	add_child_autofree(match_session)
 	match_session._state = MatchSession.SessionState.HOSTING
-	board_session._reconnect_tokens_by_player_id["player_2"] = "secret-token"
-	assert_true(board_session.verify_reconnect_token("player_2", "secret-token"))
+	var token := NetworkMatchRecovery.generate_reconnect_token()
+	board_session._reconnect_token_hashes_by_player_id["player_2"] = (
+		NetworkMatchRecovery.hash_token(token)
+	)
+	assert_true(board_session.verify_reconnect_token("player_2", token))
 	assert_false(board_session.verify_reconnect_token("player_2", "wrong-token"))
+
+
+func test_disconnect_active_player_advances_authority_turn() -> void:
+	var authority := NetworkBoardAuthority.new()
+	var slots: Array[PlayerSlot] = []
+	slots.append(PlayerSlot.create("player_1", 1, 0, "Host"))
+	slots.append(PlayerSlot.create("player_2", 2, 0, "Client"))
+	authority.reset_for_slots(slots)
+	authority.board_stub.advance_turn(authority.match_slots)
+	assert_eq(authority.board_stub.active_player_id, "player_2")
+
+	assert_true(authority.mark_peer_inactive(2))
+	authority.board_stub.advance_turn(authority.match_slots)
+	assert_eq(authority.board_stub.active_player_id, "player_1")
 
 
 func test_atomic_reclaim_rolls_back_board_when_phase_fails() -> void:
