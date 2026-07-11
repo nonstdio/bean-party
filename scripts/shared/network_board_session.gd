@@ -7,6 +7,7 @@ signal board_active_changed(is_active: bool)
 var board_stub: BoardStub = BoardStub.new()
 
 var _authority: NetworkBoardAuthority = null
+var _board_slots: Array[PlayerSlot] = []
 var _is_active: bool = false
 
 
@@ -57,9 +58,7 @@ func can_local_player_advance_turn() -> bool:
 
 
 func get_board_slots() -> Array[PlayerSlot]:
-	if _authority == null:
-		return []
-	return _authority.match_slots
+	return _board_slots
 
 
 func request_start_board() -> void:
@@ -125,6 +124,7 @@ func _on_peer_connected(peer_id: int) -> void:
 func _reset_board() -> void:
 	var was_active := _is_active
 	_authority = null
+	_board_slots.clear()
 	_is_active = false
 	board_stub = BoardStub.new()
 	board_state_changed.emit()
@@ -164,28 +164,55 @@ func _sync_board_from_authority() -> void:
 		return
 
 	board_stub = _authority.board_stub.duplicate_stub()
+	_board_slots.clear()
+	for slot in _authority.match_slots:
+		_board_slots.append(slot.duplicate_slot())
 	board_state_changed.emit()
 
 
-func _apply_remote_board_state(payload: Dictionary, is_active: bool) -> void:
+func _apply_remote_board_state(
+		payload: Dictionary,
+		slots_payload: Array,
+		is_active: bool,
+) -> void:
 	_authority = null
 	_is_active = is_active
 	board_stub = BoardStub.from_dict(payload)
+	_load_board_slots(slots_payload)
 	board_state_changed.emit()
 	if is_active:
 		board_active_changed.emit(true)
 
 
+func _load_board_slots(slots_payload: Array) -> void:
+	_board_slots.clear()
+	for entry in slots_payload:
+		if entry is Dictionary:
+			_board_slots.append(PlayerSlot.from_dict(entry))
+
+
+func _export_board_slots() -> Array:
+	var payload: Array = []
+	for slot in _authority.match_slots:
+		payload.append(slot.to_dict())
+	return payload
+
+
 func _broadcast_board_sync() -> void:
 	if _authority == null:
 		return
-	_rpc_apply_board_sync.rpc(_authority.export_board_state(), true)
+	_rpc_apply_board_sync.rpc(_authority.export_board_state(), _export_board_slots(), true)
 
 
 func _push_board_sync_to_peer(peer_id: int) -> void:
 	if _authority == null:
 		return
-	_rpc_apply_board_sync.rpc_id(peer_id, _authority.export_board_state(), true)
+	_rpc_apply_board_sync.rpc_id(
+		peer_id,
+		_authority.export_board_state(),
+		_export_board_slots(),
+		true,
+	)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -196,5 +223,9 @@ func _rpc_request_advance_turn(player_id: String) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_apply_board_sync(payload: Dictionary, is_active: bool) -> void:
-	_apply_remote_board_state(payload, is_active)
+func _rpc_apply_board_sync(
+		payload: Dictionary,
+		slots_payload: Array,
+		is_active: bool,
+) -> void:
+	_apply_remote_board_state(payload, slots_payload, is_active)

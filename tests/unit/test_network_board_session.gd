@@ -7,6 +7,13 @@ func before_each() -> void:
 	_test_port = 18000 + int(Time.get_ticks_msec() % 1000)
 
 
+func _export_match_slots(authority: NetworkBoardAuthority) -> Array:
+	var payload: Array = []
+	for slot in authority.match_slots:
+		payload.append(slot.to_dict())
+	return payload
+
+
 func _make_host_stack() -> Dictionary:
 	var host_session := MatchSession.new()
 	add_child_autofree(host_session)
@@ -38,7 +45,11 @@ func test_local_board_mutation_is_overwritten_by_authority_sync() -> void:
 
 	var client_board := NetworkBoardSession.new()
 	add_child_autofree(client_board)
-	client_board._apply_remote_board_state(authority.export_board_state(), true)
+	client_board._apply_remote_board_state(
+		authority.export_board_state(),
+		_export_match_slots(authority),
+		true,
+	)
 
 	client_board.board_stub.turn_index = 99
 	assert_eq(client_board.board_stub.turn_index, 99)
@@ -47,7 +58,11 @@ func test_local_board_mutation_is_overwritten_by_authority_sync() -> void:
 		lobby_authority.slots[0].owning_peer_id,
 		lobby_authority.slots[0].player_id,
 	)
-	client_board._apply_remote_board_state(authority.export_board_state(), true)
+	client_board._apply_remote_board_state(
+		authority.export_board_state(),
+		_export_match_slots(authority),
+		true,
+	)
 
 	assert_eq(client_board.board_stub.turn_index, 1)
 	assert_eq(client_board.board_stub.turn_index, authority.board_stub.turn_index)
@@ -98,7 +113,11 @@ func test_board_hash_matches_after_sync_payload() -> void:
 
 	var client_board := NetworkBoardSession.new()
 	add_child_autofree(client_board)
-	client_board._apply_remote_board_state(authority.export_board_state(), true)
+	client_board._apply_remote_board_state(
+		authority.export_board_state(),
+		_export_match_slots(authority),
+		true,
+	)
 
 	assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
 
@@ -107,7 +126,11 @@ func test_board_hash_matches_after_sync_payload() -> void:
 		lobby_authority.slots[1].player_id,
 	)
 	host_board._sync_board_from_authority()
-	client_board._apply_remote_board_state(authority.export_board_state(), true)
+	client_board._apply_remote_board_state(
+		authority.export_board_state(),
+		_export_match_slots(authority),
+		true,
+	)
 
 	assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
 	assert_eq(host_board.board_stub.turn_index, 2)
@@ -144,7 +167,11 @@ func test_multiple_turns_keep_host_and_client_hashes_aligned() -> void:
 			)
 		)
 		host_board._sync_board_from_authority()
-		client_board._apply_remote_board_state(authority.export_board_state(), true)
+		client_board._apply_remote_board_state(
+		authority.export_board_state(),
+		_export_match_slots(authority),
+		true,
+	)
 		assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
 
 
@@ -209,3 +236,50 @@ func test_board_roster_ignores_lobby_additions_after_start() -> void:
 
 	assert_eq(lobby.slots.size(), frozen_count + 1)
 	assert_eq(board.get_board_slots().size(), frozen_count)
+
+
+func test_synced_client_restores_frozen_roster_from_board_sync() -> void:
+	var authority := NetworkBoardAuthority.new()
+	var lobby_authority := NetworkLobbyAuthority.new()
+	lobby_authority.try_add_slot(1, "Host")
+	lobby_authority.try_add_slot(2, "Client")
+	authority.reset_for_slots(lobby_authority.slots)
+
+	var client_board := NetworkBoardSession.new()
+	add_child_autofree(client_board)
+	client_board._apply_remote_board_state(
+		authority.export_board_state(),
+		_export_match_slots(authority),
+		true,
+	)
+
+	assert_eq(client_board.get_board_slots().size(), 2)
+	assert_eq(client_board.get_board_slots()[1].owning_peer_id, 2)
+
+
+func test_replicated_roster_enables_turn_detection_without_authority() -> void:
+	var session := MatchSession.new()
+	add_child_autofree(session)
+	session.host(_test_port)
+	await get_tree().process_frame
+
+	var board := NetworkBoardSession.new()
+	session.add_child(board)
+
+	var slots: Array[PlayerSlot] = []
+	slots.append(PlayerSlot.create("player_1", 1, 0, "Host", Color.WHITE))
+	slots.append(PlayerSlot.create("player_2", 2, 0, "Client", Color.WHITE))
+	var stub := BoardStub.new()
+	stub.reset_for_slots(slots)
+
+	var slots_payload: Array = []
+	for slot in slots:
+		slots_payload.append(slot.to_dict())
+
+	board._apply_remote_board_state(stub.to_dict(), slots_payload, true)
+	assert_true(board.can_local_player_advance_turn())
+
+	stub.advance_turn(slots)
+	board._apply_remote_board_state(stub.to_dict(), slots_payload, true)
+	assert_false(board.can_local_player_advance_turn())
+	assert_eq(board.get_active_player_id(), "player_2")
