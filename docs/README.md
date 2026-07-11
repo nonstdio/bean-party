@@ -9,7 +9,8 @@ This directory contains the durable design, architecture, operating guidance, re
 1. Read the repository [README](../README.md) and [contribution guide](../CONTRIBUTING.md).
 2. Follow the [Godot setup guide](guides/godot-setup.md).
 3. Review the [Godot project architecture](architecture/godot-project.md) before adding shared systems or a minigame.
-4. Use the [runtime debug harness guide](guides/runtime-debug-harnesses.md) to exercise the currently implemented local, minigame, and networking proofs.
+4. Read the [Godot 3D movement standards](architecture/godot-3d-movement.md) before implementing player-controlled 3D movement.
+5. Use the [runtime debug harness guide](guides/runtime-debug-harnesses.md) to exercise the currently implemented local, minigame, and networking proofs.
 
 ### Minigame authors
 
@@ -17,6 +18,7 @@ This directory contains the durable design, architecture, operating guidance, re
 2. Use the [minigame design guide](design/minigames.md) to prepare and review the idea.
 3. Open a [minigame proposal](../.github/ISSUE_TEMPLATE/minigame-proposal.yml) and receive approval before substantial implementation intended for integration.
 4. Follow [Create a minigame](guides/create-a-minigame.md) and the [minigame integration contract](architecture/minigame-integration.md) during implementation.
+5. For player-controlled 3D movement, follow the [Godot 3D movement standards](architecture/godot-3d-movement.md).
 
 GitHub issues are the canonical home for pre-implementation minigame proposals. Once implementation begins, keep the design brief, controls, asset credits, and test notes with the minigame in `minigames/<slug>/README.md`.
 
@@ -112,6 +114,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 ### Architecture and integration
 
 - [Godot project architecture](architecture/godot-project.md)
+- [Godot 3D movement standards](architecture/godot-3d-movement.md)
 - [Minigame integration contract](architecture/minigame-integration.md)
 - [Networking architecture](architecture/networking.md)
 
