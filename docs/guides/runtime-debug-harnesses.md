@@ -20,7 +20,7 @@ To exercise the network slice on one machine:
 6. Edit display names and toggle lobby readiness per player.
 7. On the host, select `Start board`. Only the peer that owns the active `PlayerSlot` can request `Advance turn`.
 8. On the host, select `Start minigame flow`. Each peer marks briefing readiness for its player. The host drives the three-second countdown.
-9. During `ActiveMinigame`, the shell loads Snapshot Arena with host snapshots and optional client-side movement prediction. The client status line shows snapshot serial/hash and prediction correction stats.
+9. During `ActiveMinigame`, the shell loads **Action Spike** (`HOST_ACTION`) through `NetworkActionMinigameSession`. Required client movement prediction and host reconciliation apply; the status line shows snapshot serial/hash and prediction correction stats. Snapshot Arena (`HOST_SNAPSHOT`) remains available when wired separately.
 10. Select `Disconnect` in each instance when finished.
 
 All lobby, board, and phase synchronization in this slice uses reliable RPCs. The host validates slot ownership, board-turn ownership, and briefing readiness. The board roster is frozen when the host starts the board, so later lobby edits do not alter the active board match.
