@@ -26,6 +26,8 @@ project.godot           # Godot project configuration and main-scene setting
 
 The foundation intentionally does not create a board manager, global singleton, networking layer, or minigame API. Those systems must earn their complexity through the vertical slice.
 
+When online play is implemented, the shared **session layer** (proposed `MatchSession` / `TransportAdapter`) should live in `scripts/shared/` behind the boundary described in [networking architecture](networking-architecture.md). Prefer an app-owned session with explicit teardown over an automatic networking singleton.
+
 ## Conventions
 
 - Use `.tscn` for editable scenes and `.gd` for GDScript. Keep files readable in Git and use one clear owner for each scene.
