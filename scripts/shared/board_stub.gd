@@ -80,6 +80,10 @@ func duplicate_stub() -> BoardStub:
 	return BoardStub.from_dict(to_dict())
 
 
+func state_hash() -> int:
+	return MatchSnapshotSerializer.hash_dictionary(to_dict())
+
+
 func _index_for_player_id(slots: Array[PlayerSlot], player_id: String) -> int:
 	for i in slots.size():
 		if slots[i].player_id == player_id:

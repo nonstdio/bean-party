@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/main.gd" id="1_41s4j"]
 [ext_resource type="Script" path="res://scripts/app/couch_session_view.gd" id="2_couch"]
@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://scripts/shared/match_session.gd" id="5_session"]
 [ext_resource type="Script" path="res://scripts/shared/network_lobby_session.gd" id="6_lobby"]
 [ext_resource type="Script" path="res://scripts/app/network_lobby_view.gd" id="7_lobby_view"]
+[ext_resource type="Script" path="res://scripts/shared/network_board_session.gd" id="8_board"]
+[ext_resource type="Script" path="res://scripts/app/network_board_view.gd" id="9_board_view"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -169,6 +171,10 @@ script = ExtResource("5_session")
 unique_name_in_owner = true
 script = ExtResource("6_lobby")
 
+[node name="NetworkBoardSession" type="Node" parent="Margin/Content/NetworkSession/MatchSession"]
+unique_name_in_owner = true
+script = ExtResource("8_board")
+
 [node name="NetworkLobby" type="VBoxContainer" parent="Margin/Content/NetworkSession"]
 unique_name_in_owner = true
 visible = false
@@ -205,6 +211,52 @@ theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 14
 text = "Join or host to open the networked lobby."
 horizontal_alignment = 1
+
+[node name="NetworkBoard" type="VBoxContainer" parent="Margin/Content/NetworkSession"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+script = ExtResource("9_board_view")
+
+[node name="NetworkBoardTitle" type="Label" parent="Margin/Content/NetworkSession/NetworkBoard"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
+theme_override_font_sizes/font_size = 18
+text = "Network board stub"
+horizontal_alignment = 1
+
+[node name="NetworkBoardLabel" type="Label" parent="Margin/Content/NetworkSession/NetworkBoard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
+theme_override_font_sizes/font_size = 16
+text = "Board idle."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="NetworkBoardHashLabel" type="Label" parent="Margin/Content/NetworkSession/NetworkBoard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
+theme_override_font_sizes/font_size = 14
+text = "board hash 0"
+horizontal_alignment = 1
+
+[node name="NetworkBoardActions" type="HBoxContainer" parent="Margin/Content/NetworkSession/NetworkBoard"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="NetworkBoardStartButton" type="Button" parent="Margin/Content/NetworkSession/NetworkBoard/NetworkBoardActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start board"
+
+[node name="NetworkBoardTurnButton" type="Button" parent="Margin/Content/NetworkSession/NetworkBoard/NetworkBoardActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Advance turn"
 
 [node name="NetworkTitle" type="Label" parent="Margin/Content/NetworkSession"]
 layout_mode = 2
