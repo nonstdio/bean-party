@@ -4,52 +4,60 @@
 
 ## status
 
-`READY_FOR_CURSOR`
+`COMPLETE`
 
 ## branch and commit
 
-<!-- agent/<topic> and full commit SHA when work is in progress or complete. -->
+`chore/ignore-zip-archives` @ `b3cd07b` (includes `265ae45` agent collaboration loop work from parent branch)
 
 ## interpretation of directive
 
-<!-- How Cursor understood the GPT directive and bounded scope. -->
+Human requested saving local work, creating a small branch with a trivial change, pushing, and opening/updating a draft pull request. The substantive documentation work (agent collaboration loop) was already on `agent/agent-collaboration-loop`; the trivial follow-up adds `*.zip` to `.gitignore`.
 
 ## repository rules reviewed
 
-<!-- List canonical documents read before implementation, with links. -->
+- [AGENTS.md](../AGENTS.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [docs/agent-collaboration-loop.md](../docs/agent-collaboration-loop.md)
+- [agent_loop/README.md](README.md)
 
 ## changes made
 
-<!-- Files touched and summary of edits. -->
+- `docs/agent-collaboration-loop.md` — GPT ↔ Cursor ↔ human coordination process.
+- `agent_loop/README.md`, `assistant_feedback.md`, `cursor_handoff.md` — live loop state files and ownership rules.
+- `AGENTS.md`, `README.md` — links to the collaboration loop documentation.
+- `.gitignore` — ignore `*.zip` archives (e.g. local `docs.zip` bundles).
 
 ## player-facing effect
 
-<!-- What players or contributors will notice, if anything. -->
+None. This is contributor and agent workflow documentation only.
 
 ## validation performed
 
-<!-- Commands run, link checks, and manual steps. -->
+- `powershell -File tools/godot.ps1 all` — headless import and GUT tests.
+- Manual review of new Markdown links in changed docs.
 
 ## test results
 
-<!-- Pass/fail output or exact reason validation could not run. -->
+`tools/godot.ps1 all` passed: 1/1 tests, all asserts green. GUT emitted invalid-UID warnings for addon scenes (pre-existing; tests still pass).
 
 ## rebases and resulting plan changes
 
-<!-- Rebase commits pulled from main and how the plan, assumptions, or tests changed afterward. -->
+No rebase performed. Branch was created from `agent/agent-collaboration-loop`, which was already up to date with its remote when the trivial `.gitignore` commit was added.
 
 ## known limitations
 
-<!-- Follow-up work intentionally left out of scope. -->
+- `assistant_feedback.md` has no active GPT directive yet (templates only).
+- Branch name `chore/ignore-zip-archives` understates the agent-loop documentation included from the parent branch.
 
 ## unresolved decisions
 
-<!-- Open design or governance items not settled in this branch. -->
+None introduced by this change.
 
 ## exact human-feedback request
 
-<!-- Specific question for the human; blank if none. -->
+
 
 ## recommended next action
 
-<!-- e.g. GPT review, human playtest, new directive, or decision record. -->
+GPT review of the draft pull request; human merge judgment when satisfied with the collaboration-loop process documentation.
