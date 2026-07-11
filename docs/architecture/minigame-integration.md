@@ -1,8 +1,10 @@
 # Minigame integration contract
 
+Status: **Local contract v1 accepted; networking extension proposed**
+
 ## Purpose
 
-This document describes how independently designed minigames join the shared shell without changing the board or another minigame. It defines ownership, runtime lifecycle, result, cleanup, and networking boundaries. It is an interface *goal*, not an engine-specific API; the final code-level contract will be written after the required engine and networking spikes.
+This document describes how independently designed minigames join the shared shell without changing the board or another minigame. It defines ownership, runtime lifecycle, outcome, cleanup, and networking boundaries. [Decision 0004](../decisions/0004-local-minigame-contract.md) accepts the code-level local contract at version 1. The networking extension remains proposed until its required spikes and stabilization milestone complete.
 
 Use the [minigame design guide](../design/minigames.md) for proposal requirements, player-facing review criteria, and the transition from a proposal issue to `minigames/<slug>/README.md`.
 
@@ -10,10 +12,10 @@ Use the [minigame design guide](../design/minigames.md) for proposal requirement
 
 Every minigame should support four runtime stages:
 
-1. **Setup** — the shared shell provides player identities, teams, input assignments, and any approved configuration.
+1. **Setup** — the shared shell loads the manifest and scene, then provides player identities, teams, a seeded RNG, per-player input, and approved configuration through `MinigameContext`.
 2. **Briefing** — the minigame presents its explanation, controls, and ready state using shared conventions when available.
-3. **Play and result** — it runs a bounded round, produces an unambiguous result, and exposes only the result data required by the shell.
-4. **Teardown** — it releases its scene, audio, temporary state, input hooks, signals, and network registrations so another minigame can start cleanly.
+3. **Play and result** — the shell starts the controller; it runs a bounded round and submits exactly one outcome-only `MinigameResult`.
+4. **Teardown** — the shell aborts when necessary and frees the scene. The minigame releases its audio, temporary state, input readers, signals, and any provisional network registrations so another minigame can start cleanly.
 
 ## Intended repository layout
 
@@ -23,6 +25,7 @@ Keep each Godot minigame self-contained under its own stable slug:
 minigames/
   <minigame-slug>/
     README.md       # design brief, controls, player counts, asset credits
+    minigame.tres   # MinigameManifest consumed by the registry
     scenes/         # Godot scenes owned by this minigame
     scripts/        # GDScript owned by this minigame
     assets/         # only assets needed by this minigame
@@ -31,13 +34,44 @@ minigames/
 
 Do not place minigame-specific logic in the board or shared-system area without an accepted shared-interface change. Follow the broader conventions in [Godot project architecture](godot-project.md).
 
+Folders beginning with `_`, including `minigames/_template/`, are authoring support and are not discovered as playable minigames.
+
+## Local contract v1
+
+The stable shared types live in `scripts/shared/minigames/`:
+
+| Type | Responsibility |
+| --- | --- |
+| `MinigameManifest` | Version, stable id, root scene, player range, format, and capability declaration |
+| `MinigameContext` | Immutable match-scoped copies of players and teams, RNG seed, instance id, and shell-owned input source |
+| `MinigameInputSource` | Per-`PlayerSlot` normalized movement, primary, and secondary input; minigames read but do not route devices |
+| `MinigameController` | Required scene-root lifecycle and exactly-once result submission |
+| `MinigameResult` | Ordered placement groups, optional per-player scores, or an abort reason |
+| `MinigameRegistry` | Discovers and validates manifests under `minigames/` |
+| `MinigameRunner` | Shell-owned load, setup, start, abort, retry, result acceptance, and unload behavior |
+
+The manifest `contract_version` must equal `1`. A future breaking local change requires a new version and decision review; networking additions do not change the local version unless they break this surface.
+
+### Result rules
+
+- A completed result contains ordered best-to-worst placement groups. Multiple player ids in one group represent a tie.
+- Every supplied participant appears exactly once. Unknown or duplicate player ids are invalid.
+- Scores are optional, numeric, and keyed only by supplied player ids.
+- An aborted result contains a reason and no placements or scores.
+- Results never contain beans, items, board advantages, or other economy mutations. The shell translates the outcome into board rewards.
+- The controller and runner reject duplicate, late, or malformed results.
+
+### Input rules
+
+The shell maps local physical devices to `PlayerSlot`s and writes normalized values into `MinigameInputSource`. A minigame reads that source by stable `player_id`. It must not enumerate controller ids, mutate the project `InputMap`, or use global input polling for gameplay. Pause, retry, and early exit remain shell actions rather than minigame actions.
+
 ## What the shared shell should own
 
 - match and board state;
 - player profiles, teams, and input assignment;
 - scene loading and transition timing;
 - global accessibility, audio, and UI settings;
-- the result format consumed by the board;
+- result validation and translation from placements/scores to board rewards;
 - common art, audio, and UI kits once they exist.
 
 ## What a minigame should own
@@ -49,17 +83,13 @@ Do not place minigame-specific logic in the board or shared-system area without 
 
 ## Local integration definition of done
 
-A minigame is ready for integration review when it satisfies the [design definition of done](../design/minigames.md#design-definition-of-done), stays within its documented repository boundary, consumes shell-owned player and input assignments, returns a deterministic result for the same final state, and cleans up on restart or exit without leaking state into the next scene.
+A minigame is ready for integration review when it satisfies the [design definition of done](../design/minigames.md#design-definition-of-done), passes manifest and contract validation, stays within its documented repository boundary, consumes shell-owned player and input assignments, returns a deterministic result for the same final state, and cleans up on restart or exit without leaking state into the next scene.
 
-Until the concrete code-level API is accepted, the pull request should document how it was tested for setup, result delivery, retry, early exit, and teardown. A dependency on a new shared interface requires explicit design review rather than placing minigame-specific behavior in the shell.
-
-## Open integration questions
-
-The prototype must answer how the shell loads a minigame, passes player/input information, receives results, handles pause/quit/retry, and prevents a minigame from leaking state into the next scene. Those answers will become the code-level interface before multiple minigames are accepted.
+The pull request documents how setup, result delivery, retry, early exit, and teardown were tested for every supported player count. A dependency on a new shared interface requires explicit design review rather than placing minigame-specific behavior in the shell.
 
 ## Networking
 
-Network-capable minigames plug into the shared shell through a proposed session interface documented in [networking architecture](networking.md). The code-level API will be formalized in milestone 12 of the [networking implementation plan](../plans/networking.md), **after** the milestone 10 `HOST_ACTION` combat spike validates the shared action-netcode kit. Names below are **proposals**. Proposal and implemented-design-brief declarations follow the [minigame design guide](../design/minigames.md).
+Network-capable minigames will extend local contract v1 through a proposed session interface documented in [networking architecture](networking.md). The networking code-level API will be formalized in milestone 12 of the [networking implementation plan](../plans/networking.md), **after** the milestone 10 `HOST_ACTION` combat spike validates the shared action-netcode kit. Names below are **proposals**. Declaring networking metadata does not by itself make a minigame network-ready.
 
 ### Capability declaration
 
@@ -94,7 +124,6 @@ At result time the minigame returns:
 | --- | --- |
 | Placements or team outcome | Unambiguous winner(s) or team result |
 | Score breakdown | Per-`PlayerSlot` or per-team scores for results UI |
-| Board rewards | Beans, items, or advantages the host applies on `ReturnToBoard` |
 | Diagnostic summary (optional) | Tick counts, correction stats, replay notes for debugging |
 
 ### Networking rules

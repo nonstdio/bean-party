@@ -6,8 +6,8 @@ This guide defines what a Bean Party minigame proposal and implemented design br
 
 Every substantial minigame should move through these stages:
 
-1. **Proposal** — open a GitHub issue using the [Minigame proposal template](../../.github/ISSUE_TEMPLATE/minigame-proposal.md) before substantial implementation. The issue is the canonical design record while the idea is being discussed.
-2. **Review** — resolve or explicitly defer questions about player format, objective, controls, accessibility, scope, shared-system needs, originality, and validation before committing to the implementation.
+1. **Proposal** — open a GitHub issue using the [Minigame proposal template](../../.github/ISSUE_TEMPLATE/minigame-proposal.yml) before substantial implementation intended for integration. The issue is the canonical design record while the idea is being discussed.
+2. **Review and approval** — resolve or explicitly defer questions about player format, objective, controls, accessibility, scope, shared-system needs, originality, and validation. A maintainer records `Approved for implementation` before substantial integration-focused work begins. Small experiments may proceed in personal branches or draft pull requests, but do not establish shared conventions.
 3. **Implementation brief** — when implementation begins, create `minigames/<slug>/README.md`. It becomes the canonical description of the minigame as its design changes in code; link back to the proposal issue for history.
 4. **Playtest and revision** — test with the intended number of players when possible, record what happened, and update the implemented brief when the rules or player experience change.
 5. **Integration review** — verify the design definition of done below and the separate [integration contract](../architecture/minigame-integration.md) before merge.
@@ -53,7 +53,7 @@ Once implementation begins, `minigames/<slug>/README.md` should record the curre
 - proposal issue link and a short elevator pitch;
 - supported player counts, team format, objective, rules, scoring, and tie behavior;
 - briefing, controls, camera, accessibility considerations, and expected timing;
-- board-state dependencies and expected result or reward data;
+- board-state dependencies and expected placement or score data; the shell owns all board rewards;
 - `local_only` or `network_capable` capability and any conceptual sync profile;
 - asset inventory, creators, sources, and licenses;
 - playtests performed, automated or manual test notes, known limitations, and open design questions.
@@ -64,7 +64,7 @@ Keep implementation details in the minigame's scenes, scripts, tests, or focused
 
 A minigame design is ready for integration review when:
 
-- its proposal was reviewed and the implemented README reflects the current rules;
+- its proposal received explicit approval and the implemented README reflects the current rules;
 - its objective, controls, scoring, tie behavior, and result are unambiguous;
 - it supports its stated player counts and team format;
 - its briefing communicates the necessary information accessibly and quickly;

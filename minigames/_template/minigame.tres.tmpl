@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MinigameManifest" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/shared/minigames/minigame_manifest.gd" id="1_manifest"]
+[ext_resource type="PackedScene" path="res://minigames/__SLUG__/scenes/main.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_manifest")
+contract_version = 1
+minigame_id = &"__SLUG__"
+display_name = "__DISPLAY_NAME__"
+root_scene = ExtResource("2_scene")
+minimum_players = 2
+maximum_players = 4
+format = &"free_for_all"
+capability = &"local_only"

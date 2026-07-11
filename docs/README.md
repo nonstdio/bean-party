@@ -14,8 +14,8 @@ This directory contains the durable design, architecture, operating guidance, re
 
 1. Read the [game design target](design/game.md) and [creative direction](design/creative-direction.md).
 2. Use the [minigame design guide](design/minigames.md) to prepare and review the idea.
-3. Open a [minigame proposal](../.github/ISSUE_TEMPLATE/minigame-proposal.md) before substantial implementation.
-4. Follow the [minigame integration contract](architecture/minigame-integration.md) during implementation.
+3. Open a [minigame proposal](../.github/ISSUE_TEMPLATE/minigame-proposal.yml) and receive approval before substantial implementation intended for integration.
+4. Follow [Create a minigame](guides/create-a-minigame.md) and the [minigame integration contract](architecture/minigame-integration.md) during implementation.
 
 GitHub issues are the canonical home for pre-implementation minigame proposals. Once implementation begins, keep the design brief, controls, asset credits, and test notes with the minigame in `minigames/<slug>/README.md`.
 
@@ -105,6 +105,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 ### Guides
 
 - [Godot setup for agents](guides/godot-setup.md)
+- [Create a minigame](guides/create-a-minigame.md)
 
 ### Plans
 
@@ -118,6 +119,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 ### Decisions
 
 - [Decision record process and index](decisions/README.md)
+- [Decision 0004: local minigame contract](decisions/0004-local-minigame-contract.md)
 
 ### Project
 
