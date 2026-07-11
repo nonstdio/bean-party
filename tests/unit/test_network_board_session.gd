@@ -68,23 +68,29 @@ func test_local_board_mutation_is_overwritten_by_authority_sync() -> void:
 	assert_eq(client_board.board_stub.turn_index, authority.board_stub.turn_index)
 
 
+func _add_peer_slot(lobby: NetworkLobbySession, peer_id: int, display_name: String) -> PlayerSlot:
+	assert_true(lobby.is_authority())
+	var slot := lobby._authority.try_add_slot(peer_id, display_name)
+	assert_not_null(slot)
+	lobby._publish_authority_state()
+	return slot
+
+
 func test_host_rejects_out_of_turn_request() -> void:
 	var stack := await _make_host_stack()
 	var board: NetworkBoardSession = stack.board
 	var lobby: NetworkLobbySession = stack.lobby
 
-	lobby.request_add_local_slot("Host Two")
+	var client_slot := _add_peer_slot(lobby, 2, "Client")
 	await get_tree().process_frame
 
 	board.request_start_board()
 	await get_tree().process_frame
 
 	var active_id := board.get_active_player_id()
-	var inactive_id := ""
-	for slot in lobby.slots:
-		if slot.player_id != active_id:
-			inactive_id = slot.player_id
-			break
+	var inactive_id := client_slot.player_id
+	if active_id == inactive_id:
+		inactive_id = lobby.slots[0].player_id
 
 	var turn_before := board.board_stub.turn_index
 	board.request_advance_turn(inactive_id)
@@ -180,7 +186,7 @@ func test_host_ignores_second_board_start() -> void:
 	var board: NetworkBoardSession = stack.board
 	var lobby: NetworkLobbySession = stack.lobby
 
-	lobby.request_add_local_slot("Guest")
+	_add_peer_slot(lobby, 2, "Client")
 	await get_tree().process_frame
 
 	board.request_start_board()
@@ -206,7 +212,7 @@ func test_board_rejects_turn_during_minigame_flow() -> void:
 	var board: NetworkBoardSession = stack.board
 	var lobby: NetworkLobbySession = stack.lobby
 
-	lobby.request_add_local_slot("Guest")
+	_add_peer_slot(lobby, 2, "Client")
 	await get_tree().process_frame
 
 	board.request_start_board()
@@ -232,7 +238,8 @@ func test_board_uses_frozen_roster_after_lobby_changes() -> void:
 	var board: NetworkBoardSession = stack.board
 	var lobby: NetworkLobbySession = stack.lobby
 
-	lobby.request_add_local_slot("Guest")
+	var host_slot := lobby.slots[0]
+	var client_slot := _add_peer_slot(lobby, 2, "Client")
 	await get_tree().process_frame
 
 	board.request_start_board()
@@ -240,7 +247,16 @@ func test_board_uses_frozen_roster_after_lobby_changes() -> void:
 
 	var active_id := board.get_active_player_id()
 	var frozen_count := board.get_board_slots().size()
-	lobby.request_remove_local_slot(active_id)
+	var removed_id := (
+		client_slot.player_id
+		if active_id != client_slot.player_id
+		else host_slot.player_id
+	)
+	lobby._authority.try_remove_slot(
+		2 if removed_id == client_slot.player_id else 1,
+		removed_id,
+	)
+	lobby._publish_authority_state()
 	await get_tree().process_frame
 
 	assert_eq(lobby.slots.size(), 1)
@@ -261,7 +277,7 @@ func test_board_roster_ignores_lobby_additions_after_start() -> void:
 	await get_tree().process_frame
 	var frozen_count := board.get_board_slots().size()
 
-	lobby.request_add_local_slot("Latecomer")
+	_add_peer_slot(lobby, 3, "Latecomer")
 	await get_tree().process_frame
 
 	assert_eq(lobby.slots.size(), frozen_count + 1)

@@ -34,6 +34,8 @@ func is_authority() -> bool:
 func can_add_local_slot() -> bool:
 	if not is_networked():
 		return false
+	if not get_local_slots().is_empty():
+		return false
 	if is_authority():
 		return _authority != null and _authority.can_add_slot_for_peer(_local_peer_id())
 	return slots.size() < MatchConstants.MAX_PLAYERS
@@ -154,6 +156,8 @@ func _on_match_session_state_changed() -> void:
 	if match_session.is_session_established():
 		if is_authority() and _authority == null:
 			_start_host_lobby()
+		elif not is_authority():
+			call_deferred("_ensure_local_slot")
 		return
 
 	_reset_lobby()
@@ -178,6 +182,13 @@ func _start_host_lobby() -> void:
 	_authority = NetworkLobbyAuthority.new()
 	_authority.try_add_slot(_local_peer_id(), "Host")
 	_publish_authority_state()
+
+
+func _ensure_local_slot() -> void:
+	if not is_networked() or is_authority():
+		return
+	if get_local_slots().is_empty():
+		request_add_local_slot("Player")
 
 
 func _reset_lobby() -> void:
@@ -244,6 +255,9 @@ func _apply_remote_slots(payload: Array) -> void:
 	_ensure_local_device_defaults()
 	slots_structure_changed.emit()
 	session_state_changed.emit()
+
+	if not is_authority():
+		call_deferred("_ensure_local_slot")
 
 
 func _ensure_local_device_defaults() -> void:

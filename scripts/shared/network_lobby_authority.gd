@@ -10,7 +10,9 @@ var _next_player_serial: int = 1
 
 
 func can_add_slot_for_peer(peer_id: int) -> bool:
-	return slots.size() < MatchConstants.MAX_PLAYERS
+	if slots.size() >= MatchConstants.MAX_PLAYERS:
+		return false
+	return get_slots_for_peer(peer_id).is_empty()
 
 
 func try_add_slot(peer_id: int, display_name: String = "") -> PlayerSlot:

@@ -19,6 +19,13 @@ func reset_for_player_ids(player_ids: PackedStringArray) -> void:
 		positions_by_player_id[player_ids[index]] = spawn_points[index]
 
 
+static func apply_move(position: Vector2, move: Vector2, delta: float) -> Vector2:
+	var next := position + move.limit_length(1.0) * MOVE_SPEED * delta
+	next.x = clampf(next.x, PLAYER_RADIUS, ARENA_SIZE.x - PLAYER_RADIUS)
+	next.y = clampf(next.y, PLAYER_RADIUS, ARENA_SIZE.y - PLAYER_RADIUS)
+	return next
+
+
 func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 	if not winner_player_id.is_empty():
 		return
@@ -29,9 +36,7 @@ func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 			move = Vector2.ZERO
 
 		var position: Vector2 = positions_by_player_id[player_id]
-		position += move.limit_length(1.0) * MOVE_SPEED * delta
-		position.x = clampf(position.x, PLAYER_RADIUS, ARENA_SIZE.x - PLAYER_RADIUS)
-		position.y = clampf(position.y, PLAYER_RADIUS, ARENA_SIZE.y - PLAYER_RADIUS)
+		position = apply_move(position, move, delta)
 		positions_by_player_id[player_id] = position
 
 		if position.distance_to(GOAL_CENTER) <= GOAL_RADIUS:
@@ -39,11 +44,17 @@ func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 			return
 
 
-func export_positions() -> Dictionary:
+func export_positions(acked_input_ticks: Dictionary = {}) -> Dictionary:
 	var payload: Dictionary = {}
 	for player_id in positions_by_player_id.keys():
 		var position: Vector2 = positions_by_player_id[player_id]
-		payload[String(player_id)] = {"x": position.x, "y": position.y}
+		var player_key := String(player_id)
+		var entry := {
+			"x": position.x,
+			"y": position.y,
+			"acked_input_tick": int(acked_input_ticks.get(player_key, 0)),
+		}
+		payload[player_key] = entry
 	return payload
 
 

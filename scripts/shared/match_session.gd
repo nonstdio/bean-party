@@ -14,13 +14,17 @@ signal peer_disconnected(peer_id: int)
 signal connection_failed
 signal server_disconnected
 signal echo_completed(from_peer_id: int, message: String)
+signal ping_updated(peer_id: int, ping_ms: int)
 
 var _peer: ENetMultiplayerPeer = null
 var _state: SessionState = SessionState.IDLE
 var _pending_echoes: Dictionary = {}
+var _ping_ms_by_peer_id: Dictionary = {}
 var _connect_started_msec: int = 0
+var _ping_accumulator: float = 0.0
 
 const CONNECT_TIMEOUT_MSEC := 5000
+const PING_INTERVAL_SEC := 1.0
 
 
 func get_session_state() -> SessionState:
@@ -102,11 +106,16 @@ func get_remote_peer_ids() -> Array[int]:
 	)
 
 
+func get_ping_ms(peer_id: int) -> int:
+	return int(_ping_ms_by_peer_id.get(peer_id, -1))
+
+
 func send_echo(peer_id: int, message: String) -> int:
 	var nonce := randi()
 	_pending_echoes[nonce] = {
 		"peer_id": peer_id,
 		"message": message,
+		"sent_msec": Time.get_ticks_msec(),
 	}
 	_rpc_echo.rpc_id(peer_id, message, nonce)
 	return nonce
@@ -118,16 +127,26 @@ func _exit_tree() -> void:
 		_state = SessionState.IDLE
 
 
-func _process(_delta: float) -> void:
-	if _state != SessionState.CONNECTING or _peer == null:
+func _process(delta: float) -> void:
+	if _state == SessionState.CONNECTING and _peer != null:
+		if _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+			_on_connection_failed()
+			return
+
+		if Time.get_ticks_msec() - _connect_started_msec > CONNECT_TIMEOUT_MSEC:
+			_on_connection_failed()
+			return
+
+	if not is_session_established():
 		return
 
-	if _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
-		_on_connection_failed()
+	_ping_accumulator += delta
+	if _ping_accumulator < PING_INTERVAL_SEC:
 		return
 
-	if Time.get_ticks_msec() - _connect_started_msec > CONNECT_TIMEOUT_MSEC:
-		_on_connection_failed()
+	_ping_accumulator = 0.0
+	for peer_id in get_remote_peer_ids():
+		send_echo(peer_id, "ping-%d" % Time.get_ticks_msec())
 
 
 func _bind_multiplayer_signals() -> void:
@@ -159,6 +178,7 @@ func _unbind_multiplayer_signals() -> void:
 func _teardown_peer() -> void:
 	_unbind_multiplayer_signals()
 	_pending_echoes.clear()
+	_ping_ms_by_peer_id.clear()
 
 	if _peer != null:
 		_peer.close()
@@ -173,6 +193,7 @@ func _on_connected_to_server() -> void:
 
 	_state = SessionState.CONNECTED
 	session_state_changed.emit()
+	_ping_accumulator = PING_INTERVAL_SEC
 
 
 func _on_connection_failed() -> void:
@@ -198,9 +219,11 @@ func _on_server_disconnected() -> void:
 func _on_peer_connected(peer_id: int) -> void:
 	peer_connected.emit(peer_id)
 	session_state_changed.emit()
+	_ping_accumulator = PING_INTERVAL_SEC
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
+	_ping_ms_by_peer_id.erase(peer_id)
 	peer_disconnected.emit(peer_id)
 	session_state_changed.emit()
 
@@ -213,15 +236,25 @@ func _rpc_echo(message: String, nonce: int) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_echo_reply(message: String, nonce: int) -> void:
-	var sender_id := multiplayer.get_remote_sender_id()
+	_apply_echo_reply(multiplayer.get_remote_sender_id(), message, nonce)
+
+
+func _apply_echo_reply(from_peer_id: int, message: String, nonce: int) -> void:
 	if not _pending_echoes.has(nonce):
 		return
 
 	var pending: Dictionary = _pending_echoes[nonce]
-	if int(pending.get("peer_id", -1)) != sender_id:
+	if int(pending.get("peer_id", -1)) != from_peer_id:
 		return
 	if String(pending.get("message", "")) != message:
 		return
 
 	_pending_echoes.erase(nonce)
-	echo_completed.emit(sender_id, message)
+
+	var sent_msec := int(pending.get("sent_msec", 0))
+	if sent_msec > 0:
+		var ping_ms := maxi(0, Time.get_ticks_msec() - sent_msec)
+		_ping_ms_by_peer_id[from_peer_id] = ping_ms
+		ping_updated.emit(from_peer_id, ping_ms)
+
+	echo_completed.emit(from_peer_id, message)

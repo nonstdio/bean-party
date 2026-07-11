@@ -56,6 +56,24 @@ func is_flow_active() -> bool:
 	return _authority != null and _authority.is_flow_active()
 
 
+func is_late_joiner() -> bool:
+	return (
+		is_networked()
+		and not is_authority()
+		and _authority != null
+		and current_phase != MatchPhase.Phase.BOARD
+		and not _local_peer_in_match_roster()
+	)
+
+
+func can_participate_in_active_minigame() -> bool:
+	if _authority == null or current_phase != MatchPhase.Phase.ACTIVE_MINIGAME:
+		return false
+	if is_authority():
+		return true
+	return _local_peer_in_match_roster()
+
+
 func get_briefing_ready(player_id: String) -> bool:
 	if _authority == null:
 		return false
@@ -128,7 +146,7 @@ func _find_minigame_session() -> NetworkMinigameSession:
 
 func _local_peer_id() -> int:
 	var match_session := _match_session()
-	if match_session == null:
+	if match_session == null or not match_session.is_session_established():
 		return MatchConstants.OFFLINE_PEER_ID
 	return match_session.multiplayer.get_unique_id()
 
@@ -280,9 +298,31 @@ func _push_phase_sync_to_peer(peer_id: int) -> void:
 	_rpc_apply_phase_sync.rpc_id(peer_id, _authority.export_state())
 
 
+func _local_peer_in_match_roster() -> bool:
+	if _authority == null:
+		return false
+
+	var peer_id := _local_peer_id()
+	for slot in _authority.match_slots:
+		if slot.owning_peer_id == peer_id:
+			return true
+	return false
+
+
+func _can_run_local_minigame() -> bool:
+	if _authority == null:
+		return false
+	if is_authority():
+		return true
+	return _local_peer_in_match_roster()
+
+
 func _update_minigame_for_phase(previous_phase: MatchPhase.Phase) -> void:
 	if current_phase == MatchPhase.Phase.ACTIVE_MINIGAME:
-		_start_active_minigame()
+		if _can_run_local_minigame():
+			_start_active_minigame()
+		else:
+			_stop_active_minigame()
 	elif previous_phase == MatchPhase.Phase.ACTIVE_MINIGAME:
 		_stop_active_minigame()
 

@@ -135,6 +135,10 @@ func _build_phase_detail() -> String:
 		parts.append("instance %s" % _phase_session.minigame_instance_id)
 	if _phase_session.current_phase == MatchPhase.Phase.COUNTDOWN:
 		parts.append("countdown %d" % _phase_session.countdown_seconds_remaining)
+	if _phase_session.is_late_joiner():
+		parts.append(
+			"match already in progress; wait for the host to finish this round (reconnect not supported yet)"
+		)
 	if parts.is_empty():
 		return "Host can start the networked minigame flow from the board phase."
 	return " · ".join(parts)

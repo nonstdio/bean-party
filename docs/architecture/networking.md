@@ -54,7 +54,7 @@ Distinguish three concepts that must not be conflated in gameplay code:
 | Concept | Meaning | v1 notes |
 | --- | --- | --- |
 | **Authority process** | Owns canonical simulation, hits, scoring, RNG | Runs on the host peer today; **must not assume** the authority always controls a `PlayerSlot` |
-| **Network peer** | One connected machine (`peer_id`) | May own zero or more `PlayerSlot`s |
+| **Network peer** | One connected machine (`peer_id`) | **Launch policy:** one `PlayerSlot` per peer online; multi-local per peer is deferred |
 | **Logical `PlayerSlot`** | In-match player identity | Submits inputs through its owning peer |
 
 **Architectural direction:** gameplay systems query authority through the session layer, not through “am I player 1?” checks alone. This preserves a future path to a headless dedicated authority without rewriting minigames. Dedicated servers are **deferred**; the separation is a design constraint now.
@@ -68,21 +68,21 @@ Implemented debug-slice capacity constants:
 
 Example layouts:
 
-- **4 remote friends** — 4 peers × 1 `PlayerSlot` each
-- **Couch + online** — 2 peers × 2 local `PlayerSlot`s each
+- **4 remote friends (launch target)** — 4 peers × 1 `PlayerSlot` each
 - **Local-only (no network)** — 1 peer × up to 4 `PlayerSlot`s (offline milestone 1)
+- **Couch + online (deferred)** — multiple `PlayerSlot`s per peer online; not supported in the current lobby authority
 
 ```text
 ┌──────────────── Host peer (authority) ────────────────┐
-│  PlayerSlot A (local)   PlayerSlot B (local, couch)   │
+│  PlayerSlot A (local)                                 │
 └───────────────────────────┬────────────────────────────┘
                             │ reliable + unreliable messages
                             ▼
                      Client peer 2
-                     PlayerSlot C, D
+                     PlayerSlot B
 ```
 
-A **network peer** represents a connection endpoint. A **`PlayerSlot`** represents who is playing in the match. Multiple `PlayerSlot`s may share one `owning_peer_id` when one computer runs several local controllers.
+A **network peer** represents a connection endpoint. A **`PlayerSlot`** represents who is playing in the match. Offline proofs may still assign multiple `local_player_index` values to one peer; the networked lobby authority currently rejects more than one `PlayerSlot` per `owning_peer_id`.
 
 ### Implemented `PlayerSlot` schema
 

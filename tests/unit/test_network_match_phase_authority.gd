@@ -40,10 +40,10 @@ func test_briefing_ready_advances_to_countdown_when_all_ready() -> void:
 	assert_eq(authority.countdown_seconds_remaining, NetworkMatchPhaseAuthority.COUNTDOWN_SECONDS)
 
 
-func test_two_local_slots_on_one_peer_require_separate_ready() -> void:
+func test_two_peers_require_separate_ready() -> void:
 	var lobby := NetworkLobbyAuthority.new()
-	lobby.try_add_slot(1, "Host One")
-	lobby.try_add_slot(1, "Host Two")
+	lobby.try_add_slot(1, "Host")
+	lobby.try_add_slot(2, "Client")
 	var slots := lobby.slots
 
 	var authority := NetworkMatchPhaseAuthority.new()
@@ -53,7 +53,7 @@ func test_two_local_slots_on_one_peer_require_separate_ready() -> void:
 	assert_true(authority.try_set_briefing_ready(1, slots[0].player_id, true))
 	assert_eq(authority.current_phase, MatchPhase.Phase.BRIEFING)
 
-	assert_true(authority.try_set_briefing_ready(1, slots[1].player_id, true))
+	assert_true(authority.try_set_briefing_ready(2, slots[1].player_id, true))
 	assert_eq(authority.current_phase, MatchPhase.Phase.COUNTDOWN)
 
 

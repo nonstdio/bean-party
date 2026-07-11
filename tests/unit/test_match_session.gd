@@ -156,3 +156,20 @@ func test_echo_reply_requires_matching_sender_and_message() -> void:
 
 	session._rpc_echo_reply("hello", nonce)
 	assert_false(completed)
+
+
+func test_ping_ms_recorded_from_echo_reply() -> void:
+	var session := MatchSession.new()
+	add_child_autofree(session)
+
+	assert_eq(session.host(_test_port), OK)
+
+	var nonce := 5150
+	session._pending_echoes[nonce] = {
+		"peer_id": 2,
+		"message": "ping-test",
+		"sent_msec": Time.get_ticks_msec() - 37,
+	}
+
+	session._apply_echo_reply(2, "ping-test", nonce)
+	assert_gte(session.get_ping_ms(2), 37)

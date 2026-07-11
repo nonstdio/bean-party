@@ -1,18 +1,32 @@
 extends GutTest
 
+var _test_port: int
+
+
+func before_each() -> void:
+	_test_port = 19000 + int(Time.get_ticks_msec() % 1000)
+
 
 func test_rejects_fifth_player_across_peers() -> void:
 	var authority := NetworkLobbyAuthority.new()
 
-	assert_not_null(authority.try_add_slot(1, "Host A"))
-	assert_not_null(authority.try_add_slot(1, "Host B"))
+	assert_not_null(authority.try_add_slot(1, "Host"))
 	assert_not_null(authority.try_add_slot(2, "Client A"))
-	assert_not_null(authority.try_add_slot(2, "Client B"))
+	assert_not_null(authority.try_add_slot(3, "Client B"))
+	assert_not_null(authority.try_add_slot(4, "Client C"))
 	assert_eq(authority.slots.size(), MatchConstants.MAX_PLAYERS)
 
-	var overflow := authority.try_add_slot(2, "Client C")
+	var overflow := authority.try_add_slot(4, "Client D")
 	assert_null(overflow)
 	assert_eq(authority.slots.size(), MatchConstants.MAX_PLAYERS)
+
+
+func test_rejects_second_slot_for_same_peer() -> void:
+	var authority := NetworkLobbyAuthority.new()
+
+	assert_not_null(authority.try_add_slot(1, "Host"))
+	assert_null(authority.try_add_slot(1, "Host Two"))
+	assert_eq(authority.slots.size(), 1)
 
 
 func test_rejects_slot_mutation_for_wrong_peer() -> void:
@@ -29,38 +43,34 @@ func test_rejects_slot_mutation_for_wrong_peer() -> void:
 	assert_true(client_slot.ready)
 
 
-func test_local_player_indices_are_scoped_per_peer() -> void:
+func test_each_peer_uses_local_player_index_zero() -> void:
 	var authority := NetworkLobbyAuthority.new()
-	var host_a := authority.try_add_slot(1, "Host A")
-	var host_b := authority.try_add_slot(1, "Host B")
-	var client_a := authority.try_add_slot(2, "Client A")
+	var host_slot := authority.try_add_slot(1, "Host")
+	var client_slot := authority.try_add_slot(2, "Client")
 
-	assert_eq(host_a.local_player_index, 0)
-	assert_eq(host_b.local_player_index, 1)
-	assert_eq(client_a.local_player_index, 0)
-	assert_eq(host_a.owning_peer_id, 1)
-	assert_eq(client_a.owning_peer_id, 2)
+	assert_eq(host_slot.local_player_index, 0)
+	assert_eq(client_slot.local_player_index, 0)
 
 
-func test_remove_slot_reindexes_only_owning_peer() -> void:
+func test_remove_slot_only_affects_requested_peer() -> void:
 	var authority := NetworkLobbyAuthority.new()
-	var host_a := authority.try_add_slot(1, "Host A")
-	var host_b := authority.try_add_slot(1, "Host B")
-	var client_a := authority.try_add_slot(2, "Client A")
+	var host_slot := authority.try_add_slot(1, "Host")
+	var client_slot := authority.try_add_slot(2, "Client")
 
-	assert_true(authority.try_remove_slot(1, host_a.player_id))
-	assert_eq(host_b.local_player_index, 0)
-	assert_eq(client_a.local_player_index, 0)
+	assert_true(authority.try_remove_slot(2, client_slot.player_id))
+	assert_eq(authority.slots.size(), 1)
+	assert_eq(authority.slots[0].player_id, host_slot.player_id)
+	assert_eq(host_slot.local_player_index, 0)
 
 
 func test_remove_slots_for_peer_clears_only_that_peer() -> void:
 	var authority := NetworkLobbyAuthority.new()
 	var host_slot := authority.try_add_slot(1, "Host")
 	authority.try_add_slot(2, "Client A")
-	authority.try_add_slot(2, "Client B")
+	authority.try_add_slot(3, "Client B")
 
 	authority.remove_slots_for_peer(2)
-	assert_eq(authority.slots.size(), 1)
+	assert_eq(authority.slots.size(), 2)
 	assert_eq(authority.slots[0].player_id, host_slot.player_id)
 
 
@@ -84,6 +94,14 @@ func test_display_name_change_survives_export_round_trip() -> void:
 	var replica := NetworkLobbyAuthority.new()
 	replica.load_slots(authority.export_slots())
 	assert_eq(replica.slots[0].display_name, "Captain Bean")
+
+
+func test_can_add_local_slot_false_when_peer_already_has_player() -> void:
+	var authority := NetworkLobbyAuthority.new()
+	authority.try_add_slot(1, "Host")
+
+	assert_false(authority.can_add_slot_for_peer(1))
+	assert_true(authority.can_add_slot_for_peer(2))
 
 
 func test_export_and_load_round_trip_preserves_slots() -> void:
