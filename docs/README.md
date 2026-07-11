@@ -132,6 +132,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 
 - [Research notes](research/README.md)
 - [Engine evaluation](research/engine-evaluation.md)
+- [Steam transport investigation](research/steam-transport-investigation.md)
 
 ### Decisions
 

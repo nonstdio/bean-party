@@ -8,15 +8,15 @@ func before_each() -> void:
 
 
 func test_enet_transport_adapter_creates_server_peer() -> void:
-	var peer := EnetTransportAdapter.create_server_peer(_test_port)
+	var peer := EnetTransportAdapter.create_enet_server_peer(_test_port)
 	assert_not_null(peer)
 	assert_eq(peer.get_connection_status(), MultiplayerPeer.CONNECTION_CONNECTED)
 	peer.close()
 
 
 func test_enet_transport_adapter_creates_client_peer() -> void:
-	var server := EnetTransportAdapter.create_server_peer(_test_port)
-	var client := EnetTransportAdapter.create_client_peer("127.0.0.1", _test_port)
+	var server := EnetTransportAdapter.create_enet_server_peer(_test_port)
+	var client := EnetTransportAdapter.create_enet_client_peer("127.0.0.1", _test_port)
 	assert_not_null(server)
 	assert_not_null(client)
 	client.close()
@@ -85,7 +85,7 @@ func test_connect_timeout_returns_to_idle() -> void:
 	var session := MatchSession.new()
 	add_child_autofree(session)
 
-	session._peer = EnetTransportAdapter.create_client_peer("127.0.0.1", _test_port)
+	session._peer = EnetTransportAdapter.create_enet_client_peer("127.0.0.1", _test_port)
 	session._state = MatchSession.SessionState.CONNECTING
 	session._connect_started_msec = Time.get_ticks_msec() - MatchSession.CONNECT_TIMEOUT_MSEC - 1
 

@@ -30,7 +30,7 @@ project.godot           # Godot project configuration and main-scene setting
 
 The foundation does not create a production board manager or global singleton. The main scene owns app-level debug views and a `MatchSession` node with lobby, board, and network phase children. Separately, the local debug phase controller is `RefCounted`, and the minigame development harness owns a `MinigameRunner`. These are deliberately separate proofs; there is no app-level coordinator joining them into one match yet.
 
-The shared ENet debug **session layer** is implemented in `scripts/shared/` as `MatchSession` and `EnetTransportAdapter`, behind the boundary described in [networking architecture](networking.md). It is app-owned, not an autoload: the `MatchSession` node exists with the main scene, creates a peer only when hosting or joining, and explicitly clears the peer on disconnect, connection failure, server loss, or tree exit. Future transports and a capability-limited minigame network session remain proposed.
+The shared ENet debug **session layer** is implemented in `scripts/shared/` as `MatchSession`, `TransportAdapter`, and `EnetTransportAdapter`, behind the boundary described in [networking architecture](networking.md). It is app-owned, not an autoload: the `MatchSession` node exists with the main scene, creates a peer only when hosting or joining, and explicitly clears the peer on disconnect, connection failure, server loss, or tree exit. `SteamTransportAdapter` is a fail-closed stub pending legal review and a live channel-parity spike.
 
 ## Implemented runtime surfaces
 

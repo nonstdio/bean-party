@@ -24,7 +24,10 @@ signal session_ended(reason: SessionEndReason, message: String)
 signal echo_completed(from_peer_id: int, message: String)
 signal ping_updated(peer_id: int, ping_ms: int)
 
-var _peer: ENetMultiplayerPeer = null
+var _peer: MultiplayerPeer = null
+var _transport_adapter: TransportAdapter = TransportAdapterRegistry.create(
+	TransportAdapterRegistry.default_transport_id(),
+)
 var _state: SessionState = SessionState.IDLE
 var _pending_echoes: Dictionary = {}
 var _ping_ms_by_peer_id: Dictionary = {}
@@ -53,10 +56,31 @@ func is_server() -> bool:
 	return _state == SessionState.HOSTING
 
 
+func get_transport_id() -> String:
+	if _transport_adapter == null:
+		return ""
+	return _transport_adapter.get_transport_id()
+
+
+func set_transport_adapter(adapter: TransportAdapter) -> void:
+	if is_active():
+		return
+	_transport_adapter = adapter
+
+
 func host(port: int = MatchConstants.DEFAULT_ENET_PORT) -> Error:
+	return host_with_transport(TransportAdapterRegistry.default_transport_id(), {"port": port})
+
+
+func host_with_transport(transport_id: String, options: Dictionary = {}) -> Error:
 	disconnect_session()
 
-	_peer = EnetTransportAdapter.create_server_peer(port)
+	var adapter := TransportAdapterRegistry.create(transport_id)
+	if adapter == null:
+		return ERR_UNAVAILABLE
+	_transport_adapter = adapter
+
+	_peer = _transport_adapter.create_server_peer(options)
 	if _peer == null:
 		return ERR_CANT_CREATE
 
@@ -71,12 +95,24 @@ func join(
 		address: String,
 		port: int = MatchConstants.DEFAULT_ENET_PORT,
 ) -> Error:
+	return join_with_transport(
+		TransportAdapterRegistry.default_transport_id(),
+		{"address": address, "port": port},
+	)
+
+
+func join_with_transport(transport_id: String, options: Dictionary = {}) -> Error:
 	disconnect_session()
 
-	_last_join_address = address
-	_last_join_port = port
+	var adapter := TransportAdapterRegistry.create(transport_id)
+	if adapter == null:
+		return ERR_UNAVAILABLE
+	_transport_adapter = adapter
 
-	_peer = EnetTransportAdapter.create_client_peer(address, port)
+	_last_join_address = String(options.get("address", ""))
+	_last_join_port = int(options.get("port", MatchConstants.DEFAULT_ENET_PORT))
+
+	_peer = _transport_adapter.create_client_peer(options)
 	if _peer == null:
 		return ERR_CANT_CREATE
 
