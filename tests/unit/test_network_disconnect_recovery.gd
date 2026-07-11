@@ -106,11 +106,88 @@ func test_capture_reconnect_state_uses_local_device_slots_without_peer() -> void
 
 	lobby_session.slots = slots
 	lobby_session._local_device_slots["player_2"] = 0
+	lobby_session._local_reconnect_credentials["player_2"] = {
+		"recovery_session_id": "recovery_test",
+		"reconnect_token": "token_test",
+	}
+	match_session._state = MatchSession.SessionState.CONNECTED
+	match_session._last_join_address = "127.0.0.1"
+	match_session._last_join_port = 7777
+	board_session._client_recovery_session_id = "recovery_test"
 
 	lobby_session._capture_reconnect_state()
 	assert_true(NetworkReconnectState.has_pending())
 	assert_eq(NetworkReconnectState.pending_player_id, "player_2")
+	assert_eq(NetworkReconnectState.pending_recovery_session_id, "recovery_test")
+	assert_eq(NetworkReconnectState.pending_reconnect_token, "token_test")
+	assert_eq(NetworkReconnectState.pending_host_address, "127.0.0.1")
+	assert_eq(NetworkReconnectState.pending_host_port, 7777)
 	NetworkReconnectState.clear()
+
+
+func test_reconnect_state_requires_matching_host_target() -> void:
+	NetworkReconnectState.remember("player_2", 1, "recovery_a", "token", "127.0.0.1", 7777)
+	assert_true(NetworkReconnectState.matches_target("recovery_a", "127.0.0.1", 7777))
+	assert_false(NetworkReconnectState.matches_target("recovery_b", "127.0.0.1", 7777))
+	assert_false(NetworkReconnectState.matches_target("recovery_a", "10.0.0.1", 7777))
+	NetworkReconnectState.clear()
+
+
+func test_board_verify_reconnect_token() -> void:
+	var match_session := MatchSession.new()
+	var board_session := NetworkBoardSession.new()
+	match_session.add_child(board_session)
+	add_child_autofree(match_session)
+	match_session._state = MatchSession.SessionState.HOSTING
+	board_session._reconnect_tokens_by_player_id["player_2"] = "secret-token"
+	assert_true(board_session.verify_reconnect_token("player_2", "secret-token"))
+	assert_false(board_session.verify_reconnect_token("player_2", "wrong-token"))
+
+
+func test_atomic_reclaim_rolls_back_board_when_phase_fails() -> void:
+	var lobby := NetworkLobbyAuthority.new()
+	lobby.try_add_slot(1, "Host")
+	lobby.try_add_slot(2, "Client")
+	lobby.slots[1].connection_status = PlayerSlot.ConnectionStatus.INACTIVE
+
+	var board_authority := NetworkBoardAuthority.new()
+	board_authority.reset_for_slots(lobby.slots)
+	board_authority.match_slots[1].connection_status = PlayerSlot.ConnectionStatus.INACTIVE
+
+	var phase_authority := NetworkMatchPhaseAuthority.new()
+	phase_authority.begin_from_board(board_authority.match_slots, board_authority.board_stub)
+	phase_authority.match_slots[1].connection_status = PlayerSlot.ConnectionStatus.CONNECTED
+
+	var lobby_backup := PlayerSlotConnectivity.duplicate_slots(lobby.slots)
+	var board_backup := PlayerSlotConnectivity.duplicate_slots(board_authority.match_slots)
+
+	assert_true(board_authority.reclaim_slot_for_peer("player_2", 9))
+	assert_true(lobby.reclaim_slot_for_peer("player_2", 9))
+	assert_false(
+		PlayerSlotConnectivity.reclaim_slot(phase_authority.match_slots, "player_2", 9)
+	)
+
+	PlayerSlotConnectivity.copy_slots_into(lobby.slots, lobby_backup)
+	PlayerSlotConnectivity.copy_slots_into(board_authority.match_slots, board_backup)
+	assert_eq(lobby.slots[1].owning_peer_id, 2)
+	assert_eq(board_authority.match_slots[1].owning_peer_id, 2)
+	assert_eq(lobby.slots[1].connection_status, PlayerSlot.ConnectionStatus.INACTIVE)
+
+
+func test_minigame_mark_peer_inactive_clears_remote_input_and_winner() -> void:
+	var minigame_session := NetworkMinigameSession.new()
+	add_child_autofree(minigame_session)
+	var slots: Array[PlayerSlot] = []
+	slots.append(PlayerSlot.create("player_1", 1, 0, "Host"))
+	slots.append(PlayerSlot.create("player_2", 2, 0, "Client"))
+	assert_true(minigame_session.start_minigame(slots, "snapshot_test"))
+	minigame_session._remote_inputs["player_2"] = Vector2.RIGHT
+	minigame_session._simulator.winner_player_id = "player_2"
+
+	minigame_session.mark_peer_inactive(2)
+	assert_false(minigame_session._remote_inputs.has("player_2"))
+	assert_eq(minigame_session._simulator.winner_player_id, "")
+	assert_eq(minigame_session._slots[1].connection_status, PlayerSlot.ConnectionStatus.INACTIVE)
 
 
 func test_host_reclaim_restores_same_player_count() -> void:

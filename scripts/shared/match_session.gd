@@ -30,6 +30,8 @@ var _pending_echoes: Dictionary = {}
 var _ping_ms_by_peer_id: Dictionary = {}
 var _connect_started_msec: int = 0
 var _ping_accumulator: float = 0.0
+var _last_join_address: String = ""
+var _last_join_port: int = MatchConstants.DEFAULT_ENET_PORT
 
 const CONNECT_TIMEOUT_MSEC := 5000
 const PING_INTERVAL_SEC := 1.0
@@ -70,6 +72,9 @@ func join(
 		port: int = MatchConstants.DEFAULT_ENET_PORT,
 ) -> Error:
 	disconnect_session()
+
+	_last_join_address = address
+	_last_join_port = port
 
 	_peer = EnetTransportAdapter.create_client_peer(address, port)
 	if _peer == null:
@@ -116,6 +121,14 @@ func get_remote_peer_ids() -> Array[int]:
 
 func get_ping_ms(peer_id: int) -> int:
 	return int(_ping_ms_by_peer_id.get(peer_id, -1))
+
+
+func get_last_join_address() -> String:
+	return _last_join_address
+
+
+func get_last_join_port() -> int:
+	return _last_join_port
 
 
 func send_echo(peer_id: int, message: String) -> int:

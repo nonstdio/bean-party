@@ -30,9 +30,29 @@ static func reclaim_slot(slots: Array[PlayerSlot], player_id: String, peer_id: i
 	return false
 
 
+static func can_reclaim_slot(slots: Array[PlayerSlot], player_id: String) -> bool:
+	for slot in slots:
+		if slot.player_id == player_id:
+			return slot.connection_status == PlayerSlot.ConnectionStatus.INACTIVE
+	return false
+
+
 static func participating_slot_count(slots: Array[PlayerSlot]) -> int:
 	var count := 0
 	for slot in slots:
 		if is_participating(slot):
 			count += 1
 	return count
+
+
+static func duplicate_slots(slots: Array[PlayerSlot]) -> Array[PlayerSlot]:
+	var copy: Array[PlayerSlot] = []
+	for slot in slots:
+		copy.append(slot.duplicate_slot())
+	return copy
+
+
+static func copy_slots_into(target: Array[PlayerSlot], source: Array[PlayerSlot]) -> void:
+	target.clear()
+	for slot in source:
+		target.append(slot.duplicate_slot())

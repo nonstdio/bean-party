@@ -193,19 +193,40 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	for slot in _authority.match_slots:
 		if slot.owning_peer_id == peer_id:
 			_authority.briefing_ready_by_player_id[slot.player_id] = false
+	if _minigame_session != null and _minigame_session.is_active:
+		_minigame_session.mark_peer_inactive(peer_id)
 	_sync_from_authority()
 	_broadcast_phase_sync()
 
 
-func host_reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
+func host_reclaim_slot_for_peer(player_id: String, peer_id: int, publish: bool = true) -> bool:
+	if not _apply_reclaim_slot_for_peer(player_id, peer_id):
+		return false
+	if publish:
+		_sync_from_authority()
+		_broadcast_phase_sync()
+	return true
+
+
+func _apply_reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
 	if _authority == null:
 		return false
 	if not PlayerSlotConnectivity.reclaim_slot(_authority.match_slots, player_id, peer_id):
 		return false
 	_authority.briefing_ready_by_player_id[player_id] = false
-	_sync_from_authority()
-	_broadcast_phase_sync()
 	return true
+
+
+func can_reclaim_slot(player_id: String, _peer_id: int) -> bool:
+	if _authority == null:
+		return false
+	return PlayerSlotConnectivity.can_reclaim_slot(_authority.match_slots, player_id)
+
+
+func _restore_match_slots(backup: Array[PlayerSlot]) -> void:
+	if _authority == null:
+		return
+	PlayerSlotConnectivity.copy_slots_into(_authority.match_slots, backup)
 
 
 func _on_minigame_result_ready(result: MinigameResult) -> void:

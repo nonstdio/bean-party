@@ -138,6 +138,10 @@ func reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
 	return PlayerSlotConnectivity.reclaim_slot(slots, player_id, peer_id)
 
 
+func can_reclaim_slot_for_peer(player_id: String) -> bool:
+	return PlayerSlotConnectivity.can_reclaim_slot(slots, player_id)
+
+
 func load_slots(payload: Array) -> void:
 	slots.clear()
 	for entry in payload:

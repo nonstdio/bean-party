@@ -459,7 +459,7 @@ Without a surviving authority peer, no client can authoritatively restore snapsh
 - **non-host reconnect** at safe phases;
 - future recovery work in milestone 13.
 
-This policy is **partially implemented** (milestone 9). Clients receive `session_ended` with **Host left the match.** when the host disconnects. Non-host disconnect during an active match marks frozen roster slots `inactive` and skips them for turns and briefing readiness. Board-phase reclaim restores a prior `player_id` for a reconnecting peer when `match_epoch` matches. Mid-minigame reconnect, graceful teardown of every subsystem in one frame, and the full manual disconnect matrix are still open.
+This policy is **partially implemented** (milestone 9). Clients receive `session_ended` with **Host left the match.** when the host disconnects. Non-host disconnect during an active match marks frozen roster slots `inactive` and skips them for turns and briefing readiness. Board-phase reclaim restores a prior `player_id` for a reconnecting peer when `match_epoch`, recovery session id, host target, and a per-slot reconnect token all match; reclaim mutates lobby, board, and phase copies atomically with rollback on failure. Disconnect during an active minigame clears the departed player's input and excludes them from winner/result handling for that round. Pending reclaim state survives only graceful in-process **Disconnect → Join** in the debug shell, not client crash/restart or link loss classified as host loss. Mid-minigame reconnect, graceful teardown of every subsystem in one frame, and the full manual disconnect matrix are still open.
 
 ### Disconnect rules
 
