@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/main.gd" id="1_41s4j"]
+[ext_resource type="Script" path="res://scripts/app/couch_session_view.gd" id="2_couch"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -46,7 +47,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.917647, 0.423529, 0.176471, 1)
 theme_override_font_sizes/font_size = 72
-text = "BEAN BATTLES"
+text = "BEAN PARTY"
 horizontal_alignment = 1
 
 [node name="Divider" type="ColorRect" parent="Margin/Content"]
@@ -58,14 +59,43 @@ color = Color(0.278431, 0.784314, 0.486275, 1)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 26
-text = "Godot 4.7 foundation"
+text = "Local couch session"
 horizontal_alignment = 1
 
 [node name="Description" type="Label" parent="Margin/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 20
-text = "A shared board and independently built minigames are on their way."
+text = "Assign names, colors, and controllers for up to four local players."
+horizontal_alignment = 1
+
+[node name="CouchSession" type="VBoxContainer" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+script = ExtResource("2_couch")
+
+[node name="SlotsList" type="VBoxContainer" parent="Margin/Content/CouchSession"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Actions" type="HBoxContainer" parent="Margin/Content/CouchSession"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="AddPlayerButton" type="Button" parent="Margin/Content/CouchSession/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Add player"
+
+[node name="StatusLabel" type="Label" parent="Margin/Content/CouchSession"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
+theme_override_font_sizes/font_size = 16
+text = "Loading couch session..."
 horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="Margin/Content"]
