@@ -8,11 +8,19 @@ This document describes how independently designed minigames join the shared she
 
 Use the [minigame design guide](../design/minigames.md) for proposal requirements, player-facing review criteria, and the transition from a proposal issue to `minigames/<slug>/README.md`.
 
+## Current implementation boundary
+
+Local contract version 1 is implemented and exercised by `res://scenes/dev/minigame_harness.tscn`, the shell-owned `MinigameRunner`, and `minigames/reference-tap/`. The registry discovers normal minigame folders and skips authoring/support folders whose names begin with `_`.
+
+The main app's local phase debug flow does **not** load a `MinigameManifest` or use `MinigameRunner` yet. Its selected ids, outcomes, and rewards are stub data. The ENet phase proof similarly loads `minigames/_network_stub/` directly; that placeholder is intentionally not a contract minigame and is not registry-discovered. Connecting the accepted local lifecycle to the app shell, and then extending it with a validated network session interface, remains future integration work.
+
+See [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for the executable paths and limitations.
+
 ## Runtime lifecycle
 
 Every minigame should support four runtime stages:
 
-1. **Setup** — the shared shell loads the manifest and scene, then provides player identities, teams, a seeded RNG, per-player input, and approved configuration through `MinigameContext`.
+1. **Setup** — the shared shell loads the manifest and scene, then provides player identities, teams, a seeded RNG, and per-player input through `MinigameContext`. Contract version 1 does not yet expose an arbitrary configuration payload.
 2. **Briefing** — the minigame presents its explanation, controls, and ready state using shared conventions when available.
 3. **Play and result** — the shell starts the controller; it runs a bounded round and submits exactly one outcome-only `MinigameResult`.
 4. **Teardown** — the shell aborts when necessary and frees the scene. The minigame releases its audio, temporary state, input readers, signals, and any provisional network registrations so another minigame can start cleanly.
@@ -57,6 +65,7 @@ The manifest `contract_version` must equal `1`. A future breaking local change r
 - A completed result contains ordered best-to-worst placement groups. Multiple player ids in one group represent a tie.
 - Every supplied participant appears exactly once. Unknown or duplicate player ids are invalid.
 - Scores are optional, numeric, and keyed only by supplied player ids.
+- Diagnostics are optional outcome metadata copied by the result object; they must not carry authoritative board-economy mutations.
 - An aborted result contains a reason and no placements or scores.
 - Results never contain beans, items, board advantages, or other economy mutations. The shell translates the outcome into board rewards.
 - The controller and runner reject duplicate, late, or malformed results.

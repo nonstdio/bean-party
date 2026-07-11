@@ -1,8 +1,10 @@
 # Godot project architecture
 
+Status: **Active pre-production foundation**
+
 ## Foundation
 
-Bean Party uses **Godot 4.7 stable**, **GDScript**, and the **Compatibility renderer**. This is a small, runnable foundation, not the final game architecture. It exists so contributors can open the project immediately while the team evolves the board, minigame API, art kit, and release targets through reviewed decisions.
+Bean Party uses **Godot 4.7 stable**, **GDScript**, and the **Compatibility renderer**. This is a runnable architecture and contributor-test foundation, not a playable game or the final game architecture. It exists so contributors can exercise the implemented local session, local minigame contract, and ENet debug slice while the team evolves the board, network minigame API, art kit, and release targets through reviewed decisions.
 
 Godot stores the main scene in `project.godot`; `res://` refers to this repository root. The initial entry point is `res://scenes/app/main.tscn`.
 
@@ -26,9 +28,22 @@ tools/                  # Platform runners for agent setup, validation, and test
 project.godot           # Godot project configuration and main-scene setting
 ```
 
-The foundation does not create a board manager or global singleton. It now contains the accepted local minigame v1 contract and the first proposed networking session spikes; neither should be bypassed with minigame-specific shell or transport code.
+The foundation does not create a production board manager or global singleton. The main scene owns app-level debug views and a `MatchSession` node with lobby, board, and network phase children. Separately, the local debug phase controller is `RefCounted`, and the minigame development harness owns a `MinigameRunner`. These are deliberately separate proofs; there is no app-level coordinator joining them into one match yet.
 
-When online play is implemented, the shared **session layer** (proposed `MatchSession` / `TransportAdapter`) should live in `scripts/shared/` behind the boundary described in [networking architecture](networking.md). Prefer an app-owned session with explicit teardown over an automatic networking singleton.
+The shared ENet debug **session layer** is implemented in `scripts/shared/` as `MatchSession` and `EnetTransportAdapter`, behind the boundary described in [networking architecture](networking.md). It is app-owned, not an autoload: the `MatchSession` node exists with the main scene, creates a peer only when hosting or joining, and explicitly clears the peer on disconnect, connection failure, server loss, or tree exit. Future transports and a capability-limited minigame network session remain proposed.
+
+## Implemented runtime surfaces
+
+| Surface | Current implementation | Boundary |
+| --- | --- | --- |
+| Main app | `scenes/app/main.tscn` and `scripts/app/` | Scrollable debug shell, not a menu or production game flow |
+| Offline session | `OfflineMatchSession`, `PlayerSlot`, and `couch_session_view.gd` | 2–4 local slots; physical device mapping is represented by session-local indices only |
+| Offline phase proof | `LocalMatchPhaseController`, `MatchSnapshot`, serializer, and board stub | Walks placeholder phases and JSON snapshot restore; does not load a real minigame |
+| Local minigame contract | `scripts/shared/minigames/`, `scenes/dev/minigame_harness.tscn`, and `reference-tap` | Accepted contract v1; harness-only integration today |
+| ENet connection proof | `MatchSession` and `EnetTransportAdapter` | Direct address and port, one listen-server host, reliable echo, explicit teardown |
+| Network shell proof | `NetworkLobbySession`, `NetworkBoardSession`, and `NetworkMatchPhaseSession` plus their authority objects | Reliable host-authoritative debug state through a placeholder scene; not production netcode |
+
+Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for operating steps and current limitations.
 
 ## Conventions
 
@@ -37,6 +52,7 @@ When online play is implemented, the shared **session layer** (proposed `MatchSe
 - Use `res://` paths in project resources. Do not use machine-specific absolute paths.
 - Minigame-local scenes, scripts, and assets stay within `minigames/<slug>/`; only promote something to `scenes/shared/` or `scripts/shared/` when two or more minigames genuinely need it.
 - Commit original assets and their source files when practical. Do not commit generated Godot folders, exports, or builds.
+- Keep `.uid` sidecar files untracked under the current ignore policy; Godot may regenerate them locally.
 - Use tabs for GDScript indentation and LF line endings. The repository’s `.editorconfig` and `.gitattributes` state this explicitly.
 
 ## Running and validating

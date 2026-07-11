@@ -4,6 +4,10 @@ Date: 2026-07-11
 
 Status: Proposed
 
+## Implementation checkpoint
+
+The repository contains debug proofs for the offline session/phase foundation and ENet milestones 3–5, plus a partial milestone 6 placeholder phase flow. This evidence does not change the decision status: milestones 7 and 9 and the other validation gates below have not completed, required manual evidence is not stored in the repository, and no network-capable contract minigame exists. See the [networking plan status](../plans/networking.md#milestone-overview) and [runtime debug harness guide](../guides/runtime-debug-harnesses.md).
+
 ## Context
 
 Bean Party is a short-session social party game: a board frames the match and 30–90 second minigames create the memorable moments. The project has accepted **Godot 4.7 stable** with **GDScript** ([Decision 0001](0001-godot-engine.md)) and a local-first contributor workflow. Online play is a later milestone, not a blocker for the first local vertical slice.
@@ -60,7 +64,7 @@ Dedicated servers excel when sessions are long-lived, competitive integrity is p
 
 ### Transport strategy
 
-**Spike assumption:** `ENetMultiplayerPeer` behind a proposed session/transport boundary (`MatchSession`, `TransportAdapter`—names are proposals). Board and minigames must not construct ENet or Steam peers directly.
+**Implemented spike:** `MatchSession` owns connection lifecycle and uses the concrete `EnetTransportAdapter` helper to create `ENetMultiplayerPeer` server/client peers. This proves app-owned transport setup and teardown for direct address/port sessions. It is not yet a general `TransportAdapter` interface, does not support Steam substitution, and is not exposed to minigames. Board and minigames must not construct ENet or Steam peers directly.
 
 **Open question:** equivalent RPC channel behavior in candidate Godot Steam peer extensions must be investigated in milestone 11; channel parity is a **release blocker** for Steam, not a minor note.
 
@@ -97,7 +101,7 @@ Host migration sub-problems (detection, election, snapshot source on crash, RPC 
 
 ### Relationship to local-first development
 
-Local play remains the fastest path for minigame iteration. The offline session model (milestone 1) should implement `PlayerSlot`s and phase logic without any network peer. Online layers attach through the session boundary so a minigame that works locally can become network-capable by declaring a sync profile—not by forking its rules.
+Local play remains the fastest path for minigame iteration. The repository implements offline `PlayerSlot`s and phase logic without a network peer, plus a separate accepted local minigame contract harness. These proofs are not wired into one app match flow yet. Future online layers must attach through the session boundary so a minigame that works locally can become network-capable by declaring a sync profile—not by forking its rules.
 
 ### Explicitly out of scope for this decision
 

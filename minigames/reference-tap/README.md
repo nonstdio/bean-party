@@ -22,5 +22,5 @@ No external assets are used.
 
 ## Validation
 
-- Automated local contract test under `tests/`.
+- Automated local contract and behavior tests under `minigames/reference-tap/tests/`.
 - Intended as an executable reference and smoke fixture, not a balanced or presentation-complete minigame.

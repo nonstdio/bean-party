@@ -1,5 +1,7 @@
 # Networking implementation plan
 
+Status: **Active**
+
 This plan breaks Bean Party online networking into reviewable milestones. Each milestone should ship as its own focused pull request. Do not begin production netcode until [Decision 0003](../decisions/0003-peer-hosted-networking.md) has passed human review.
 
 Related documents:
@@ -17,25 +19,31 @@ Related documents:
 
 ## Milestone overview
 
-| # | Milestone | Depends on |
-| --- | --- | --- |
-| 1 | Offline session / `PlayerSlot` model | — |
-| 2 | Local phase state machine + snapshots | 1 |
-| 3 | ENet host/join harness | 1 |
-| 4 | Networked lobby (multi-local per peer) | 1, 3 |
-| 5 | Authoritative board stub | 2, 4 |
-| 6 | Networked scene flow (briefing → results) | 2, 4, 5 |
-| 7 | Simple movement minigame (`HOST_SNAPSHOT`) | 6 |
-| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | 7 |
-| 9 | Disconnect recovery (non-host reconnect, clean host exit) | 2, 6, 7 |
-| 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | 7, 8 |
-| 11 | Steam transport investigation | 3 |
-| 12 | Formal minigame networking API stabilization | 7, 9, 10 |
-| 13 | Host migration (Case B) — post-acceptance | 9, 12 |
+Milestones are marked **Implemented proof** when their intended code/test surface exists in the repository, even if the milestone's complete manual stop condition is not recorded. **In progress** means a required behavior is known to be absent. No milestone below is labeled complete without its required manual evidence.
+
+| # | Milestone | Status in current artifacts | Depends on |
+| --- | --- | --- | --- |
+| 1 | Offline session / `PlayerSlot` model | Implemented proof; session-local controller indices exist, but physical input routing and recorded manual 2/4-player evidence are absent | — |
+| 2 | Local phase state machine + snapshots | Implemented proof with unit coverage and debug UI; manual completion evidence is not stored | 1 |
+| 3 | ENet host/join harness | Implemented proof with lifecycle/teardown/echo unit coverage; multi-instance, LAN, and internet evidence is not stored | 1 |
+| 4 | Networked lobby (multi-local per peer) | Implemented proof with ownership/cap/round-trip unit coverage; manual malformed-RPC and multi-peer evidence is not stored | 1, 3 |
+| 5 | Authoritative board stub | Implemented proof with authority, frozen-roster, and hash agreement unit coverage; manual peer testing is not stored | 2, 4 |
+| 6 | Networked scene flow (briefing → results) | In progress: placeholder flow, phase agreement, and result/reward idempotency are covered; disconnect behavior and required manual two-peer validation are absent | 2, 4, 5 |
+| 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Not started | 6 |
+| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | Not started | 7 |
+| 9 | Disconnect recovery (non-host reconnect, clean host exit) | Not started; basic transport teardown is not match recovery | 2, 6, 7 |
+| 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Not started | 7, 8 |
+| 11 | Steam transport investigation | Not started | 3 |
+| 12 | Formal minigame networking API stabilization | Not started | 7, 9, 10 |
+| 13 | Host migration (Case B) — post-acceptance | Deferred / not started | 9, 12 |
+
+The status above is based on executable code, tests, scenes, tools, and durable documentation in this repository. Pull-request descriptions or informal playtests that are not preserved here are not counted as completion evidence. See [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for the exact current workflows and limitations.
 
 ---
 
 ## Milestone 1: Offline session and player model
+
+Implementation status: **Implemented proof; physical input routing and durable manual evidence remain.**
 
 ### Purpose
 
@@ -47,7 +55,7 @@ From the starter app, two to four local players can join a couch session with di
 
 ### Implementation boundary
 
-- `scripts/shared/` — proposed `PlayerSlot` data, session registry (proposal names)
+- `scripts/shared/` — implemented `PlayerSlot` data and `OfflineMatchSession`
 - `tests/unit/` — slot assignment, cap at `MAX_PLAYERS = 4`
 - No `MultiplayerPeer`, no board, no minigame changes required
 
@@ -66,14 +74,17 @@ From the starter app, two to four local players can join a couch session with di
 
 Shell can enumerate `PlayerSlot`s and map inputs by `local_player_index` → local controller on the owning machine in a headless or minimal scene test.
 
-### Open questions before milestone 2
+### Spike outcomes and remaining questions
 
-- `player_id` format (UUID vs incremental match id)
-- Whether empty slots are allowed in a 2-player match or always compacted
+- The current proof uses incremental match-scoped ids (`player_N`) and never reuses an id after removal.
+- Removing a local slot compacts `local_player_index` values. There is no persistent empty-slot model.
+- Mapping the stored local device slot to real gameplay input remains outside this milestone proof.
 
 ---
 
 ## Milestone 2: Local phase state machine and phase-boundary snapshots
+
+Implementation status: **Implemented proof with automated coverage; durable manual completion evidence remains.**
 
 ### Purpose
 
@@ -85,7 +96,7 @@ A debug or stub flow walks Lobby → Board (stub) → Briefing → Results → B
 
 ### Implementation boundary
 
-- `scripts/shared/` — phase controller, snapshot serializer (proposal)
+- `scripts/shared/` — implemented local phase controller, snapshot model/serializer, and board stub
 - `tests/unit/` — transition guards, snapshot round-trip, `match_epoch` increment
 - No ENet yet; “host” is always the local process
 
@@ -104,14 +115,16 @@ A debug or stub flow walks Lobby → Board (stub) → Briefing → Results → B
 
 GUT tests prove snapshot round-trip and phase guards; manual run completes one full loop.
 
-### Open questions before milestone 3
+### Spike outcomes
 
-- Snapshot format (JSON vs binary vs Godot `var_to_bytes`)
-- Whether `match_epoch` bumps on every snapshot or only authority change
+- `MatchSnapshotSerializer` uses canonicalized JSON and stores 64-bit RNG seed/state values as decimal strings to preserve round trips.
+- The offline controller increments `match_epoch` on every snapshot capture and advances it monotonically on restore. The separate network phase proof currently increments its epoch on host phase transitions; the two proofs are not unified.
 
 ---
 
 ## Milestone 3: ENet host/join harness
+
+Implementation status: **Implemented proof; required manual network-path evidence remains.**
 
 ### Purpose
 
@@ -123,7 +136,7 @@ Two instances on one machine: host clicks “Host,” client enters address and 
 
 ### Implementation boundary
 
-- `scripts/shared/` — proposed `MatchSession`, `EnetTransportAdapter`
+- `scripts/shared/` — implemented `MatchSession` and concrete `EnetTransportAdapter` debug boundary
 - Minimal UI in `scenes/app/` or debug scene only
 - No board, no minigame
 
@@ -144,12 +157,14 @@ Reliable RPC echo test passes host → client and client → host; disconnect on
 
 ### Open questions before milestone 4
 
-- Default port and firewall documentation
+- Port `7777` is the implemented debug default; firewall and internet-hosting guidance remains open.
 - Heartbeat interval for detecting silent drops
 
 ---
 
 ## Milestone 4: Networked lobby with multiple local players per peer
+
+Implementation status: **Implemented proof; required manual multi-peer evidence remains.**
 
 ### Purpose
 
@@ -187,6 +202,8 @@ All peers display identical lobby `PlayerSlot` list and ready flags after each c
 
 ## Milestone 5: Authoritative board stub
 
+Implementation status: **Implemented proof; required manual peer evidence remains.**
+
 ### Purpose
 
 Host-owned board with client move **requests** and reliable application broadcasts.
@@ -217,12 +234,14 @@ Board-state hash equal on all peers after every turn in automated test.
 
 ### Open questions before milestone 6
 
-- Turn order tie-breaking
+- The stub advances sequentially through the frozen board roster; real board turn-order and tie-breaking policy remains open.
 - How board stub connects to real board design later
 
 ---
 
 ## Milestone 6: Networked scene loading, briefing, readiness, countdown, and results
+
+Implementation status: **In progress.** The host-synchronized placeholder flow and automated phase/idempotency checks exist. Required manual two-peer evidence is not stored, and disconnect during briefing is unresolved: the frozen phase roster can continue waiting on a departed slot.
 
 ### Purpose
 
