@@ -13,7 +13,7 @@ It takes structural inspiration from Mario Party-style board-and-minigame games,
 
 ## Project status
 
-The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. Target platforms, networking model, final art pipeline, and board economy remain open decisions.
+The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. A **proposed** peer-hosted networking architecture ([Decision 0003](docs/decisions/0003-peer-hosted-networking.md)) targets up to 8 players online; it is not validated netcode yet. Target platforms, final art pipeline, and board economy remain open decisions.
 
 ## Run the starter project
 
@@ -34,6 +34,8 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Game design target](docs/game-design.md) — what “Mario Party-style” means for this project.
 - [Creative direction](docs/creative-direction.md) — how to evoke Bean Battles without copying it.
 - [Minigame contribution contract](docs/minigame-contract.md) — the intended shape of an independently developed minigame.
+- [Networking architecture](docs/networking-architecture.md) — proposed online topology, authority, and phase machine.
+- [Networking implementation plan](docs/networking-implementation-plan.md) — milestones and test matrix for future netcode work.
 - [Godot project architecture](docs/godot-architecture.md) — repository layout and Godot conventions.
 - [Engine evaluation](docs/engine-evaluation.md) — the evaluation that led to the Godot decision.
 - [Project governance](docs/project-governance.md) — pull requests and the `main` branch rules.
@@ -43,6 +45,6 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 
 ## Open decisions
 
-- Is the first playable version local-only, online-only, or local-first with online play later?
+- Is the first playable version local-only, online-only, or local-first with online play later? (Networking direction is [proposed](docs/decisions/0003-peer-hosted-networking.md); local-first remains the implementation order.)
 - Which software and content licenses should govern contributions and releases?
 - What is the final board economy: beans, victory tokens, or both?
