@@ -100,8 +100,9 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	row.add_child(swatch)
 
 	var peer_label := Label.new()
-	peer_label.text = "P%d" % slot.owning_peer_id
-	peer_label.custom_minimum_size = Vector2(36, 0)
+	peer_label.text = _format_peer_label(slot)
+	peer_label.custom_minimum_size = Vector2(110, 0)
+	row.set_meta(&"peer_label", peer_label)
 	row.add_child(peer_label)
 
 	var name_control: Control
@@ -163,7 +164,17 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	return row
 
 
+func _format_peer_label(slot: PlayerSlot) -> String:
+	if slot.owning_peer_id == 1:
+		return "Host · P%d" % (slot.local_player_index + 1)
+	return "Peer %d · P%d" % [slot.owning_peer_id, slot.local_player_index + 1]
+
+
 func _refresh_slot_row(row: HBoxContainer, slot: PlayerSlot) -> void:
+	if row.has_meta(&"peer_label"):
+		var peer_label: Label = row.get_meta(&"peer_label")
+		peer_label.text = _format_peer_label(slot)
+
 	var name_display: Control = row.get_meta(&"name_display")
 	if name_display is LineEdit:
 		var name_field: LineEdit = name_display
