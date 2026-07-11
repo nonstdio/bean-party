@@ -35,3 +35,17 @@ static func lane_name(lane: Lane) -> String:
 
 static func enet_channel_for_lane(lane: Lane) -> int:
 	return int(ENET_CHANNEL_BY_LANE.get(lane, 0))
+
+
+## Proposed WebRTC data-channel map (3 channels per peer).
+const WEBRTC_CHANNEL_BY_LANE := {
+	Lane.SESSION_CONTROL: 0,
+	Lane.ENTITY_LIFECYCLE: 0,
+	Lane.PLAYER_INPUT: 1,
+	Lane.WORLD_SNAPSHOT: 2,
+	Lane.COSMETIC: 2,
+}
+
+
+static func webrtc_channel_for_lane(lane: Lane) -> int:
+	return int(WEBRTC_CHANNEL_BY_LANE.get(lane, 0))

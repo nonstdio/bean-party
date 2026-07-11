@@ -21,6 +21,7 @@ func describe_capabilities() -> Dictionary:
 	return {
 		"supports_direct_address_join": true,
 		"supports_steam_lobby_join": false,
+		"supports_room_code_join": false,
 		"supports_transfer_channels": true,
 		"max_transfer_channels": 4,
 		"notes": "Debug/LAN transport for milestones 3–10.",

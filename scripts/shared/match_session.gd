@@ -35,8 +35,11 @@ var _connect_started_msec: int = 0
 var _ping_accumulator: float = 0.0
 var _last_join_address: String = ""
 var _last_join_port: int = MatchConstants.DEFAULT_ENET_PORT
+var _last_join_room_code: String = ""
+var _webrtc_coordinator: WebRtcMultiplayerCoordinator = null
 
 const CONNECT_TIMEOUT_MSEC := 5000
+const WEBRTC_CONNECT_TIMEOUT_MSEC := 20000
 const PING_INTERVAL_SEC := 1.0
 
 
@@ -80,6 +83,9 @@ func host_with_transport(transport_id: String, options: Dictionary = {}) -> Erro
 		return ERR_UNAVAILABLE
 	_transport_adapter = adapter
 
+	if transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		return _begin_webrtc_session(options, true)
+
 	_peer = _transport_adapter.create_server_peer(options)
 	if _peer == null:
 		return ERR_CANT_CREATE
@@ -111,6 +117,10 @@ func join_with_transport(transport_id: String, options: Dictionary = {}) -> Erro
 
 	_last_join_address = String(options.get("address", ""))
 	_last_join_port = int(options.get("port", MatchConstants.DEFAULT_ENET_PORT))
+	_last_join_room_code = String(options.get("room_code", ""))
+
+	if transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		return _begin_webrtc_session(options, false)
 
 	_peer = _transport_adapter.create_client_peer(options)
 	if _peer == null:
@@ -167,6 +177,10 @@ func get_last_join_port() -> int:
 	return _last_join_port
 
 
+func get_last_join_room_code() -> String:
+	return _last_join_room_code
+
+
 func send_echo(peer_id: int, message: String) -> int:
 	var nonce := randi()
 	_pending_echoes[nonce] = {
@@ -185,12 +199,13 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	if _state == SessionState.CONNECTING and _peer != null:
-		if _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+	if _state == SessionState.CONNECTING:
+		var timeout_msec := _connect_timeout_msec()
+		if Time.get_ticks_msec() - _connect_started_msec > timeout_msec:
 			_on_connection_failed()
 			return
 
-		if Time.get_ticks_msec() - _connect_started_msec > CONNECT_TIMEOUT_MSEC:
+		if _peer != null and _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
 			_on_connection_failed()
 			return
 
@@ -236,12 +251,97 @@ func _teardown_peer() -> void:
 	_unbind_multiplayer_signals()
 	_pending_echoes.clear()
 	_ping_ms_by_peer_id.clear()
+	_teardown_webrtc_coordinator()
 
 	if _peer != null:
 		_peer.close()
 		_peer = null
 
 	multiplayer.multiplayer_peer = null
+
+
+func _teardown_webrtc_coordinator() -> void:
+	if _webrtc_coordinator == null:
+		return
+
+	if _webrtc_coordinator.multiplayer_peer_ready.is_connected(_on_webrtc_peer_ready):
+		_webrtc_coordinator.multiplayer_peer_ready.disconnect(_on_webrtc_peer_ready)
+	if _webrtc_coordinator.connection_failed.is_connected(_on_webrtc_connection_failed):
+		_webrtc_coordinator.connection_failed.disconnect(_on_webrtc_connection_failed)
+	if _webrtc_coordinator.lobby_code_ready.is_connected(_on_webrtc_lobby_code_ready):
+		_webrtc_coordinator.lobby_code_ready.disconnect(_on_webrtc_lobby_code_ready)
+
+	_webrtc_coordinator.stop()
+	_webrtc_coordinator.queue_free()
+	_webrtc_coordinator = null
+
+
+func _connect_timeout_msec() -> int:
+	if get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		return WEBRTC_CONNECT_TIMEOUT_MSEC
+	return CONNECT_TIMEOUT_MSEC
+
+
+func _begin_webrtc_session(options: Dictionary, is_host: bool) -> Error:
+	if not WebRtcAvailability.is_extension_loaded():
+		return ERR_CANT_CREATE
+
+	var normalized := WebRtcTransportAdapter.normalize_options(options)
+	var signaling_url := String(normalized.get("signaling_url", ""))
+	var room_code := String(normalized.get("room_code", ""))
+	var ice_servers: Array = normalized.get("ice_servers", [])
+
+	if signaling_url == "":
+		return ERR_INVALID_PARAMETER
+	if not is_host and room_code.strip_edges() == "":
+		return ERR_INVALID_PARAMETER
+
+	_last_join_address = signaling_url
+	_last_join_room_code = room_code
+
+	_webrtc_coordinator = WebRtcMultiplayerCoordinator.new()
+	add_child(_webrtc_coordinator)
+	_webrtc_coordinator.multiplayer_peer_ready.connect(_on_webrtc_peer_ready)
+	_webrtc_coordinator.connection_failed.connect(_on_webrtc_connection_failed)
+	_webrtc_coordinator.lobby_code_ready.connect(_on_webrtc_lobby_code_ready)
+
+	_state = SessionState.CONNECTING
+	_connect_started_msec = Time.get_ticks_msec()
+	session_state_changed.emit()
+
+	if is_host:
+		_webrtc_coordinator.start_host(signaling_url, room_code, ice_servers)
+	else:
+		_webrtc_coordinator.start_client(signaling_url, room_code, ice_servers)
+
+	return OK
+
+
+func _on_webrtc_peer_ready(peer: MultiplayerPeer, is_host: bool) -> void:
+	_peer = peer
+	multiplayer.multiplayer_peer = _peer
+	_bind_multiplayer_signals()
+
+	if is_host:
+		_state = SessionState.HOSTING
+		session_state_changed.emit()
+		_ping_accumulator = PING_INTERVAL_SEC
+		return
+
+	_on_connected_to_server()
+
+
+func _on_webrtc_lobby_code_ready(lobby_code: String) -> void:
+	_last_join_room_code = lobby_code
+	session_state_changed.emit()
+
+
+func _on_webrtc_connection_failed(message: String) -> void:
+	if _state != SessionState.CONNECTING:
+		return
+
+	_end_session(SessionEndReason.CONNECTION_FAILED, message)
+	connection_failed.emit()
 
 
 func _on_connected_to_server() -> void:
