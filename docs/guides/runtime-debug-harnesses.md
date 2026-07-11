@@ -32,6 +32,7 @@ All lobby, board, and phase synchronization in this slice uses reliable RPCs. Th
 - Snapshot Arena runs through `NetworkMinigameSession` with host snapshots, client interpolation, and optional local movement prediction (milestone 8 experiment). Latency impairment testing is manual.
 - The debug UI has no match-start readiness gate; lobby ready flags are synchronized but do not block `Start board`.
 - Disconnect recovery and reconnect are not implemented. A client losing the host returns its `MatchSession` to idle; a non-host disconnect removes that peer's lobby slots, but an already frozen board/phase roster is not reconciled. A disconnect during briefing can therefore leave readiness waiting on a departed slot.
+- Rejoining while a minigame is already in progress is unsupported: the host keeps the frozen match roster, so a new connection gets a lobby slot but is treated as a **late joiner** until the host returns to board. The client shows the current phase label but does not load Snapshot Arena or accept inputs for that round.
 - Network phase state is synchronized live but does not use the offline `MatchSnapshot` serializer. No network phase-boundary recovery snapshot is retained.
 - Manual multi-instance, LAN, internet, impairment, and human-playtest evidence is not stored as a durable repository artifact. Do not infer completion of a plan milestone's manual stop conditions from the presence of code or unit tests.
 
