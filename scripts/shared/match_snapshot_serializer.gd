@@ -15,7 +15,11 @@ static func deserialize(serialized: String) -> MatchSnapshot:
 
 
 static func snapshot_hash(snapshot: MatchSnapshot) -> int:
-	return hash(serialize(snapshot))
+	return hash_dictionary(_snapshot_to_dict(snapshot))
+
+
+static func hash_dictionary(data: Dictionary) -> int:
+	return hash(JSON.stringify(_sort_value(data.duplicate(true))))
 
 
 static func _snapshot_to_dict(snapshot: MatchSnapshot) -> Dictionary:
