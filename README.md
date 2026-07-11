@@ -17,6 +17,8 @@ The project is in pre-production. We have selected **Godot 4.7 stable** with **G
 
 ## Run the starter project
 
+Agents should first follow [Godot setup for agents](docs/godot-agent-setup.md), which installs the pinned editor and runs the terminal-first validation and test commands on Windows, macOS, and Linux.
+
 1. Install [Godot 4.7 stable](https://godotengine.org/download/archive/).
 2. Import the repository’s `project.godot` file in the Godot Project Manager.
 3. Select the project and press `F6`/`F5`, or run `godot --editor --path .` from the repository root.
@@ -36,6 +38,8 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Engine evaluation](docs/engine-evaluation.md) — the evaluation that led to the Godot decision.
 - [Project governance](docs/project-governance.md) — pull requests and the `main` branch rules.
 - [Agent guide](AGENTS.md) — instructions for AI-assisted work in this repository.
+
+- [Godot setup for agents](docs/godot-agent-setup.md) — exact installation, validation, and test commands on Windows, macOS, and Linux.
 
 ## Open decisions
 

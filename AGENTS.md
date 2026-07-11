@@ -4,7 +4,7 @@ This repository is pre-production work for Bean Party, a collaborative party gam
 
 ## Start here
 
-Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/godot-architecture.md](docs/godot-architecture.md), and the relevant document in `docs/` before changing project direction. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
+Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/godot-agent-setup.md](docs/godot-agent-setup.md), [docs/godot-architecture.md](docs/godot-architecture.md), and the relevant document in `docs/` before changing project direction. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
 
 ## Working rules
 
@@ -20,6 +20,10 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/godot-arc
 ## Validation
 
 Verify Markdown links, keep documents internally consistent, and run `godot --headless --path . --editor --quit` when Godot is installed. Once automated checks exist, run the repository’s documented formatter, tests, and build before opening a pull request.
+
+## Agent commands
+
+Before opening a pull request, run `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS and Linux. The runners honor `GODOT_BIN`, validate the headless project import, and execute GUT tests.
 
 ## Pull requests
 
