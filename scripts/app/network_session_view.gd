@@ -21,6 +21,8 @@ func _ready() -> void:
 	_disconnect_button.pressed.connect(_on_disconnect_pressed)
 	_echo_button.pressed.connect(_on_echo_pressed)
 	_match_session.session_state_changed.connect(_refresh)
+	_match_session.connection_failed.connect(_on_connection_failed)
+	_match_session.server_disconnected.connect(_on_server_disconnected)
 	_match_session.echo_completed.connect(_on_echo_completed)
 	_refresh()
 
@@ -59,6 +61,16 @@ func _on_disconnect_pressed() -> void:
 	_refresh()
 
 
+func _on_connection_failed() -> void:
+	_status_label.text = "Connection failed."
+	_refresh()
+
+
+func _on_server_disconnected() -> void:
+	_status_label.text = "Server disconnected."
+	_refresh()
+
+
 func _on_echo_pressed() -> void:
 	var remote_peers := _match_session.get_remote_peer_ids()
 	if remote_peers.is_empty():
@@ -79,30 +91,53 @@ func _on_echo_completed(from_peer_id: int, message: String) -> void:
 
 
 func _refresh() -> void:
-	var active := _match_session.is_active()
-	_host_button.disabled = active
-	_join_button.disabled = active
-	_disconnect_button.disabled = not active
-	_echo_button.disabled = not active or _match_session.get_remote_peer_ids().is_empty()
+	var state := _match_session.get_session_state()
+	var in_session := state != MatchSession.SessionState.IDLE
+	_host_button.disabled = in_session
+	_join_button.disabled = in_session
+	_disconnect_button.disabled = not in_session
+	_echo_button.disabled = (
+		not _match_session.is_session_established()
+		or _match_session.get_remote_peer_ids().is_empty()
+	)
 
-	if active:
-		var role := "host" if _match_session.is_server() else "client"
-		var peer_ids := _match_session.get_session_peer_ids()
-		_peers_label.text = "Peers (%s): %s" % [role, ", ".join(peer_ids)]
-		if _status_label.text == "Session disconnected.":
-			_status_label.text = "Session active as %s." % role
-	else:
-		_peers_label.text = "Peers: none"
+	match state:
+		MatchSession.SessionState.CONNECTING:
+			_peers_label.text = "Peers: connecting..."
+		MatchSession.SessionState.CONNECTED:
+			var peer_ids := _match_session.get_session_peer_ids()
+			_peers_label.text = "Peers (client): %s" % ", ".join(peer_ids)
+			if not _is_terminal_status():
+				_status_label.text = "Connected as client."
+		MatchSession.SessionState.HOSTING:
+			var peer_ids := _match_session.get_session_peer_ids()
+			_peers_label.text = "Peers (host): %s" % ", ".join(peer_ids)
+			if not _is_terminal_status():
+				var port := _read_port(true)
+				if port > 0:
+					_status_label.text = "Hosting on port %d." % port
+		_:
+			_peers_label.text = "Peers: none"
 
 
-func _read_port() -> int:
+func _is_terminal_status() -> bool:
+	return (
+		_status_label.text == "Connection failed."
+		or _status_label.text == "Server disconnected."
+		or _status_label.text == "Session disconnected."
+	)
+
+
+func _read_port(quiet := false) -> int:
 	var text := _port_field.text.strip_edges()
 	if not text.is_valid_int():
-		_status_label.text = "Port must be a number."
+		if not quiet:
+			_status_label.text = "Port must be a number."
 		return -1
 
 	var port := int(text)
 	if port < 1 or port > 65535:
-		_status_label.text = "Port must be between 1 and 65535."
+		if not quiet:
+			_status_label.text = "Port must be between 1 and 65535."
 		return -1
 	return port

@@ -1,21 +1,42 @@
 class_name MatchSession
 extends Node
 
+enum SessionState {
+	IDLE,
+	CONNECTING,
+	CONNECTED,
+	HOSTING,
+}
+
 signal session_state_changed
 signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
+signal connection_failed
+signal server_disconnected
 signal echo_completed(from_peer_id: int, message: String)
 
 var _peer: ENetMultiplayerPeer = null
+var _state: SessionState = SessionState.IDLE
 var _pending_echoes: Dictionary = {}
+var _connect_started_msec: int = 0
+
+const CONNECT_TIMEOUT_MSEC := 5000
+
+
+func get_session_state() -> SessionState:
+	return _state
 
 
 func is_active() -> bool:
-	return _peer != null
+	return _state != SessionState.IDLE
+
+
+func is_session_established() -> bool:
+	return _state == SessionState.CONNECTED or _state == SessionState.HOSTING
 
 
 func is_server() -> bool:
-	return is_active() and multiplayer.is_server()
+	return _state == SessionState.HOSTING
 
 
 func host(port: int = MatchConstants.DEFAULT_ENET_PORT) -> Error:
@@ -26,6 +47,7 @@ func host(port: int = MatchConstants.DEFAULT_ENET_PORT) -> Error:
 		return ERR_CANT_CREATE
 
 	multiplayer.multiplayer_peer = _peer
+	_state = SessionState.HOSTING
 	_bind_multiplayer_signals()
 	session_state_changed.emit()
 	return OK
@@ -42,26 +64,22 @@ func join(
 		return ERR_CANT_CREATE
 
 	multiplayer.multiplayer_peer = _peer
+	_state = SessionState.CONNECTING
+	_connect_started_msec = Time.get_ticks_msec()
 	_bind_multiplayer_signals()
 	session_state_changed.emit()
 	return OK
 
 
 func disconnect_session() -> void:
-	_unbind_multiplayer_signals()
-	_pending_echoes.clear()
-
-	if _peer != null:
-		_peer.close()
-		_peer = null
-
-	multiplayer.multiplayer_peer = null
+	_teardown_peer()
+	_state = SessionState.IDLE
 	session_state_changed.emit()
 
 
 func get_session_peer_ids() -> Array[int]:
 	var peer_ids: Array[int] = []
-	if not is_active():
+	if not is_session_established():
 		return peer_ids
 
 	var own_id := multiplayer.get_unique_id()
@@ -86,9 +104,30 @@ func get_remote_peer_ids() -> Array[int]:
 
 func send_echo(peer_id: int, message: String) -> int:
 	var nonce := randi()
-	_pending_echoes[nonce] = message
+	_pending_echoes[nonce] = {
+		"peer_id": peer_id,
+		"message": message,
+	}
 	_rpc_echo.rpc_id(peer_id, message, nonce)
 	return nonce
+
+
+func _exit_tree() -> void:
+	if is_active():
+		_teardown_peer()
+		_state = SessionState.IDLE
+
+
+func _process(_delta: float) -> void:
+	if _state != SessionState.CONNECTING or _peer == null:
+		return
+
+	if _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		_on_connection_failed()
+		return
+
+	if Time.get_ticks_msec() - _connect_started_msec > CONNECT_TIMEOUT_MSEC:
+		_on_connection_failed()
 
 
 func _bind_multiplayer_signals() -> void:
@@ -96,6 +135,12 @@ func _bind_multiplayer_signals() -> void:
 		multiplayer.peer_connected.connect(_on_peer_connected)
 	if not multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	if not multiplayer.connected_to_server.is_connected(_on_connected_to_server):
+		multiplayer.connected_to_server.connect(_on_connected_to_server)
+	if not multiplayer.connection_failed.is_connected(_on_connection_failed):
+		multiplayer.connection_failed.connect(_on_connection_failed)
+	if not multiplayer.server_disconnected.is_connected(_on_server_disconnected):
+		multiplayer.server_disconnected.connect(_on_server_disconnected)
 
 
 func _unbind_multiplayer_signals() -> void:
@@ -103,6 +148,51 @@ func _unbind_multiplayer_signals() -> void:
 		multiplayer.peer_connected.disconnect(_on_peer_connected)
 	if multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
 		multiplayer.peer_disconnected.disconnect(_on_peer_disconnected)
+	if multiplayer.connected_to_server.is_connected(_on_connected_to_server):
+		multiplayer.connected_to_server.disconnect(_on_connected_to_server)
+	if multiplayer.connection_failed.is_connected(_on_connection_failed):
+		multiplayer.connection_failed.disconnect(_on_connection_failed)
+	if multiplayer.server_disconnected.is_connected(_on_server_disconnected):
+		multiplayer.server_disconnected.disconnect(_on_server_disconnected)
+
+
+func _teardown_peer() -> void:
+	_unbind_multiplayer_signals()
+	_pending_echoes.clear()
+
+	if _peer != null:
+		_peer.close()
+		_peer = null
+
+	multiplayer.multiplayer_peer = null
+
+
+func _on_connected_to_server() -> void:
+	if _state != SessionState.CONNECTING:
+		return
+
+	_state = SessionState.CONNECTED
+	session_state_changed.emit()
+
+
+func _on_connection_failed() -> void:
+	if _state != SessionState.CONNECTING:
+		return
+
+	_teardown_peer()
+	_state = SessionState.IDLE
+	connection_failed.emit()
+	session_state_changed.emit()
+
+
+func _on_server_disconnected() -> void:
+	if _state != SessionState.CONNECTED:
+		return
+
+	_teardown_peer()
+	_state = SessionState.IDLE
+	server_disconnected.emit()
+	session_state_changed.emit()
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -124,10 +214,14 @@ func _rpc_echo(message: String, nonce: int) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_echo_reply(message: String, nonce: int) -> void:
 	var sender_id := multiplayer.get_remote_sender_id()
-	if _pending_echoes.has(nonce):
-		if String(_pending_echoes[nonce]) == message:
-			_pending_echoes.erase(nonce)
-			echo_completed.emit(sender_id, message)
+	if not _pending_echoes.has(nonce):
 		return
 
+	var pending: Dictionary = _pending_echoes[nonce]
+	if int(pending.get("peer_id", -1)) != sender_id:
+		return
+	if String(pending.get("message", "")) != message:
+		return
+
+	_pending_echoes.erase(nonce)
 	echo_completed.emit(sender_id, message)
