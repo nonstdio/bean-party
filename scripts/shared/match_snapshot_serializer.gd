@@ -27,16 +27,11 @@ static func _snapshot_to_dict(snapshot: MatchSnapshot) -> Dictionary:
 	if snapshot.board_stub != null:
 		board_payload = snapshot.board_stub.to_dict()
 
-	var device_slots: Dictionary = {}
-	for player_id in snapshot.local_device_slots:
-		device_slots[player_id] = int(snapshot.local_device_slots[player_id])
-
 	return {
 		"board_stub": board_payload,
 		"final_scores_by_player_id": _intify_dictionary(
 			snapshot.final_scores_by_player_id
 		),
-		"local_device_slots": device_slots,
 		"match_epoch": snapshot.match_epoch,
 		"match_settings": _intify_dictionary(snapshot.match_settings),
 		"minigame_outcome_applied": snapshot.minigame_outcome_applied,
@@ -67,9 +62,6 @@ static func _snapshot_from_dict(data: Dictionary) -> MatchSnapshot:
 	snapshot.final_scores_by_player_id = _intify_dictionary(
 		data.get("final_scores_by_player_id", {}).duplicate(true)
 	)
-
-	for player_id in data.get("local_device_slots", {}):
-		snapshot.local_device_slots[player_id] = int(data["local_device_slots"][player_id])
 
 	for slot_data in data.get("slots", []):
 		if slot_data is Dictionary:
@@ -103,10 +95,6 @@ static func _sort_array(data: Array) -> Array:
 	var sorted: Array = []
 	for item in data:
 		sorted.append(_sort_value(item))
-	if not sorted.is_empty() and sorted[0] is Dictionary and sorted[0].has("player_id"):
-		sorted.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-			return String(a.get("player_id", "")) < String(b.get("player_id", ""))
-		)
 	return sorted
 
 

@@ -8,7 +8,6 @@ var phase: MatchPhase.Phase = MatchPhase.Phase.LOBBY
 var rng_seed: int = 0
 var rng_state: int = 0
 var slots: Array[PlayerSlot] = []
-var local_device_slots: Dictionary = {}
 var match_settings: Dictionary = {}
 var board_stub: BoardStub = null
 var selected_minigame_id: String = ""

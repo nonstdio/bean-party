@@ -75,6 +75,52 @@ func test_match_epoch_increments_on_snapshot_capture() -> void:
 	assert_gt(controller.match_epoch, initial_epoch)
 
 
+func test_initial_lobby_snapshot_contains_match_settings() -> void:
+	var session := OfflineMatchSession.new()
+	session.add_local_slot("Player")
+	var controller := LocalMatchPhaseController.new(session)
+
+	assert_eq(controller.last_snapshot.match_settings.get("max_players"), 4)
+
+
+func test_restore_keeps_match_epoch_monotonic() -> void:
+	var session := OfflineMatchSession.new()
+	session.add_local_slot("Player")
+	var controller := LocalMatchPhaseController.new(session)
+
+	var oldest := MatchSnapshotSerializer.deserialize(
+		MatchSnapshotSerializer.serialize(controller.last_snapshot)
+	)
+	var epochs: Array[int] = [controller.match_epoch]
+
+	controller.transition_to(MatchPhase.Phase.BOARD)
+	epochs.append(controller.match_epoch)
+	controller.transition_to(MatchPhase.Phase.MINIGAME_SELECTION)
+	controller.transition_to(MatchPhase.Phase.BRIEFING)
+	epochs.append(controller.match_epoch)
+
+	var highest_before_restore := 0
+	for epoch in epochs:
+		highest_before_restore = max(highest_before_restore, epoch)
+
+	assert_true(controller.restore_from_snapshot(oldest))
+	assert_gt(controller.match_epoch, highest_before_restore)
+
+
+func test_restore_preserves_local_device_slots() -> void:
+	var session := OfflineMatchSession.new()
+	var slot := session.add_local_slot("Player")
+	session.set_local_device_slot(slot.player_id, 2)
+	var controller := LocalMatchPhaseController.new(session)
+
+	controller.transition_to(MatchPhase.Phase.BOARD)
+	var board_snapshot := controller.capture_snapshot()
+
+	controller.advance_happy_path()
+	assert_true(controller.restore_from_snapshot(board_snapshot))
+	assert_eq(session.get_local_device_slot(slot.player_id), 2)
+
+
 func test_snapshot_contains_required_fields() -> void:
 	var session := OfflineMatchSession.new()
 	session.add_local_slot("Player")

@@ -52,6 +52,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 func _init(offline_session: OfflineMatchSession) -> void:
 	session = offline_session
 	_rng.randomize()
+	_on_enter_phase(MatchPhase.Phase.LOBBY)
 	capture_snapshot()
 
 
@@ -103,7 +104,6 @@ func capture_snapshot() -> MatchSnapshot:
 	snapshot.minigame_outcome_applied = minigame_outcome_applied
 	snapshot.pending_board_rewards = pending_board_rewards.duplicate(true)
 	snapshot.final_scores_by_player_id = final_scores_by_player_id.duplicate(true)
-	snapshot.local_device_slots = session.export_local_device_slots()
 
 	for slot in session.slots:
 		snapshot.slots.append(slot.duplicate_slot())
@@ -120,7 +120,9 @@ func restore_from_snapshot(snapshot: MatchSnapshot) -> bool:
 	if snapshot == null:
 		return false
 
-	match_epoch = snapshot.match_epoch
+	var preserved_device_slots := session.export_local_device_slots()
+	var previous_epochs := [match_epoch, snapshot.match_epoch]
+
 	current_phase = snapshot.phase
 	match_settings = snapshot.match_settings.duplicate(true)
 	selected_minigame_id = snapshot.selected_minigame_id
@@ -129,7 +131,8 @@ func restore_from_snapshot(snapshot: MatchSnapshot) -> bool:
 	pending_board_rewards = snapshot.pending_board_rewards.duplicate(true)
 	final_scores_by_player_id = snapshot.final_scores_by_player_id.duplicate(true)
 
-	session.load_slots(snapshot.slots, snapshot.local_device_slots)
+	session.load_slots(snapshot.slots)
+	_restore_local_device_slots(preserved_device_slots, snapshot.slots)
 	board_stub = (
 		snapshot.board_stub.duplicate_stub()
 		if snapshot.board_stub != null
@@ -138,6 +141,8 @@ func restore_from_snapshot(snapshot: MatchSnapshot) -> bool:
 
 	_rng.seed = snapshot.rng_seed
 	_rng.state = snapshot.rng_state
+
+	match_epoch = max(previous_epochs[0], previous_epochs[1]) + 1
 
 	last_snapshot = _duplicate_snapshot(snapshot)
 	phase_changed.emit(current_phase, current_phase)
@@ -229,3 +234,15 @@ func _finalize_match_scores() -> void:
 
 func _duplicate_snapshot(snapshot: MatchSnapshot) -> MatchSnapshot:
 	return MatchSnapshotSerializer.deserialize(MatchSnapshotSerializer.serialize(snapshot))
+
+
+func _restore_local_device_slots(
+		preserved_device_slots: Dictionary,
+		restored_slots: Array[PlayerSlot],
+) -> void:
+	for slot in restored_slots:
+		if preserved_device_slots.has(slot.player_id):
+			session.set_local_device_slot(
+				slot.player_id,
+				int(preserved_device_slots[slot.player_id]),
+			)
