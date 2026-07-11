@@ -27,7 +27,7 @@ Related documents:
 | 6 | Networked scene flow (briefing → results) | 2, 4, 5 |
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | 6 |
 | 8 | Prediction / reconciliation experiment | 7 |
-| 9 | Disconnect recovery (non-host, Case A, clean host exit) | 2, 6, 7 |
+| 9 | Disconnect recovery (non-host reconnect, clean host exit) | 2, 6, 7 |
 | 10 | Steam transport investigation | 3 |
 | 11 | Formal minigame networking API | 7, 9 |
 | 12 | Host migration (Case B) — post-acceptance | 9, 11 |
@@ -333,35 +333,34 @@ Documented table: latency vs correction frequency vs player verdict; recommendat
 
 ### Purpose
 
-Implement **non-host disconnect**, **Case A** host-loss during minigames (abort/replay), **phase-boundary reconnect**, and **clean session end when the host leaves** at a safe phase. **Host migration (Case B) is out of scope**—see milestone 12.
+Implement **non-host disconnect**, **non-host reconnect at phase boundaries**, and **clean session end when the host leaves in any phase**. **Host migration and abort/replay after host loss are out of scope**—see milestone 12.
 
 ### Player-facing proof
 
-- **Case A:** Host Alt+F4 during active minigame → round aborts, board restored, minigame replayable
-- **Host leaves on board or in lobby:** remaining peers see a clear “host left” message and return to menu/lobby—not a silent stall
+- **Host Alt+F4 during any phase** (lobby, board, minigame, results): all peers see a clear “host left” message and return to menu/lobby—not a silent stall
 - **Non-host disconnect:** slot becomes inactive; match can continue
+- **Non-host reconnect** at phase boundary restores the correct slot from snapshot
 
 ### Implementation boundary
 
-- `scripts/shared/` — disconnect detection, Case A restore, reconnect at phase boundaries, idempotency keys for reliable side effects
+- `scripts/shared/` — disconnect detection, non-host reconnect, clean host-departure handling, idempotency keys for reliable side effects
 - Disconnect matrix tests in `tests/`
 
 ### Automated tests
 
 - Non-host disconnect during board: slot `inactive`, board hash still matches
-- Host disconnect during `ActiveMinigame`: phase returns to `Briefing` or `MinigameSelection` with restored snapshot hash (Case A)
-- Host disconnect during `Board` or `Lobby`: all clients transition to ended/lobby state within N seconds
+- Host disconnect during `ActiveMinigame`, `Board`, and `Lobby`: all clients transition to ended/lobby state within N seconds
 - Duplicate `result_id` / `reward_application_id` ignored (no double apply)
 - No duplicate minigame start in soak test
 
 ### Manual tests
 
-- Host disconnect during each major phase (matrix below)
-- Reconnecting client at phase boundary restores correct slot
+- Host disconnect during each major phase (matrix below)—expect **session end**, not replay
+- Reconnecting non-host client at phase boundary restores correct slot
 
 ### Stop condition
 
-Case A and non-host disconnect tests pass; host departure at phase boundaries ends the session cleanly with explicit UI. **Decision 0003 may move toward Accepted after milestones 1–7 and this milestone pass review**—Case B is not required.
+Non-host disconnect/reconnect tests pass; **every host-departure scenario ends the session cleanly** with explicit UI. **Decision 0003 may move toward Accepted after milestones 1–7 and this milestone pass review**—milestone 12 is not required.
 
 ### Open questions before milestone 10
 
@@ -445,11 +444,12 @@ Two minigames (or one minigame + stub) use identical integration path; API revie
 
 ### Purpose
 
-Explore **continuing a match after host loss at a phase boundary** without requiring everyone to re-host manually. This is **deferred** and does not block Decision 0003 **Accepted** or milestones 1–11.
+Explore **continuing a match after host loss** without requiring everyone to re-host manually. After migration works at phase boundaries, validate **abort + replay** when the host leaves during `Countdown` or `ActiveMinigame` (restore last phase-boundary snapshot, replay round). This is **deferred** and does not block Decision 0003 **Accepted** or milestones 1–11.
 
 ### Player-facing proof
 
-Host leaves on board or results → remaining peers elect a new host and continue from the last phase-boundary snapshot (or fail loudly with a documented limitation).
+- Host leaves on board or results → remaining peers elect a new host and continue from the last phase-boundary snapshot
+- Host leaves during minigame → round aborts, last boundary restored, minigame replayable (requires surviving authority from migration)
 
 ### Implementation boundary
 
@@ -503,7 +503,7 @@ Apply to milestones 7–9 at minimum:
 
 ### Disconnect recovery matrix
 
-Mark each cell: **pass**, **fail**, **abort replay (Case A)**, **session end (v1)**, or **continue (Case B — milestone 12 only)**. Host disconnect during minigame active window uses Case A. Host disconnect at phase boundaries in milestones 1–11 should **end the session cleanly**; Case B is validated separately in milestone 12.
+Mark each cell: **pass**, **fail**, **session end (v1)**, **continue (milestone 12)**, or **abort replay (milestone 12 only)**. In milestones 1–11, **every host disconnect should end the session cleanly**. Milestone 12 adds continue/replay behaviors that require surviving authority.
 
 | Phase | Non-host disconnect | Host disconnect |
 | --- | --- | --- |
@@ -511,8 +511,8 @@ Mark each cell: **pass**, **fail**, **abort replay (Case A)**, **session end (v1
 | `Board` | | |
 | `MinigameSelection` | | |
 | `Briefing` | | |
-| `Countdown` | Case A | Case A |
-| `ActiveMinigame` | | Case A |
+| `Countdown` | | session end (v1) |
+| `ActiveMinigame` | | session end (v1) |
 | `Results` | | |
 | `ReturnToBoard` | | |
 | `MatchResults` | | |
@@ -535,7 +535,7 @@ Mark each cell: **pass**, **fail**, **abort replay (Case A)**, **session end (v1
 | Board-state hash | Canonical snapshot hash at phase boundaries | Match on all connected peers |
 | Correction frequency | Prediction overlay / logs (milestone 8) | Documented per latency tier |
 | Correction magnitude | Max position error after reconcile | Documented per latency tier |
-| Disconnect recovery | Matrix above | Case A reliable; host phase-boundary exit clean; Case B tracked separately in milestone 12 |
+| Disconnect recovery | Matrix above | Host loss → session end in v1; non-host reconnect reliable; milestone 12 tracked separately |
 | Bandwidth | KB/s and msgs/sec sampled | Recorded for 2 and 4 players; no fixed cap yet |
 | Input responsiveness | Human playtest | Subjective notes **plus** one of: input-to-ack latency sample, correction rate |
 

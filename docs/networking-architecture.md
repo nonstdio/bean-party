@@ -163,7 +163,7 @@ Each snapshot should include: `match_epoch`, phase name, RNG stream position, an
 
 **Open question:** snapshot schema versioning and migration across engine iterations.
 
-Do **not** capture mid-`ActiveMinigame` snapshots for recovery in v1—in-round state is replayed from the last boundary by aborting the round (see disconnect policy).
+Do **not** capture mid-`ActiveMinigame` snapshots for recovery in v1—without host migration, host loss during a minigame ends the session (see disconnect policy). After milestone 12, host loss mid-minigame may restore the last boundary and replay the round.
 
 ## Message categories
 
@@ -190,7 +190,7 @@ Representative mapping:
 
 ### Reliable side effects and idempotency
 
-Godot reliable RPCs provide **at-most-once delivery** from the transport's perspective; duplicates or retries are still possible after reconnect or session churn. **Architectural direction:** the host must treat reliable messages that change state as idempotent using application-level keys:
+Godot reliable ordered RPCs provide **reliable ordered transport while a connection remains valid**, but do **not** guarantee application-level exactly-once effects across reconnects, retries, or authority changes. **Architectural direction:** the host must treat reliable messages that change state as idempotent using application-level keys:
 
 | Idempotency key (proposal) | Used for |
 | --- | --- |
@@ -305,28 +305,31 @@ flowchart TB
 
 ## Host migration and disconnect policy
 
-Treat **two disconnect cases** separately.
+### v1 host-loss policy (**architectural direction**)
 
-| Case | Phases | Intended first-version behavior | Label |
-| --- | --- | --- | --- |
-| **A. Host loss during minigame** | `Countdown`, `ActiveMinigame` | Abort round; restore last phase-boundary snapshot; **replay** minigame | **Spike assumption** |
-| **B. Host loss at phase boundary** | `Lobby`, `Board`, `MinigameSelection`, `Briefing`, `Results`, `ReturnToBoard`, `MatchResults` | End session cleanly; return peers to lobby | **Architectural direction** (v1) |
+> **Any host disconnect ends the session cleanly, regardless of phase.**
 
-### First-version disconnect rules
+Without a surviving authority peer, no client can authoritatively restore snapshots or replay a minigame. Phase-boundary snapshots still matter for:
+
+- automated testing and debug restore in offline/single-peer harnesses;
+- **non-host reconnect** at safe phases;
+- future recovery work in milestone 12.
+
+### Disconnect rules
 
 | Rule | Behavior | Label |
 | --- | --- | --- |
 | Mid-minigame late join | Not supported | **Deferred** (spectator / rejoin-in-round) |
-| Non-host disconnect | `PlayerSlot` → `inactive` (or `disconnected`); minigame may declare bot replacement | **Spike assumption** for inactive default |
-| Reconnect | At phase boundaries only; restore from snapshot + `match_epoch` | **Architectural direction** |
-| Host loss mid-minigame | Case A: abort + replay | **Spike assumption** |
-| Host loss at phase boundary | End session cleanly | **Architectural direction** (v1) |
-| Host migration (Case B continuity) | Remaining peers continue without re-hosting | **Deferred** (milestone 12) |
+| Non-host disconnect | `PlayerSlot` → `inactive` (or `disconnected`); minigame may declare bot replacement | **Spike assumption** |
+| Non-host reconnect | At phase boundaries only; restore from snapshot + `match_epoch` | **Architectural direction** |
+| **Host disconnect (any phase)** | End session cleanly for all peers | **Architectural direction** (v1) |
+| Host migration | Remaining peers continue without re-hosting | **Deferred** (milestone 12) |
+| Host loss mid-minigame → abort + replay | Restore last boundary and replay round | **Deferred** (milestone 12, requires migration) |
 | Malformed client requests | Host rejects; no authority grant | **Architectural direction** |
 
 ### Host migration sub-problems (**deferred** — milestone 12)
 
-Case B host migration is documented for future work and is **not** required to accept Decision 0003 or ship milestones 1–11.
+Host migration is documented for future work and is **not** required to accept Decision 0003 or ship milestones 1–11. Once migration exists, host loss during a minigame **may** restore the last phase-boundary snapshot and replay the round.
 
 1. **Detection and match pause** — disconnect vs heartbeat timeout; grace period for brief drops.
 2. **Host election** — deterministic rule across remaining peers; cannot use `PlayerSlot` index alone when multiple slots share a peer.
