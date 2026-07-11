@@ -381,10 +381,12 @@ This reinforces the decision against universal rollback: rewinding an arena full
 
 | Component | Status | Owns |
 | --- | --- | --- |
-| `EnetTransportAdapter` | Implemented debug adapter | Creates ENet server/client peers; no general transport interface exists yet |
-| `MatchSession` | Implemented debug session | Direct address/port, connection state, peer events, reliable echo, peer teardown |
+| `TransportAdapter` / `TransportAdapterRegistry` | Implemented | Transport selection boundary for `MatchSession` |
+| `EnetTransportAdapter` | Implemented | ENet server/client peers behind `TransportAdapter` |
+| `SteamTransportAdapter` | Stub only | Fails closed; see [steam transport investigation](../research/steam-transport-investigation.md) |
+| `TransportMessageLanes` | Implemented | Lane map; RPCs use channel `0` + transfer mode (WebRTC-safe) |
+| `MatchSession` | Implemented debug session | Direct address/port or transport id, connection state, peer events, reliable echo, peer teardown |
 | `NetworkLobbySession`, `NetworkBoardSession`, `NetworkMatchPhaseSession` | Implemented debug shell slices | Host-authoritative lobby, board stub, and placeholder phase synchronization |
-| Future transport/session API | Proposed | Steam substitution, connection metadata, reconnect, and capability-limited access for minigames |
 | Shell phase coordinator | Partial | Offline and network debug controllers exist, but no unified production coordinator |
 
 ### Lifetime and ownership
@@ -399,7 +401,7 @@ This reinforces the decision against universal rollback: rewinding an arena full
 
 Shooters and action minigames produce constant inputs and snapshots alongside critical lifecycle messages. These must not block one another.
 
-**Architectural direction:** conceptually separate traffic on distinct channels or logical lanes (exact channel map is a **spike assumption**):
+**Architectural direction:** separate traffic on distinct channels or logical lanes (implemented for shell RPCs via `TransportMessageLanes`):
 
 | Lane | Delivery | Examples |
 | --- | --- | --- |
@@ -409,14 +411,16 @@ Shooters and action minigames produce constant inputs and snapshots alongside cr
 | World snapshots | Unreliable ordered | transforms, velocities, periodic sim state |
 | Cosmetic | Unreliable, drop OK | VFX, SFX triggers, tracers |
 
+**WebRTC constraint:** Godot exposes three data channels per peer. Shared `@rpc` decorators use `transfer_channel` **0** and distinguish lanes by transfer mode (`reliable`, `unreliable_ordered`, `unreliable`). See [WebRTC implementation notes](../guides/webrtc-implementation-notes.md#godot-channel-model-critical).
+
 ### First spike vs later Steam integration
 
 | Transport | When | Label |
 | --- | --- | --- |
-| `ENetMultiplayerPeer` | Milestones 3–10 (through combat spike) | **Spike assumption** |
-| Steam Networking Sockets / SDR | Milestone 11 investigation | **Deferred** implementation |
+| `ENetMultiplayerPeer` | Milestones 3–11 (debug + investigation) | **Spike assumption** |
+| Steam Networking Sockets / SDR | Investigation concluded; implementation gated | **Conditional go** — [research note](../research/steam-transport-investigation.md) |
 
-**Open question:** whether candidate Godot Steam peer extensions support equivalent channel behavior to ENet. Milestone 11 must treat **channel parity as a release blocker** for Steam—not a minor compatibility note. If the chosen Steam peer lacks needed channels, the project needs application-level multiplexing or a different extension (**open question**).
+**Milestone 11 conclusion:** GodotSteam MultiplayerPeer is the recommended candidate (**conditional go**). Channel parity must be verified manually before release. Expressobits `steam-multiplayer-peer` is ruled out (no channels). See [steam transport investigation](../research/steam-transport-investigation.md).
 
 ### What not to do
 

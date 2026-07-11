@@ -37,6 +37,47 @@ This convenience build does not establish Windows as the project's final support
 
 The main scene is a deliberately utilitarian debug shell. It exposes the local session and phase proofs plus the ENet milestones implemented so far. Follow [Use the runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) for the exact workflows and limitations. For local minigame development, run `res://scenes/dev/minigame_harness.tscn` as the current scene with `F6`. See the [Godot project architecture](docs/architecture/godot-project.md) before adding shared systems or a minigame.
 
+## Host a multiplayer session
+
+The main scene (`F5`) is a network debug shell with **ENet (LAN)** and **WebRTC (internet)** transport. These are architecture proofs, not production matchmaking.
+
+### LAN host (ENet)
+
+1. Run the main scene (`F5`).
+2. Select transport **ENet (LAN)**.
+3. Choose a port (default `7777`) and select **Host**.
+4. Share your LAN IP address and port with other players. They select **ENet (LAN)**, enter the same address and port, and select **Join**.
+
+ENet requires every peer to reach the host directly on the LAN. It does not traverse NAT.
+
+### Internet host (WebRTC)
+
+**One-time setup on the host machine:**
+
+1. Install the [webrtc-native GDExtension](docs/guides/webrtc-setup.md#install-webrtc-native-desktop). On Windows, from the repository root:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\tools\setup-webrtc-native.ps1
+   ```
+   Restart Godot after installing the extension.
+2. Install [Node.js](https://nodejs.org/) 18+ and start the signaling server:
+   ```bash
+   cd tools/signaling
+   npm install
+   npm start
+   ```
+   Default signaling URL: `ws://127.0.0.1:9080`.
+
+**Each session:**
+
+1. Keep the signaling server running.
+2. Run the game (`F5` in the editor, or an exported build that includes webrtc-native).
+3. Select transport **WebRTC (internet)**.
+4. Enter the signaling URL (`ws://127.0.0.1:9080` for local testing; use a reachable `wss://` URL when friends join from other networks).
+5. Leave **room code** empty and select **Host**. Copy the room code shown in the status line.
+6. Share the signaling URL and room code with joiners. They enter both fields and select **Join**.
+
+To test on one PC, run two Godot instances against `ws://127.0.0.1:9080`. STUN hole-punch works on many home networks; restrictive NAT needs TURN relay — see [WebRTC operations runbook](docs/guides/webrtc-ops.md). See [WebRTC setup](docs/guides/webrtc-setup.md) and [runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) for troubleshooting and the lobby → board → minigame flow.
+
 ## Contributing
 
 Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), then open a minigame proposal before beginning a substantial implementation.
@@ -49,6 +90,8 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Minigame design guide](docs/design/minigames.md) — how proposals become clear, testable minigame briefs.
 - [Create a minigame](docs/guides/create-a-minigame.md) — scaffold, implement, run, test, and prepare a local minigame for review.
 - [Runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) — exercise the implemented local and ENet architecture proofs and understand their limits.
+- [WebRTC setup](docs/guides/webrtc-setup.md) — webrtc-native install, signaling server, and internet transport spikes.
+- [WebRTC operations runbook](docs/guides/webrtc-ops.md) — TURN/ICE config, signaling deployment, NAT test matrix.
 - [Minigame integration contract](docs/architecture/minigame-integration.md) — runtime, ownership, result, cleanup, and networking boundaries.
 - [Networking architecture](docs/architecture/networking.md) — implemented debug boundaries plus the proposed online topology, authority, and phase machine.
 - [Networking implementation plan](docs/plans/networking.md) — current milestone status, future sequence, and test matrix.

@@ -402,14 +402,14 @@ func host_replace_board_state(board: BoardStub, slots: Array[PlayerSlot]) -> voi
 	_broadcast_board_sync()
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_advance_turn(player_id: String) -> void:
 	if not is_authority():
 		return
 	_host_apply_advance_turn(multiplayer.get_remote_sender_id(), player_id)
 
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "call_remote", "reliable", 0)
 func _rpc_apply_board_sync(
 		payload: Dictionary,
 		slots_payload: Array,

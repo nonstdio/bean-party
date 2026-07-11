@@ -34,7 +34,8 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | Implemented proof: client prediction, input replay, blend reconciliation; preliminary manual findings at 0 ms, 50 ms, and 50 ms + 10% drop | 7 |
 | 9 | Disconnect recovery (non-host reconnect, clean host exit) | In progress: session-end signal, inactive slots during match, board-phase reclaim; manual disconnect matrix still open | 2, 6, 7 |
 | 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Implemented proof (spike): action-netcode kit, `NetworkActionMinigameSession`, Action Spike graybox with tank movement, hitscan combat, ticked input/replay, and tie-aware results; lag compensation, projectiles, physics props, respawn, and full [movement-standard](../architecture/godot-3d-movement.md) compliance deferred; manual latency matrix not stored | 7, 8 |
-| 11 | Steam transport investigation | Not started | 3 |
+| 11 | Steam transport investigation | Implemented proof (investigation): `TransportAdapter` boundary, ENet refactor, Steam stub, lane map, [research note](../research/steam-transport-investigation.md) with **conditional go**; live Steam peer + channel parity spike deferred pending legal review | 3 |
+| — | WebRTC internet transport | In progress: Phase 0–1 host/join, signaling, join-code UI, ICE polling ([research note](../research/webrtc-transport-investigation.md)); Phase 2 TURN config + RPC lane channels + [ops runbook](../guides/webrtc-ops.md) landed; formal 4-peer NAT matrix open | 11 |
 | 12 | Formal minigame networking API stabilization | Not started | 7, 9, 10 |
 | 13 | Host migration (Case B) — post-acceptance | Deferred / not started | 9, 12 |
 
@@ -513,32 +514,54 @@ Spike completes a full round without persistent desync; action-netcode kit APIs 
 
 ## Milestone 11: Steam transport investigation and spike
 
+Implementation status: **Implemented proof (investigation concluded).** Transport abstraction and written go/no-go report exist. Live Steam peer integration and channel-parity manual spike remain deferred pending Steamworks legal review.
+
 ### Purpose
 
 Determine whether Steam Networking Sockets / SDR can sit behind `TransportAdapter` without rewriting gameplay.
 
-### Player-facing proof
+### Delivered in this milestone
+
+- `TransportAdapter` interface and `TransportAdapterRegistry`
+- `EnetTransportAdapter` refactored behind the interface (static helpers retained)
+- `SteamTransportAdapter` stub (fails closed; no SDK in repository)
+- `TransportMessageLanes` proposed ENet channel map for five logical lanes
+- `MatchSession.host_with_transport` / `join_with_transport`
+- [Steam transport investigation](../research/steam-transport-investigation.md) — **conditional go** on GodotSteam MultiplayerPeer
+
+### Player-facing proof (deferred)
 
 Spike branch or gated build: host/join via Steam (or LAN simulation through Steam) using the same lobby flow as milestone 4—not production Steam integration.
 
 ### Implementation boundary
 
 - `scripts/shared/` transport adapter only; no Steam SDK commit without license/legal review
-- Investigation notes in PR or `docs/` addendum
+- Investigation notes in [research](../research/steam-transport-investigation.md)
 
-### Automated tests
+### Automated tests (delivered)
 
-- Same RPC echo tests as milestone 3 through Steam adapter (if CI cannot run Steam, document manual-only)
+- Transport registry and ENet adapter peer creation
+- `MatchSession` ENet host through adapter boundary
+- Steam transport fails closed with `ERR_CANT_CREATE`
+- Lane-to-channel map constants
 
-### Manual tests
+### Automated tests (deferred)
 
-- Compare RPC **channel** behavior vs ENet (session, lifecycle, inputs, snapshots, cosmetic lanes)
-- Note SDR NAT traversal result
-- **Channel parity is a release blocker** for Steam—not a minor note
+- Same RPC echo tests as milestone 3 through a live Steam adapter (CI cannot run Steam today)
+
+### Manual tests (required — not stored)
+
+| Scenario | Notes |
+| --- | --- |
+| Compare RPC **channel** behavior vs ENet | Session, lifecycle, inputs, snapshots, cosmetic lanes |
+| SDR NAT traversal | Document join path through Steam lobby |
+| GodotSteam host/join | Two Steam clients, echo + lobby flow |
+
+**Channel parity is a release blocker** for Steam—not a minor note.
 
 ### Stop condition
 
-Written report: go / no-go / conditional go for Steam adapter; list channel/limitation gaps.
+Written report: go / no-go / conditional go for Steam adapter; list channel/limitation gaps. **Met** — see [steam transport investigation](../research/steam-transport-investigation.md).
 
 ### Open questions before milestone 12
 

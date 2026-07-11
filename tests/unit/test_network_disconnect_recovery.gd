@@ -122,14 +122,77 @@ func test_capture_reconnect_state_uses_local_device_slots_without_peer() -> void
 	assert_eq(NetworkReconnectState.pending_reconnect_token, "token_test")
 	assert_eq(NetworkReconnectState.pending_host_address, "127.0.0.1")
 	assert_eq(NetworkReconnectState.pending_host_port, 7777)
+	assert_eq(NetworkReconnectState.pending_transport_id, TransportAdapterRegistry.TRANSPORT_ENET)
 	NetworkReconnectState.clear()
 
 
 func test_reconnect_state_requires_matching_host_target() -> void:
-	NetworkReconnectState.remember("player_2", 1, "recovery_a", "token", "127.0.0.1", 7777)
-	assert_true(NetworkReconnectState.matches_target("recovery_a", "127.0.0.1", 7777))
-	assert_false(NetworkReconnectState.matches_target("recovery_b", "127.0.0.1", 7777))
-	assert_false(NetworkReconnectState.matches_target("recovery_a", "10.0.0.1", 7777))
+	NetworkReconnectState.remember(
+		"player_2",
+		1,
+		"recovery_a",
+		"token",
+		TransportAdapterRegistry.TRANSPORT_ENET,
+		"127.0.0.1",
+		7777,
+	)
+	assert_true(
+		NetworkReconnectState.matches_target(
+			"recovery_a",
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			"127.0.0.1",
+			7777,
+		)
+	)
+	assert_false(
+		NetworkReconnectState.matches_target(
+			"recovery_b",
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			"127.0.0.1",
+			7777,
+		)
+	)
+	assert_false(
+		NetworkReconnectState.matches_target(
+			"recovery_a",
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			"10.0.0.1",
+			7777,
+		)
+	)
+	NetworkReconnectState.clear()
+
+
+func test_reconnect_state_requires_matching_webrtc_target() -> void:
+	NetworkReconnectState.remember(
+		"player_2",
+		1,
+		"recovery_a",
+		"token",
+		TransportAdapterRegistry.TRANSPORT_WEBRTC,
+		"",
+		-1,
+		"ws://127.0.0.1:9080",
+		"room123",
+	)
+	assert_true(
+		NetworkReconnectState.matches_target(
+			"recovery_a",
+			TransportAdapterRegistry.TRANSPORT_WEBRTC,
+			"ws://127.0.0.1:9080",
+			-1,
+			"room123",
+		)
+	)
+	assert_false(
+		NetworkReconnectState.matches_target(
+			"recovery_a",
+			TransportAdapterRegistry.TRANSPORT_WEBRTC,
+			"ws://127.0.0.1:9080",
+			-1,
+			"other",
+		)
+	)
 	NetworkReconnectState.clear()
 
 

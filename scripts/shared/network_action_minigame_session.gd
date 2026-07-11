@@ -74,6 +74,7 @@ func _process(delta: float) -> void:
 
 func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> bool:
 	stop_minigame()
+	MinigameLocalDeviceInput.reset_input_edge_state()
 	if slots.is_empty() or minigame_instance_id.is_empty():
 		return false
 
@@ -705,7 +706,7 @@ func _predicts_local_player(player_id: String) -> bool:
 	return not is_authority() and _local_player_ids.has(player_id) and (is_networked() or is_active)
 
 
-@rpc("any_peer", "call_remote", "unreliable")
+@rpc("any_peer", "call_remote", "unreliable_ordered", 0)
 func _rpc_submit_input(
 		player_id: String,
 		move_x: float,
@@ -834,7 +835,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	mark_peer_inactive(peer_id)
 
 
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "call_remote", "unreliable", 0)
 func _rpc_apply_snapshot(serial: int, payload: Dictionary) -> void:
 	if is_authority():
 		return

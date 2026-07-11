@@ -64,3 +64,4 @@ Which issue, plan, architecture document, or decision record uses these findings
 ## Research index
 
 - [Engine evaluation](engine-evaluation.md) — evaluation supporting the accepted Godot engine decision.
+- [Steam transport investigation](steam-transport-investigation.md) — milestone 11 go/no-go analysis for GodotSteam vs ENet.

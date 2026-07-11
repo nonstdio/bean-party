@@ -1,0 +1,10 @@
+[
+  {
+    "urls": ["stun:stun.l.google.com:19302"]
+  },
+  {
+    "urls": ["turn:turn.example.com:3478", "turns:turn.example.com:5349"],
+    "username": "bean-party-user",
+    "credential": "replace-with-generated-secret"
+  }
+]
