@@ -53,6 +53,7 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Networking architecture](docs/architecture/networking.md) — implemented debug boundaries plus the proposed online topology, authority, and phase machine.
 - [Networking implementation plan](docs/plans/networking.md) — current milestone status, future sequence, and test matrix.
 - [Godot project architecture](docs/architecture/godot-project.md) — repository layout and Godot conventions.
+- [Godot 3D movement standards](docs/architecture/godot-3d-movement.md) — physics, movement feel, interpolation, prediction, camera, and validation practices.
 - [Engine evaluation](docs/research/engine-evaluation.md) — the evaluation that led to the Godot decision.
 - [Project governance](docs/project/governance.md) — pull requests and the `main` branch rules.
 - [Agent guide](AGENTS.md) — instructions for AI-assisted work in this repository.
