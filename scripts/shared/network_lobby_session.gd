@@ -16,6 +16,7 @@ func _ready() -> void:
 		return
 
 	match_session.session_state_changed.connect(_on_match_session_state_changed)
+	match_session.session_ended.connect(_on_session_ended)
 	match_session.peer_connected.connect(_on_peer_connected)
 	match_session.peer_disconnected.connect(_on_peer_disconnected)
 	_on_match_session_state_changed()
@@ -33,6 +34,8 @@ func is_authority() -> bool:
 
 func can_add_local_slot() -> bool:
 	if not is_networked():
+		return false
+	if _is_match_in_progress():
 		return false
 	if not get_local_slots().is_empty():
 		return false
@@ -119,6 +122,21 @@ func request_set_ready(player_id: String, is_ready: bool) -> void:
 		_rpc_request_set_ready.rpc_id(1, player_id, is_ready)
 
 
+func request_reclaim_slot(player_id: String, match_epoch: int) -> void:
+	if not is_networked():
+		return
+
+	if is_authority():
+		_host_apply_reclaim(_local_peer_id(), player_id, match_epoch)
+	else:
+		_rpc_request_reclaim_slot.rpc_id(1, player_id, match_epoch)
+
+
+func owns_slot(player_id: String) -> bool:
+	var slot := get_slot(player_id)
+	return slot != null and slot.owning_peer_id == _local_peer_id()
+
+
 func request_set_display_name(player_id: String, display_name: String) -> void:
 	if not is_networked():
 		return
@@ -129,9 +147,29 @@ func request_set_display_name(player_id: String, display_name: String) -> void:
 		_rpc_request_set_display_name.rpc_id(1, player_id, display_name)
 
 
-func owns_slot(player_id: String) -> bool:
-	var slot := get_slot(player_id)
-	return slot != null and slot.owning_peer_id == _local_peer_id()
+func _board_session() -> NetworkBoardSession:
+	var match_session := _match_session()
+	if match_session == null:
+		return null
+	for child in match_session.get_children():
+		if child is NetworkBoardSession:
+			return child
+	return null
+
+
+func _phase_session() -> NetworkMatchPhaseSession:
+	var match_session := _match_session()
+	if match_session == null:
+		return null
+	for child in match_session.get_children():
+		if child is NetworkMatchPhaseSession:
+			return child
+	return null
+
+
+func _is_match_in_progress() -> bool:
+	var board_session := _board_session()
+	return board_session != null and board_session.is_board_active()
 
 
 func _match_session() -> MatchSession:
@@ -143,7 +181,9 @@ func _match_session() -> MatchSession:
 
 func _local_peer_id() -> int:
 	var match_session := _match_session()
-	if match_session == null:
+	if match_session == null or not match_session.is_session_established():
+		return MatchConstants.OFFLINE_PEER_ID
+	if match_session.multiplayer.multiplayer_peer == null:
 		return MatchConstants.OFFLINE_PEER_ID
 	return match_session.multiplayer.get_unique_id()
 
@@ -163,6 +203,26 @@ func _on_match_session_state_changed() -> void:
 	_reset_lobby()
 
 
+func _on_session_ended(reason: MatchSession.SessionEndReason, _message: String) -> void:
+	if reason == MatchSession.SessionEndReason.HOST_LEFT:
+		NetworkReconnectState.clear()
+		return
+	_capture_reconnect_state()
+
+
+func _capture_reconnect_state() -> void:
+	var board_session := _board_session()
+	var phase_session := _phase_session()
+	if board_session == null or not board_session.is_board_active():
+		return
+	if phase_session == null or not phase_session.can_reclaim_at_phase_boundary():
+		return
+
+	for player_id in _local_device_slots:
+		NetworkReconnectState.remember(player_id, phase_session.get_match_epoch())
+		return
+
+
 func _on_peer_connected(peer_id: int) -> void:
 	if not is_authority():
 		return
@@ -172,6 +232,10 @@ func _on_peer_connected(peer_id: int) -> void:
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	if not is_authority():
+		return
+	if _is_match_in_progress():
+		if PlayerSlotConnectivity.mark_peer_inactive(_authority.slots, peer_id):
+			_publish_authority_state()
 		return
 
 	_authority.remove_slots_for_peer(peer_id)
@@ -188,6 +252,12 @@ func _ensure_local_slot() -> void:
 	if not is_networked() or is_authority():
 		return
 	if get_local_slots().is_empty():
+		if NetworkReconnectState.has_pending():
+			request_reclaim_slot(
+				NetworkReconnectState.pending_player_id,
+				NetworkReconnectState.pending_match_epoch,
+			)
+			return
 		request_add_local_slot("Player")
 
 
@@ -205,6 +275,8 @@ func _publish_authority_state() -> void:
 
 
 func _host_apply_add_slot(peer_id: int, display_name: String) -> void:
+	if _is_match_in_progress():
+		return
 	if _authority.try_add_slot(peer_id, display_name) == null:
 		return
 
@@ -233,6 +305,23 @@ func _host_apply_set_display_name(peer_id: int, player_id: String, display_name:
 	_publish_authority_state()
 
 
+func _host_apply_reclaim(peer_id: int, player_id: String, match_epoch: int) -> void:
+	var board_session := _board_session()
+	var phase_session := _phase_session()
+	if board_session == null or not board_session.is_board_active():
+		return
+	if phase_session == null or not phase_session.can_reclaim_at_phase_boundary():
+		return
+	if phase_session.get_match_epoch() != match_epoch:
+		return
+	if not _authority.reclaim_slot_for_peer(player_id, peer_id):
+		return
+	if not board_session.host_reclaim_slot_for_peer(player_id, peer_id):
+		return
+	phase_session.host_reclaim_slot_for_peer(player_id, peer_id)
+	_publish_authority_state()
+
+
 func _sync_slots_from_authority() -> void:
 	if _authority == null:
 		return
@@ -258,6 +347,20 @@ func _apply_remote_slots(payload: Array) -> void:
 
 	if not is_authority():
 		call_deferred("_ensure_local_slot")
+	_maybe_clear_reconnect_state()
+
+
+func _maybe_clear_reconnect_state() -> void:
+	if not NetworkReconnectState.has_pending():
+		return
+	for slot in get_local_slots():
+		if (
+			slot.player_id == NetworkReconnectState.pending_player_id
+			and slot.owning_peer_id == _local_peer_id()
+			and PlayerSlotConnectivity.is_participating(slot)
+		):
+			NetworkReconnectState.clear()
+			return
 
 
 func _ensure_local_device_defaults() -> void:
@@ -333,6 +436,13 @@ func _rpc_request_set_display_name(player_id: String, display_name: String) -> v
 	if not is_authority():
 		return
 	_host_apply_set_display_name(multiplayer.get_remote_sender_id(), player_id, display_name)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_reclaim_slot(player_id: String, match_epoch: int) -> void:
+	if not is_authority():
+		return
+	_host_apply_reclaim(multiplayer.get_remote_sender_id(), player_id, match_epoch)
 
 
 @rpc("authority", "call_remote", "reliable")

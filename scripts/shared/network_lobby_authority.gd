@@ -130,6 +130,14 @@ func export_slots() -> Array:
 	return payload
 
 
+func mark_peer_inactive(peer_id: int) -> bool:
+	return PlayerSlotConnectivity.mark_peer_inactive(slots, peer_id)
+
+
+func reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
+	return PlayerSlotConnectivity.reclaim_slot(slots, player_id, peer_id)
+
+
 func load_slots(payload: Array) -> void:
 	slots.clear()
 	for entry in payload:

@@ -74,6 +74,8 @@ func try_set_briefing_ready(requesting_peer_id: int, player_id: String, is_ready
 	var slot := _slot_for_player_id(player_id)
 	if slot == null or slot.owning_peer_id != requesting_peer_id:
 		return false
+	if not PlayerSlotConnectivity.is_participating(slot):
+		return false
 
 	briefing_ready_by_player_id[player_id] = is_ready
 	if _all_briefing_ready():
@@ -264,10 +266,14 @@ func _apply_pending_board_rewards() -> void:
 func _all_briefing_ready() -> bool:
 	if match_slots.is_empty():
 		return false
+	var participating := false
 	for slot in match_slots:
+		if not PlayerSlotConnectivity.is_participating(slot):
+			continue
+		participating = true
 		if not bool(briefing_ready_by_player_id.get(slot.player_id, false)):
 			return false
-	return true
+	return participating
 
 
 func _reset_minigame_run_state() -> void:

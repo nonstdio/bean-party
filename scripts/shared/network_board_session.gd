@@ -18,6 +18,7 @@ func _ready() -> void:
 
 	match_session.session_state_changed.connect(_on_match_session_state_changed)
 	match_session.peer_connected.connect(_on_peer_connected)
+	match_session.peer_disconnected.connect(_on_peer_disconnected)
 	_on_match_session_state_changed()
 
 
@@ -119,7 +120,9 @@ func _phase_session() -> NetworkMatchPhaseSession:
 
 func _local_peer_id() -> int:
 	var match_session := _match_session()
-	if match_session == null:
+	if match_session == null or not match_session.is_session_established():
+		return MatchConstants.OFFLINE_PEER_ID
+	if match_session.multiplayer.multiplayer_peer == null:
 		return MatchConstants.OFFLINE_PEER_ID
 	return match_session.multiplayer.get_unique_id()
 
@@ -141,6 +144,50 @@ func _on_peer_connected(peer_id: int) -> void:
 	if not is_authority() or not _is_active:
 		return
 	_push_board_sync_to_peer(peer_id)
+
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	if not is_authority():
+		return
+	host_mark_peer_inactive(peer_id)
+
+
+func host_mark_peer_inactive(peer_id: int) -> bool:
+	if not is_authority() or _authority == null or not _is_active:
+		return false
+
+	var was_active_turn := false
+	for slot in _authority.match_slots:
+		if slot.owning_peer_id == peer_id and slot.player_id == board_stub.active_player_id:
+			was_active_turn = true
+			break
+
+	if not _authority.mark_peer_inactive(peer_id):
+		return false
+
+	if was_active_turn:
+		board_stub.advance_turn(_authority.match_slots)
+
+	_sync_board_from_authority()
+	_broadcast_board_sync()
+	return true
+
+
+func host_reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
+	if not is_authority() or _authority == null or not _is_active:
+		return false
+	if not _authority.reclaim_slot_for_peer(player_id, peer_id):
+		return false
+	_sync_board_from_authority()
+	_broadcast_board_sync()
+	return true
+
+
+func get_match_epoch() -> int:
+	var phase_session := _phase_session()
+	if phase_session == null:
+		return -1
+	return phase_session.get_match_epoch()
 
 
 func _reset_board() -> void:

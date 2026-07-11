@@ -22,9 +22,19 @@ func try_advance_turn(requesting_peer_id: int, player_id: String) -> bool:
 	var slot := _slot_for_player_id(player_id)
 	if slot == null or slot.owning_peer_id != requesting_peer_id:
 		return false
+	if not PlayerSlotConnectivity.is_participating(slot):
+		return false
 
 	board_stub.advance_turn(match_slots)
 	return true
+
+
+func mark_peer_inactive(peer_id: int) -> bool:
+	return PlayerSlotConnectivity.mark_peer_inactive(match_slots, peer_id)
+
+
+func reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
+	return PlayerSlotConnectivity.reclaim_slot(match_slots, player_id, peer_id)
 
 
 func export_board_state() -> Dictionary:

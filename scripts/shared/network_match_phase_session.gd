@@ -19,6 +19,7 @@ func _ready() -> void:
 
 	match_session.session_state_changed.connect(_on_match_session_state_changed)
 	match_session.peer_connected.connect(_on_peer_connected)
+	match_session.peer_disconnected.connect(_on_peer_disconnected)
 
 	var board_session := _board_session()
 	if board_session != null:
@@ -72,6 +73,18 @@ func can_participate_in_active_minigame() -> bool:
 	if is_authority():
 		return true
 	return _local_peer_in_match_roster()
+
+
+func get_match_epoch() -> int:
+	if _authority == null:
+		return -1
+	return _authority.match_epoch
+
+
+func can_reclaim_at_phase_boundary() -> bool:
+	if _authority == null:
+		return false
+	return current_phase == MatchPhase.Phase.BOARD
 
 
 func get_briefing_ready(player_id: String) -> bool:
@@ -170,6 +183,29 @@ func _on_peer_connected(peer_id: int) -> void:
 	if not is_authority() or _authority == null:
 		return
 	_push_phase_sync_to_peer(peer_id)
+
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	if not is_authority() or _authority == null:
+		return
+	if not PlayerSlotConnectivity.mark_peer_inactive(_authority.match_slots, peer_id):
+		return
+	for slot in _authority.match_slots:
+		if slot.owning_peer_id == peer_id:
+			_authority.briefing_ready_by_player_id[slot.player_id] = false
+	_sync_from_authority()
+	_broadcast_phase_sync()
+
+
+func host_reclaim_slot_for_peer(player_id: String, peer_id: int) -> bool:
+	if _authority == null:
+		return false
+	if not PlayerSlotConnectivity.reclaim_slot(_authority.match_slots, player_id, peer_id):
+		return false
+	_authority.briefing_ready_by_player_id[player_id] = false
+	_sync_from_authority()
+	_broadcast_phase_sync()
+	return true
 
 
 func _on_minigame_result_ready(result: MinigameResult) -> void:

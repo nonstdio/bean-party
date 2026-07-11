@@ -30,8 +30,8 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 5 | Authoritative board stub | Implemented proof with authority, frozen-roster, and hash agreement unit coverage; manual peer testing is not stored | 2, 4 |
 | 6 | Networked scene flow (briefing → results) | In progress: placeholder flow, phase agreement, and result/reward idempotency are covered; disconnect behavior and required manual two-peer validation are absent | 2, 4, 5 |
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Implemented proof: Snapshot Arena, `NetworkMinigameSession`, result/hash agreement unit coverage; online lobby enforces one player per peer; durable 4-player and bandwidth evidence not stored | 6 |
-| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | In progress: client prediction, correction overlay, blend reconciliation; preliminary manual findings at 0 ms and 50 ms; 100 ms and loss/jitter profiles still open | 7 |
-| 9 | Disconnect recovery (non-host reconnect, clean host exit) | Not started; basic transport teardown is not match recovery | 2, 6, 7 |
+| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | Implemented proof: client prediction, input replay, blend reconciliation; preliminary manual findings at 0 ms, 50 ms, and 50 ms + 10% drop | 7 |
+| 9 | Disconnect recovery (non-host reconnect, clean host exit) | In progress: session-end signal, inactive slots during match, board-phase reclaim; manual disconnect matrix still open | 2, 6, 7 |
 | 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Not started | 7, 8 |
 | 11 | Steam transport investigation | Not started | 3 |
 | 12 | Formal minigame networking API stabilization | Not started | 7, 9, 10 |
