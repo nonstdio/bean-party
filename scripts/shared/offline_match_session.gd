@@ -123,6 +123,46 @@ func ready_count() -> int:
 	return count
 
 
+func export_local_device_slots() -> Dictionary:
+	return _local_device_slots.duplicate(true)
+
+
+func load_slots(
+		slots_to_load: Array[PlayerSlot],
+		device_slots: Dictionary = {},
+		next_player_serial: int = -1,
+) -> void:
+	slots.clear()
+	_local_device_slots.clear()
+
+	for slot in slots_to_load:
+		slots.append(slot.duplicate_slot())
+
+	if device_slots.is_empty():
+		for i in slots.size():
+			_local_device_slots[slots[i].player_id] = i
+	else:
+		for player_id in device_slots:
+			_local_device_slots[player_id] = int(device_slots[player_id])
+
+	if next_player_serial > 0:
+		_next_player_serial = next_player_serial
+	else:
+		_next_player_serial = _derive_next_player_serial()
+
+	slots_structure_changed.emit()
+
+
+func _derive_next_player_serial() -> int:
+	var highest := 0
+	for slot in slots:
+		if slot.player_id.begins_with("player_"):
+			var suffix := slot.player_id.trim_prefix("player_")
+			if suffix.is_valid_int():
+				highest = max(highest, int(suffix))
+	return highest + 1
+
+
 func _allocate_player_id() -> String:
 	var id := "player_%d" % _next_player_serial
 	_next_player_serial += 1
