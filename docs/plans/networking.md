@@ -1,12 +1,12 @@
 # Networking implementation plan
 
-This plan breaks Bean Party online networking into reviewable milestones. Each milestone should ship as its own focused pull request. Do not begin production netcode until [Decision 0003](decisions/0003-peer-hosted-networking.md) has passed human review.
+This plan breaks Bean Party online networking into reviewable milestones. Each milestone should ship as its own focused pull request. Do not begin production netcode until [Decision 0003](../decisions/0003-peer-hosted-networking.md) has passed human review.
 
 Related documents:
 
-- [Networking architecture](networking-architecture.md) — topology, authority, phases, messages
-- [Minigame contribution contract](minigame-contract.md) — network-facing minigame rules
-- [Godot project architecture](godot-architecture.md) — repository layout
+- [Networking architecture](../architecture/networking.md) — topology, authority, phases, messages
+- [Minigame contribution contract](../architecture/minigame-integration.md) — network-facing minigame rules
+- [Godot project architecture](../architecture/godot-project.md) — repository layout
 
 ## Principles
 
@@ -93,7 +93,7 @@ A debug or stub flow walks Lobby → Board (stub) → Briefing → Results → B
 
 - Illegal transitions rejected (e.g. `ActiveMinigame` → `Lobby` without teardown)
 - Snapshot round-trip: hash equality after serialize/deserialize
-- Snapshot contains all fields listed in [networking architecture](networking-architecture.md#phase-boundary-snapshots)
+- Snapshot contains all fields listed in [networking architecture](../architecture/networking.md#phase-boundary-snapshots)
 
 ### Manual tests
 
@@ -395,7 +395,7 @@ Local player movement feels responsive; remote players interpolate smoothly; hit
 - Shared **action-netcode kit** in `scripts/shared/` (prediction, reconciliation, entity registry, lag-compensated hitscan, projectile authority helpers, debug overlay)
 - One minigame under `minigames/<slug>/` — network-capable, `HOST_ACTION`
 - Shell integration only through approved session interface
-- Transport message lanes separated per [networking architecture](networking-architecture.md#transport-message-lanes)
+- Transport message lanes separated per [networking architecture](../architecture/networking.md#transport-message-lanes)
 
 ### Automated tests
 
@@ -470,7 +470,7 @@ Written report: go / no-go / conditional go for Steam adapter; list channel/limi
 
 ### Purpose
 
-Freeze the shell → minigame network contract as GDScript types/interfaces **after** milestones 7, 9, and 10 validate both `HOST_SNAPSHOT` and `HOST_ACTION` paths. Update [minigame contract](minigame-contract.md) with real symbols.
+Freeze the shell → minigame network contract as GDScript types/interfaces **after** milestones 7, 9, and 10 validate both `HOST_SNAPSHOT` and `HOST_ACTION` paths. Update [minigame contract](../architecture/minigame-integration.md) with real symbols.
 
 ### Player-facing proof
 
@@ -617,4 +617,4 @@ Required for milestones 6–10 before merge. Minimum: two people on two machines
 - Third-party networking addons
 - Production Steam release integration (milestone 11 is investigation)
 
-Update [Decision 0003](decisions/0003-peer-hosted-networking.md) to **Accepted** after milestones 1–7 and milestone 9 pass review. **Host migration (milestone 13) is not a gate** for accepting the peer-hosted architecture decision. **Do not treat the minigame networking API as frozen** until milestone 12 completes after milestone 10.
+Update [Decision 0003](../decisions/0003-peer-hosted-networking.md) to **Accepted** after milestones 1–7 and milestone 9 pass review. **Host migration (milestone 13) is not a gate** for accepting the peer-hosted architecture decision. **Do not treat the minigame networking API as frozen** until milestone 12 completes after milestone 10.

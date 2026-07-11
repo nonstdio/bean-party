@@ -4,9 +4,9 @@ This guide describes the proposed online architecture for Bean Party. It is impl
 
 Related documents:
 
-- [Decision 0003: peer-hosted networking](decisions/0003-peer-hosted-networking.md) — chosen baseline and validation gates
-- [Networking implementation plan](networking-implementation-plan.md) — milestones and test matrix
-- [Minigame contribution contract](minigame-contract.md) — network-facing minigame inputs, outputs, and sync profiles
+- [Decision 0003: peer-hosted networking](../decisions/0003-peer-hosted-networking.md) — chosen baseline and validation gates
+- [Networking implementation plan](../plans/networking.md) — milestones and test matrix
+- [Minigame contribution contract](minigame-integration.md) — network-facing minigame inputs, outputs, and sync profiles
 
 ## Terminology
 
@@ -373,7 +373,7 @@ This reinforces the decision against universal rollback: rewinding an arena full
 
 - **Proposed:** `MatchSession` is owned by the app-level flow (e.g. match coordinator scene/controller), created when a player hosts or joins, torn down when returning to main menu.
 - Minigames receive a read-only or capability-limited handle for sending inputs and receiving phase events—they do not own the peer.
-- On teardown, minigames must unregister RPCs, disconnect signals, and clear buffered state ([minigame contract](minigame-contract.md)).
+- On teardown, minigames must unregister RPCs, disconnect signals, and clear buffered state ([minigame contract](minigame-integration.md)).
 
 ### Transport message lanes
 
@@ -486,7 +486,7 @@ sequenceDiagram
 - RPCs targeting old `peer_id` after migration
 - Exceeding 4 `PlayerSlot`s or claiming another peer's slot
 
-See [networking implementation plan](networking-implementation-plan.md) for the disconnect recovery matrix and acceptance measurements.
+See [networking implementation plan](../plans/networking.md) for the disconnect recovery matrix and acceptance measurements.
 
 ## Player-count scale note
 

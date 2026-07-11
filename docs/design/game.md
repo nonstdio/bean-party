@@ -29,7 +29,7 @@ The design work should answer two questions early: what does a bean mean in the 
 
 ## Minigame target
 
-The initial compatibility target is 2–4 local players using a shared screen and controllers or keyboard. Online play follows the same 2–4 player target ([networking architecture](networking-architecture.md)). More players and asynchronous modes may follow, but should not complicate the first slice.
+The initial compatibility target is 2–4 local players using a shared screen and controllers or keyboard. Online play follows the same 2–4 player target ([networking architecture](../architecture/networking.md)). More players and asynchronous modes may follow, but should not complicate the first slice.
 
 Each minigame proposal should specify:
 
