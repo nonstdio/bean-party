@@ -1,0 +1,138 @@
+name: Windows test build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-test-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7
+  GODOT_RELEASE: 4.7-stable
+  GODOT_ARCHIVE_SHA256: 02a5312236f4e0209c78bcb2f52135b1963e6b8888c873c9cee81459e60bcd71
+  EXPORT_TEMPLATES_SHA256: 9714459dc071907c0f3d5f17d608faf69e7cda21331fc5d39c4503ffa4e99eec
+
+jobs:
+  build:
+    name: Export Windows executable
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cache verified Godot export toolchain
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\godot-4.7
+          key: godot-4.7-windows-export-${{ env.GODOT_ARCHIVE_SHA256 }}-${{ env.EXPORT_TEMPLATES_SHA256 }}
+
+      - name: Download and verify Godot export toolchain
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $toolchain = Join-Path $env:RUNNER_TEMP "godot-4.7"
+          $editorArchive = Join-Path $toolchain "godot-editor.zip"
+          $templatesArchive = Join-Path $toolchain "export-templates.zip"
+          $templatesExtracted = Join-Path $toolchain "export-templates"
+          New-Item -ItemType Directory -Path $toolchain -Force | Out-Null
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot-builds/releases/download/$env:GODOT_RELEASE/Godot_v$env:GODOT_RELEASE`_win64.exe.zip" `
+            -OutFile $editorArchive
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot-builds/releases/download/$env:GODOT_RELEASE/Godot_v$env:GODOT_RELEASE`_export_templates.tpz" `
+            -OutFile $templatesArchive
+
+          $editorHash = (Get-FileHash -LiteralPath $editorArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($editorHash -ne $env:GODOT_ARCHIVE_SHA256) {
+            throw "Godot archive checksum mismatch. Expected $env:GODOT_ARCHIVE_SHA256, got $editorHash."
+          }
+          $templatesHash = (Get-FileHash -LiteralPath $templatesArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($templatesHash -ne $env:EXPORT_TEMPLATES_SHA256) {
+            throw "Export templates checksum mismatch. Expected $env:EXPORT_TEMPLATES_SHA256, got $templatesHash."
+          }
+
+          Expand-Archive -LiteralPath $editorArchive -DestinationPath $toolchain -Force
+          Expand-Archive -LiteralPath $templatesArchive -DestinationPath $templatesExtracted -Force
+          Remove-Item -LiteralPath $editorArchive, $templatesArchive -Force
+
+      - name: Install export templates
+        shell: pwsh
+        run: |
+          $toolchain = Join-Path $env:RUNNER_TEMP "godot-4.7"
+          $source = Join-Path $toolchain "export-templates\templates"
+          $destination = Join-Path $env:APPDATA "Godot\export_templates\$env:GODOT_VERSION.stable"
+          if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+            throw "Export templates were not found at $source."
+          }
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+          Copy-Item -Path (Join-Path $source "*") -Destination $destination -Recurse -Force
+
+      - name: Export release build
+        shell: pwsh
+        run: |
+          $godot = Join-Path $env:RUNNER_TEMP "godot-4.7\Godot_v$env:GODOT_RELEASE`_win64.exe"
+          if (-not (Test-Path -LiteralPath $godot -PathType Leaf)) {
+            throw "Godot executable was not found at $godot."
+          }
+          New-Item -ItemType Directory -Path "build\windows" -Force | Out-Null
+          & $godot --headless --path . --export-release "Windows Desktop" "build\windows\BeanParty.exe"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Godot export failed with exit code $LASTEXITCODE."
+          }
+          $executable = "build\windows\BeanParty.exe"
+          if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw "Godot completed without producing $executable."
+          }
+          $hash = (Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  BeanParty.exe" | Out-File -FilePath "build\windows\BeanParty.exe.sha256" -Encoding ascii
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bean-party-windows-${{ github.sha }}
+          path: |
+            build/windows/BeanParty.exe
+            build/windows/BeanParty.exe.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-latest:
+    name: Publish latest Windows build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows build
+        uses: actions/download-artifact@v5
+        with:
+          name: bean-party-windows-${{ github.sha }}
+
+      - name: Create or update rolling prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="latest-windows"
+          title="Latest Windows test build"
+          short_sha="${GITHUB_SHA:0:7}"
+          notes="Automated unsigned test build from [${short_sha}](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}). Download \`BeanParty.exe\` and run it without installing Godot. Windows SmartScreen may warn because this development build is not code-signed."
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" BeanParty.exe BeanParty.exe.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$tag" --title "$title" --notes "$notes" --prerelease --repo "$GITHUB_REPOSITORY"
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh release create "$tag" BeanParty.exe BeanParty.exe.sha256 --target "$GITHUB_SHA" --title "$title" --notes "$notes" --prerelease --repo "$GITHUB_REPOSITORY"
+          fi
