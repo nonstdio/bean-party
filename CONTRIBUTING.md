@@ -6,6 +6,12 @@ Thank you for helping make Bean Battles. We want the project to feel like a part
 
 Read the [game design target](docs/game-design.md), [creative direction](docs/creative-direction.md), and [minigame contribution contract](docs/minigame-contract.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template first. A short proposal saves everyone from building the same idea twice or discovering an integration problem late.
 
+## Godot setup
+
+The project standard is **Godot 4.7 stable** with **GDScript**. Install that version from the [official Godot archive](https://godotengine.org/download/archive/), import `project.godot` through the Project Manager, and run the starter scene with `F6`/`F5`. See [docs/godot-architecture.md](docs/godot-architecture.md) for the repository layout and `res://` paths.
+
+Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`, and do not add exported builds to the repository. Use a decision record before upgrading the engine, adding C#, changing renderer defaults, or adding a project-wide Godot plugin.
+
 ## Contribution workflow
 
 1. Choose or open an issue. Explain the player count, controls, objective, likely round length, and visual idea.
@@ -24,7 +30,7 @@ The first supported target is a minigame that is understandable at a glance, fai
 - How does the game avoid an early mistake making the rest of the round pointless?
 - What makes it feel at home in Bean Battles rather than a generic party-game scene?
 
-Do not assume an engine, programming language, file extension, or shared API until the project chooses one. The intended folder layout and lifecycle are described in [docs/minigame-contract.md](docs/minigame-contract.md).
+Use Godot scenes and GDScript, but do not assume a shared API beyond what [docs/minigame-contract.md](docs/minigame-contract.md) documents. The concrete code-level minigame API is still an open design task.
 
 ## Art, audio, and third-party material
 
@@ -34,7 +40,9 @@ The project has not selected a software or content license yet. Until one is add
 
 ## Review and branch rules
 
-`main` is the default and protected branch. Direct pushes, force pushes, and branch deletion are blocked. Merges require a pull request, one approval, and all review conversations resolved. Stale approvals are dismissed when the pull request changes. Maintainers retain an emergency bypass for recovery; it should not be the normal path.
+`main` is the default and protected branch. Direct pushes, force pushes, and branch deletion are blocked. Merges require a pull request and all review conversations resolved. The required-approval count is temporarily **zero** while the project has one active contributor, so a contributor may merge their own pull request. Stale approvals are still dismissed when the pull request changes. Maintainers retain an emergency bypass for recovery; it should not be the normal path.
+
+When the project has at least two active contributors, restore one required independent approval before merge.
 
 Continuous integration is not configured yet, so no automated checks are required today. When build and test workflows exist, they will become part of the merge requirements.
 

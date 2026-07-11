@@ -13,7 +13,15 @@ It takes structural inspiration from Mario Party-style board-and-minigame games,
 
 ## Project status
 
-The project is in pre-production. We have not chosen a game engine, target platforms, networking model, or final art pipeline. The early goal is to align on the game’s direction and establish a friendly, reviewable contribution workflow.
+The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. Target platforms, networking model, final art pipeline, and board economy remain open decisions.
+
+## Run the starter project
+
+1. Install [Godot 4.7 stable](https://godotengine.org/download/archive/).
+2. Import the repository’s `project.godot` file in the Godot Project Manager.
+3. Select the project and press `F6`/`F5`, or run `godot --editor --path .` from the repository root.
+
+The starter scene is deliberately small: it proves that the project loads and gives contributors a safe place to begin. See the [Godot project architecture](docs/godot-architecture.md) before adding shared systems or a minigame.
 
 ## Contributing
 
@@ -24,13 +32,13 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Game design target](docs/game-design.md) — what “Mario Party-style” means for this project.
 - [Creative direction](docs/creative-direction.md) — how to evoke Bean Battles without copying it.
 - [Minigame contribution contract](docs/minigame-contract.md) — the intended shape of an independently developed minigame.
-- [Engine evaluation](docs/engine-evaluation.md) — requirements, candidates, and a decision plan.
+- [Godot project architecture](docs/godot-architecture.md) — repository layout and Godot conventions.
+- [Engine evaluation](docs/engine-evaluation.md) — the evaluation that led to the Godot decision.
 - [Project governance](docs/project-governance.md) — pull requests and the `main` branch rules.
 - [Agent guide](AGENTS.md) — instructions for AI-assisted work in this repository.
 
 ## Open decisions
 
-- Which engine and first target platform should we support?
 - Is the first playable version local-only, online-only, or local-first with online play later?
 - Which software and content licenses should govern contributions and releases?
 - What is the final board economy: beans, victory tokens, or both?

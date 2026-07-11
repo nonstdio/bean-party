@@ -11,3 +11,12 @@ Desktop.ini
 *.log
 *.tmp
 *.bak
+
+# Godot-generated files
+.godot/
+.import/
+.mono/
+
+# Local exports and builds
+exports/
+build/
