@@ -3,15 +3,13 @@ extends Node
 
 signal phase_state_changed
 
-const STUB_MINIGAME_SCENE := preload("res://minigames/_network_stub/network_stub_minigame.tscn")
-
 var current_phase: MatchPhase.Phase = MatchPhase.Phase.BOARD
 var selected_minigame_id: String = ""
 var minigame_instance_id: String = ""
 var countdown_seconds_remaining: int = 0
 
 var _authority: NetworkMatchPhaseAuthority = null
-var _active_minigame_host: Node = null
+var _minigame_session: NetworkMinigameSession = null
 
 
 func _ready() -> void:
@@ -25,6 +23,10 @@ func _ready() -> void:
 	var board_session := _board_session()
 	if board_session != null:
 		board_session.board_active_changed.connect(_on_board_active_changed)
+
+	_minigame_session = _find_minigame_session()
+	if _minigame_session != null:
+		_minigame_session.minigame_result_ready.connect(_on_minigame_result_ready)
 
 	_on_match_session_state_changed()
 
@@ -114,6 +116,16 @@ func _board_session() -> NetworkBoardSession:
 	return null
 
 
+func _find_minigame_session() -> NetworkMinigameSession:
+	var match_session := _match_session()
+	if match_session == null:
+		return null
+	for child in match_session.get_children():
+		if child is NetworkMinigameSession:
+			return child
+	return null
+
+
 func _local_peer_id() -> int:
 	var match_session := _match_session()
 	if match_session == null:
@@ -142,8 +154,27 @@ func _on_peer_connected(peer_id: int) -> void:
 	_push_phase_sync_to_peer(peer_id)
 
 
+func _on_minigame_result_ready(result: MinigameResult) -> void:
+	if not is_authority() or _authority == null:
+		return
+	if _authority.current_phase != MatchPhase.Phase.ACTIVE_MINIGAME:
+		return
+	if not _authority.apply_host_minigame_result(result):
+		return
+	if not _authority.try_end_minigame_round():
+		return
+	call_deferred("_complete_minigame_phase_transition")
+
+
+func _complete_minigame_phase_transition() -> void:
+	if _authority == null:
+		return
+	_sync_from_authority()
+	_broadcast_phase_sync()
+
+
 func _reset_phase() -> void:
-	_unload_stub_scene()
+	_stop_active_minigame()
 	_authority = null
 	current_phase = MatchPhase.Phase.BOARD
 	selected_minigame_id = ""
@@ -186,6 +217,9 @@ func _host_apply_briefing_ready(peer_id: int, player_id: String, is_ready: bool)
 
 
 func _host_end_minigame_round() -> void:
+	if _minigame_session != null and _minigame_session.is_active:
+		_minigame_session.force_complete_round()
+		return
 	if _authority == null or not _authority.try_end_minigame_round():
 		return
 	_sync_from_authority()
@@ -211,11 +245,12 @@ func _sync_from_authority() -> void:
 	if _authority == null:
 		return
 
+	var previous_phase := current_phase
 	current_phase = _authority.current_phase
 	selected_minigame_id = _authority.selected_minigame_id
 	minigame_instance_id = _authority.minigame_instance_id
 	countdown_seconds_remaining = _authority.countdown_seconds_remaining
-	_update_stub_scene_for_phase()
+	_update_minigame_for_phase(previous_phase)
 	phase_state_changed.emit()
 
 
@@ -226,8 +261,11 @@ func _apply_remote_phase_state(payload: Dictionary) -> void:
 	if _authority == null:
 		_authority = NetworkMatchPhaseAuthority.new()
 
+	var previous_phase := current_phase
 	_authority.load_state(payload)
 	_sync_from_authority()
+	if previous_phase != current_phase:
+		_update_minigame_for_phase(previous_phase)
 
 
 func _broadcast_phase_sync() -> void:
@@ -242,30 +280,25 @@ func _push_phase_sync_to_peer(peer_id: int) -> void:
 	_rpc_apply_phase_sync.rpc_id(peer_id, _authority.export_state())
 
 
-func _update_stub_scene_for_phase() -> void:
+func _update_minigame_for_phase(previous_phase: MatchPhase.Phase) -> void:
 	if current_phase == MatchPhase.Phase.ACTIVE_MINIGAME:
-		_load_stub_scene()
-	else:
-		_unload_stub_scene()
+		_start_active_minigame()
+	elif previous_phase == MatchPhase.Phase.ACTIVE_MINIGAME:
+		_stop_active_minigame()
 
 
-func _load_stub_scene() -> void:
-	if _active_minigame_host != null:
+func _start_active_minigame() -> void:
+	if _minigame_session == null or _authority == null:
 		return
-
-	var root := get_tree().current_scene
-	if root == null:
+	if _minigame_session.is_active:
 		return
-
-	_active_minigame_host = STUB_MINIGAME_SCENE.instantiate()
-	root.add_child(_active_minigame_host)
+	_minigame_session.start_minigame(_authority.match_slots, _authority.minigame_instance_id)
 
 
-func _unload_stub_scene() -> void:
-	if _active_minigame_host == null:
+func _stop_active_minigame() -> void:
+	if _minigame_session == null:
 		return
-	_active_minigame_host.queue_free()
-	_active_minigame_host = null
+	_minigame_session.stop_minigame()
 
 
 @rpc("any_peer", "call_remote", "reliable")

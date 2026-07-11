@@ -22,7 +22,7 @@ func test_start_minigame_flow_reaches_briefing() -> void:
 	assert_true(authority.begin_from_board(slots, board))
 	assert_true(authority.try_start_minigame_flow())
 	assert_eq(authority.current_phase, MatchPhase.Phase.BRIEFING)
-	assert_eq(authority.selected_minigame_id, NetworkMatchPhaseAuthority.STUB_MINIGAME_ID)
+	assert_eq(authority.selected_minigame_id, NetworkMatchPhaseAuthority.SNAPSHOT_ARENA_MINIGAME_ID)
 	assert_false(authority.minigame_instance_id.is_empty())
 
 
@@ -86,9 +86,10 @@ func test_result_idempotency_applies_rewards_once() -> void:
 	authority.current_phase = MatchPhase.Phase.RESULTS
 	authority.minigame_instance_id = "minigame_1"
 
-	authority._apply_stub_minigame_results()
+	authority.minigame_winner_player_id = slots[0].player_id
+	authority._apply_minigame_results()
 	assert_eq(authority.pending_board_rewards.size(), 1)
-	authority._apply_stub_minigame_results()
+	authority._apply_minigame_results()
 	assert_eq(authority.pending_board_rewards.size(), 1)
 
 	var reward: Dictionary = authority.pending_board_rewards[0]

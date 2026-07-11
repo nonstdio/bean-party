@@ -105,16 +105,22 @@ func _on_minigame_result_submitted(result: MinigameResult) -> void:
 
 
 func _discard_active() -> void:
-	if _controller != null:
-		var callback := Callable(self, "_on_minigame_result_submitted")
-		if _controller.minigame_result_submitted.is_connected(callback):
-			_controller.minigame_result_submitted.disconnect(callback)
-		if _controller.get_parent() == self:
-			remove_child(_controller)
-		_controller.free()
+	if _controller == null:
+		_manifest = null
+		state = State.EMPTY
+		return
+
+	var controller := _controller
 	_controller = null
 	_manifest = null
 	state = State.EMPTY
+
+	var callback := Callable(self, "_on_minigame_result_submitted")
+	if controller.minigame_result_submitted.is_connected(callback):
+		controller.minigame_result_submitted.disconnect(callback)
+	if controller.get_parent() == self:
+		remove_child(controller)
+	controller.queue_free()
 
 
 func _fail(errors: PackedStringArray) -> bool:
