@@ -4,13 +4,13 @@ This repository is pre-production work for Bean Party, a collaborative party gam
 
 ## Start here
 
-Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [docs/godot-agent-setup.md](docs/godot-agent-setup.md), [docs/godot-architecture.md](docs/godot-architecture.md), and the relevant document in `docs/` before changing project direction. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
+Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), the [documentation index](docs/README.md), [Godot setup guide](docs/guides/godot-setup.md), [Godot project architecture](docs/architecture/godot-project.md), and the relevant document in `docs/` before changing project direction. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
 
 ## Working rules
 
 - Keep a change focused. Do not bundle a minigame, broad refactor, engine migration, and design rewrite in one pull request.
 - Preserve the distinction between the shared game shell and independently contributed minigames. Do not make a minigame depend directly on another minigame.
-- Propose substantial minigames before implementation and follow the lifecycle in [docs/minigame-contract.md](docs/minigame-contract.md).
+- Propose substantial minigames before implementation and follow the lifecycle in the [minigame contribution contract](docs/architecture/minigame-integration.md).
 - Use original or appropriately licensed material only. Never copy code, art, audio, text, character designs, logos, or other assets from Bean Battles, Mario Party, or another game.
 - Use Godot 4.7 stable and GDScript. Do not upgrade Godot, introduce C#, or change the renderer without an accepted decision record.
 - Never commit `.godot/`, `.import/`, `.mono/`, exported builds, or other generated editor files.

@@ -28,7 +28,7 @@ minigames/
     tests/          # automated or manual test notes
 ```
 
-Do not place minigame-specific logic in the board or shared-system area without an accepted shared-interface change. Follow the broader conventions in [Godot project architecture](godot-architecture.md).
+Do not place minigame-specific logic in the board or shared-system area without an accepted shared-interface change. Follow the broader conventions in [Godot project architecture](godot-project.md).
 
 ## What the shared shell should own
 
@@ -56,7 +56,7 @@ The prototype must answer how the shell loads a minigame, passes player/input in
 
 ## Networking
 
-Network-capable minigames plug into the shared shell through a proposed session interface documented in [networking architecture](networking-architecture.md). The code-level API will be formalized in milestone 12 of the [networking implementation plan](networking-implementation-plan.md), **after** the milestone 10 `HOST_ACTION` combat spike validates the shared action-netcode kit. Names below are **proposals**.
+Network-capable minigames plug into the shared shell through a proposed session interface documented in [networking architecture](networking.md). The code-level API will be formalized in milestone 12 of the [networking implementation plan](../plans/networking.md), **after** the milestone 10 `HOST_ACTION` combat spike validates the shared action-netcode kit. Names below are **proposals**.
 
 ### Capability declaration
 
@@ -150,7 +150,7 @@ Every networked entity in a `HOST_ACTION` minigame should conceptually expose:
 
 Spawns, despawns, deaths, pickups, and confirmed hits must be **reliable and idempotent**. Frequent transforms and velocities should be **unreliable snapshots**.
 
-See [networking architecture — action-game requirements](networking-architecture.md#action-game-requirements-host_action) for hitscan/projectile flows and physics authority.
+See [networking architecture — action-game requirements](networking.md#action-game-requirements-host_action) for hitscan/projectile flows and physics authority.
 
 ### Definition of done (network-capable minigames)
 
@@ -167,5 +167,4 @@ In addition to the local definition of done, a network-capable minigame is revie
 - hitscan and/or projectile behavior validated through the shared kit;
 - no durable network identity based on Godot node paths.
 
-See [Decision 0003](decisions/0003-peer-hosted-networking.md) for authority model and validation gates.
-
+See [Decision 0003](../decisions/0003-peer-hosted-networking.md) for authority model and validation gates.

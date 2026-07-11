@@ -11,9 +11,9 @@ Bean Party is a short-session social party game: a board frames the match and 30
 Constraints that matter for this decision:
 
 - **2–4 logical players** per match (**architectural direction**). A match may have 1–4 network peers depending on couch/online mix; one peer may own multiple local `PlayerSlot`s.
-- The shared **shell** (lobby, board, phase transitions, economy, results) must stay separate from independently contributed **minigames** ([minigame contract](../minigame-contract.md), [Godot architecture](../godot-architecture.md)).
+- The shared **shell** (lobby, board, phase transitions, economy, results) must stay separate from independently contributed **minigames** ([minigame contract](../architecture/minigame-integration.md), [Godot architecture](../architecture/godot-project.md)).
 - Contributors need a path that works for LAN/direct-IP development now and a future Steam release without rewriting board or minigame rules.
-- This record proposes a baseline aligned with the 2–4 player compatibility target in [game design](../game-design.md).
+- This record proposes a baseline aligned with the 2–4 player compatibility target in [game design](../design/game.md).
 
 ## Options considered
 
@@ -39,7 +39,7 @@ Adopt the following baseline (**architectural direction** unless labeled otherwi
 | Players vs peers | **Logical `PlayerSlot`s separate from network peers** so one machine can own multiple local-controller players |
 | Reconnect / migration | **Non-host reconnect** at phase boundaries (**architectural direction**). **Any host disconnect ends the session cleanly in v1**, regardless of phase. Phase-boundary snapshots support testing, non-host reconnect, and future recovery. **Host migration** and minigame abort/replay after host loss are **deferred** to milestone 13 |
 
-See [networking architecture](../networking-architecture.md) for topology, authority tables, phase machine, and message categories. See [networking implementation plan](../networking-implementation-plan.md) for milestones and validation.
+See [networking architecture](../architecture/networking.md) for topology, authority tables, phase machine, and message categories. See [networking implementation plan](../plans/networking.md) for milestones and validation.
 
 ### Why peer-hosted authority fits a party game
 
@@ -93,7 +93,7 @@ Dedicated servers excel when sessions are long-lived, competitive integrity is p
 | Host migration (continue match after host loss) | Remaining peers elect host and resume | **Deferred** (milestone 13) |
 | Host loss during minigame → abort round and replay | Requires surviving authority (migration or reconnect) | **Deferred** (milestone 13, after migration) |
 
-Host migration sub-problems (detection, election, snapshot source on crash, RPC continuity, player-facing resync) are documented in [networking architecture](../networking-architecture.md#host-migration-and-disconnect-policy).
+Host migration sub-problems (detection, election, snapshot source on crash, RPC continuity, player-facing resync) are documented in [networking architecture](../architecture/networking.md#host-migration-and-disconnect-policy).
 
 ### Relationship to local-first development
 
@@ -108,7 +108,7 @@ Local play remains the fastest path for minigame iteration. The offline session 
 
 ## Validation required before Accepted
 
-This decision moves to **Accepted** only when spike milestones in [networking implementation plan](../networking-implementation-plan.md) demonstrate:
+This decision moves to **Accepted** only when spike milestones in [networking implementation plan](../plans/networking.md) demonstrate:
 
 1. **Phase agreement** — all peers report the same match phase after every host-driven transition.
 2. **Result agreement** — placements, scores, and board rewards match on all peers after each minigame.

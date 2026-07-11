@@ -2,7 +2,7 @@
 
 ## Decision status
 
-**Accepted: Godot 4.7 stable with GDScript.** The decision is recorded in [Decision 0001](decisions/0001-godot-engine.md). The first priority is a sustainable contributor workflow for a party-game prototype, not maximum graphical power.
+**Accepted: Godot 4.7 stable with GDScript.** The decision is recorded in [Decision 0001](../decisions/0001-godot-engine.md). The first priority is a sustainable contributor workflow for a party-game prototype, not maximum graphical power.
 
 ## Requirements to validate
 
@@ -13,7 +13,7 @@ The engine should make the following possible with low friction:
 - a board scene that can load and unload independently developed minigames safely;
 - fast setup for friends with mixed experience levels;
 - source-control-friendly text assets and a workable approach to binary art files;
-- deterministic-enough local rules and a path to online play later, without making online networking a first-slice dependency (see [Decision 0003](decisions/0003-peer-hosted-networking.md) and [networking implementation plan](networking-implementation-plan.md));
+- deterministic-enough local rules and a path to online play later, without making online networking a first-slice dependency (see [Decision 0003](../decisions/0003-peer-hosted-networking.md) and [networking implementation plan](../plans/networking.md));
 - Windows builds first, with future desktop/web/mobile/console needs made explicit before committing to them;
 - accessible UI, input rebinding, audio controls, and build automation when the project matures.
 
@@ -52,6 +52,6 @@ Use at least two potential contributors to try the slice. Record the finalized p
 ## Questions the group must answer next
 
 - What is the first release platform: Windows desktop, web, or something else?
-- Is remote online multiplayer a launch requirement or a later milestone? (Proposed architecture: [Decision 0003](decisions/0003-peer-hosted-networking.md).)
+- Is remote online multiplayer a launch requirement or a later milestone? (Proposed architecture: [Decision 0003](../decisions/0003-peer-hosted-networking.md).)
 - Are the first boards and minigames primarily 2D, 3D, or deliberately mixed?
 - Is a commercial release plausible, and what licensing model do we want for code and assets?
