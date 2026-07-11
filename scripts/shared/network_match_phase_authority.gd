@@ -84,15 +84,19 @@ func tick_countdown(delta: float) -> bool:
 	if current_phase != MatchPhase.Phase.COUNTDOWN:
 		return false
 
+	var previous := countdown_seconds_remaining
 	_countdown_elapsed += delta
 	while _countdown_elapsed >= 1.0 and countdown_seconds_remaining > 0:
 		_countdown_elapsed -= 1.0
 		countdown_seconds_remaining -= 1
 
-	if countdown_seconds_remaining > 0:
+	if countdown_seconds_remaining == previous:
 		return false
 
-	return _transition_to(MatchPhase.Phase.ACTIVE_MINIGAME)
+	if countdown_seconds_remaining <= 0:
+		return _transition_to(MatchPhase.Phase.ACTIVE_MINIGAME)
+
+	return true
 
 
 var _countdown_elapsed: float = 0.0

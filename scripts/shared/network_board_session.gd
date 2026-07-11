@@ -44,7 +44,7 @@ func get_active_player_id() -> String:
 
 
 func can_local_player_advance_turn() -> bool:
-	if not _is_active:
+	if not accepts_turn_requests():
 		return false
 
 	var active_id := board_stub.active_player_id
@@ -67,8 +67,19 @@ func request_start_board() -> void:
 	_host_start_board()
 
 
+func accepts_turn_requests() -> bool:
+	if not _is_active:
+		return false
+
+	var phase_session := _phase_session()
+	if phase_session == null:
+		return true
+
+	return phase_session.current_phase == MatchPhase.Phase.BOARD
+
+
 func request_advance_turn(player_id: String) -> void:
-	if not is_networked() or not _is_active:
+	if not is_networked() or not accepts_turn_requests():
 		return
 
 	if is_authority():
@@ -91,6 +102,17 @@ func _lobby_session() -> NetworkLobbySession:
 
 	for child in match_session.get_children():
 		if child is NetworkLobbySession:
+			return child
+	return null
+
+
+func _phase_session() -> NetworkMatchPhaseSession:
+	var match_session := _match_session()
+	if match_session == null:
+		return null
+
+	for child in match_session.get_children():
+		if child is NetworkMatchPhaseSession:
 			return child
 	return null
 
@@ -149,7 +171,7 @@ func _host_start_board() -> void:
 
 
 func _host_apply_advance_turn(peer_id: int, player_id: String) -> void:
-	if not is_authority() or _authority == null or not _is_active:
+	if not is_authority() or _authority == null or not accepts_turn_requests():
 		return
 
 	if not _authority.try_advance_turn(peer_id, player_id):

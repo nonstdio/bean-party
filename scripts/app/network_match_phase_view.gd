@@ -6,12 +6,12 @@ extends VBoxContainer
 @onready var _phase_session: NetworkMatchPhaseSession = %NetworkMatchPhaseSession
 @onready var _phase_label: Label = %NetworkPhaseLabel
 @onready var _phase_detail_label: Label = %NetworkPhaseDetailLabel
+@onready var _briefing_ready_list: VBoxContainer = %NetworkBriefingReadyList
 @onready var _start_flow_button: Button = %NetworkStartMinigameFlowButton
 @onready var _end_round_button: Button = %NetworkEndMinigameRoundButton
 @onready var _return_board_button: Button = %NetworkReturnToBoardButton
-@onready var _briefing_ready_button: Button = %NetworkBriefingReadyButton
 
-var _local_briefing_player_id := ""
+var _briefing_ready_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -22,7 +22,6 @@ func _ready() -> void:
 	_start_flow_button.pressed.connect(_on_start_flow_pressed)
 	_end_round_button.pressed.connect(_on_end_round_pressed)
 	_return_board_button.pressed.connect(_on_return_board_pressed)
-	_briefing_ready_button.pressed.connect(_on_briefing_ready_pressed)
 	_refresh()
 
 
@@ -42,11 +41,9 @@ func _on_return_board_pressed() -> void:
 	_phase_session.request_return_to_board()
 
 
-func _on_briefing_ready_pressed() -> void:
-	if _local_briefing_player_id == "":
-		return
-	var next_ready := not _phase_session.get_briefing_ready(_local_briefing_player_id)
-	_phase_session.request_set_briefing_ready(_local_briefing_player_id, next_ready)
+func _on_briefing_ready_pressed(player_id: String) -> void:
+	var next_ready := not _phase_session.get_briefing_ready(player_id)
+	_phase_session.request_set_briefing_ready(player_id, next_ready)
 
 
 func _refresh() -> void:
@@ -76,18 +73,58 @@ func _refresh() -> void:
 		and _phase_session.current_phase != MatchPhase.Phase.RETURN_TO_BOARD
 	)
 
-	_local_briefing_player_id = ""
-	if _phase_session.current_phase == MatchPhase.Phase.BRIEFING:
-		for slot in _board_session.get_board_slots():
-			if _phase_session.owns_briefing_slot(slot.player_id):
-				_local_briefing_player_id = slot.player_id
-				break
+	_sync_briefing_ready_buttons()
 
-	_briefing_ready_button.visible = _local_briefing_player_id != ""
-	if _local_briefing_player_id != "":
-		var is_ready := _phase_session.get_briefing_ready(_local_briefing_player_id)
-		_briefing_ready_button.text = "Briefing ready: %s" % ("yes" if is_ready else "no")
-	_briefing_ready_button.disabled = _local_briefing_player_id == ""
+
+func _sync_briefing_ready_buttons() -> void:
+	var show_briefing := _phase_session.current_phase == MatchPhase.Phase.BRIEFING
+	_briefing_ready_list.visible = show_briefing
+
+	if not show_briefing:
+		_clear_briefing_ready_buttons()
+		return
+
+	var current_ids: Dictionary = {}
+	for slot in _board_session.get_board_slots():
+		if not _phase_session.owns_briefing_slot(slot.player_id):
+			continue
+
+		current_ids[slot.player_id] = true
+		if not _briefing_ready_buttons.has(slot.player_id):
+			var button := _build_briefing_ready_button(slot)
+			_briefing_ready_buttons[slot.player_id] = button
+			_briefing_ready_list.add_child(button)
+		else:
+			_refresh_briefing_ready_button(_briefing_ready_buttons[slot.player_id], slot)
+
+	for player_id in _briefing_ready_buttons.keys():
+		if not current_ids.has(player_id):
+			var button: Node = _briefing_ready_buttons[player_id]
+			button.queue_free()
+			_briefing_ready_buttons.erase(player_id)
+
+
+func _build_briefing_ready_button(slot: PlayerSlot) -> Button:
+	var button := Button.new()
+	button.set_meta(&"player_id", slot.player_id)
+	button.pressed.connect(_on_briefing_ready_pressed.bind(slot.player_id))
+	_refresh_briefing_ready_button(button, slot)
+	return button
+
+
+func _refresh_briefing_ready_button(button: Button, slot: PlayerSlot) -> void:
+	var is_ready := _phase_session.get_briefing_ready(slot.player_id)
+	button.text = "%s briefing ready: %s" % [
+		slot.display_name,
+		"yes" if is_ready else "no",
+	]
+
+
+func _clear_briefing_ready_buttons() -> void:
+	for player_id in _briefing_ready_buttons.keys():
+		var button: Node = _briefing_ready_buttons[player_id]
+		button.queue_free()
+	_briefing_ready_buttons.clear()
 
 
 func _build_phase_detail() -> String:

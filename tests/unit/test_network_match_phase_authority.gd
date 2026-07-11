@@ -40,6 +40,44 @@ func test_briefing_ready_advances_to_countdown_when_all_ready() -> void:
 	assert_eq(authority.countdown_seconds_remaining, NetworkMatchPhaseAuthority.COUNTDOWN_SECONDS)
 
 
+func test_two_local_slots_on_one_peer_require_separate_ready() -> void:
+	var lobby := NetworkLobbyAuthority.new()
+	lobby.try_add_slot(1, "Host One")
+	lobby.try_add_slot(1, "Host Two")
+	var slots := lobby.slots
+
+	var authority := NetworkMatchPhaseAuthority.new()
+	authority.begin_from_board(slots, _make_board(slots))
+	authority.try_start_minigame_flow()
+
+	assert_true(authority.try_set_briefing_ready(1, slots[0].player_id, true))
+	assert_eq(authority.current_phase, MatchPhase.Phase.BRIEFING)
+
+	assert_true(authority.try_set_briefing_ready(1, slots[1].player_id, true))
+	assert_eq(authority.current_phase, MatchPhase.Phase.COUNTDOWN)
+
+
+func test_countdown_tick_publishes_each_second() -> void:
+	var authority := NetworkMatchPhaseAuthority.new()
+	var slots := _make_slots()
+	authority.begin_from_board(slots, _make_board(slots))
+	authority.try_start_minigame_flow()
+	authority.try_set_briefing_ready(1, slots[0].player_id, true)
+	authority.try_set_briefing_ready(2, slots[1].player_id, true)
+
+	assert_eq(authority.current_phase, MatchPhase.Phase.COUNTDOWN)
+	assert_eq(authority.countdown_seconds_remaining, 3)
+
+	assert_true(authority.tick_countdown(1.0))
+	assert_eq(authority.countdown_seconds_remaining, 2)
+
+	assert_true(authority.tick_countdown(1.0))
+	assert_eq(authority.countdown_seconds_remaining, 1)
+
+	assert_true(authority.tick_countdown(1.0))
+	assert_eq(authority.current_phase, MatchPhase.Phase.ACTIVE_MINIGAME)
+
+
 func test_result_idempotency_applies_rewards_once() -> void:
 	var authority := NetworkMatchPhaseAuthority.new()
 	var slots := _make_slots()

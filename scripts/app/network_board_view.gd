@@ -3,6 +3,7 @@ extends VBoxContainer
 @onready var _match_session: MatchSession = %MatchSession
 @onready var _lobby_session: NetworkLobbySession = %NetworkLobbySession
 @onready var _board_session: NetworkBoardSession = %NetworkBoardSession
+@onready var _phase_session: NetworkMatchPhaseSession = %NetworkMatchPhaseSession
 @onready var _board_label: Label = %NetworkBoardLabel
 @onready var _hash_label: Label = %NetworkBoardHashLabel
 @onready var _start_button: Button = %NetworkBoardStartButton
@@ -14,6 +15,7 @@ var _local_active_player_id := ""
 func _ready() -> void:
 	_board_session.board_state_changed.connect(_refresh)
 	_board_session.board_active_changed.connect(_on_board_active_changed)
+	_phase_session.phase_state_changed.connect(_refresh)
 	_match_session.session_state_changed.connect(_refresh)
 	_lobby_session.slots_structure_changed.connect(_refresh)
 	_start_button.pressed.connect(_on_start_pressed)
