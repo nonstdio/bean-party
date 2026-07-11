@@ -2,7 +2,7 @@
 
 ## The short version
 
-Bean Battles should be a social board game where a turn-based board creates anticipation and short minigames create the memorable moments. The target is the *structure* that makes Mario Party-style games work, not Nintendo’s characters, art, rules text, boards, or minigames.
+Bean Party should be a social board game where a turn-based board creates anticipation and short minigames create the memorable moments. The target is the *structure* that makes Mario Party-style games work, not Nintendo’s characters, art, rules text, boards, or minigames.
 
 Nintendo describes Super Mario Party’s board mode as players taking turns rolling dice and racing across a board, with a varied set of free-for-all and team minigames. That is useful reference for the genre’s cadence, variety, and social readability. [Nintendo’s overview](https://www.nintendo.com/us/store/products/super-mario-party-108391/) also highlights online and local play, reinforcing that the shared experience matters as much as any individual challenge.
 
@@ -13,7 +13,7 @@ Nintendo describes Super Mario Party’s board mode as players taking turns roll
 3. **Every player stays involved.** Prefer designs where players can recover, influence the outcome until late, or enjoy the spectacle even after falling behind. Eliminate long waits and unclear failure states.
 4. **Variety creates stories.** Support free-for-all, 2v2, 1v3, and cooperative formats. Rotate between precision, movement, bluffing, observation, timing, and controlled chaos rather than repeatedly using the same skill.
 5. **The party is competitive, not hostile.** Surprises, reversals, and playful disruption are welcome. They should be understandable, rare enough to stay special, and never erase player agency without a chance to respond.
-6. **Bean Battles gives the game its identity.** The board economy, characters, announcer language, props, environments, and results must be original and Bean Battles-inspired rather than Mario Party replicas.
+6. **Bean Party gives the game its identity.** The board economy, characters, announcer language, props, environments, and results must be original and Bean Battles-inspired rather than Mario Party replicas.
 
 ## Core-loop hypothesis
 
@@ -44,7 +44,7 @@ Each minigame proposal should specify:
 
 - Make original boards, names, objectives, art, sound, text, and mechanics. “Inspired by” never means copying a known minigame with a visual swap.
 - Prefer an accessible, local-first prototype over a feature-complete board system.
-- Do not treat combat, weapons, or chaos as mandatory in every minigame. They are seasoning for the Bean Battles tone, not a substitute for a clear objective.
+- Do not treat combat, weapons, or chaos as mandatory in every minigame. They are seasoning for Bean Party's Bean Battles-inspired tone, not a substitute for a clear objective.
 
 ## Questions to test in a first playable
 

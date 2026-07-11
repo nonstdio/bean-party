@@ -1,6 +1,6 @@
-# Bean Battles
+# Bean Party
 
-Bean Battles is a collaborative party game: a shared board game punctuated by short, competitive, cooperative, and team-based minigames. Players collect beans, take risks, trigger surprises, and compete for the win.
+Bean Party is a collaborative party game: a shared board game punctuated by short, competitive, cooperative, and team-based minigames. Players collect beans, take risks, trigger surprises, and compete for the win.
 
 It takes structural inspiration from Mario Party-style board-and-minigame games, while its world, tone, and presentation draw from [Bean Battles on Steam](https://store.steampowered.com/app/765410/Bean_Battles/). This is an independent fan project, not an official Gupa Games product.
 

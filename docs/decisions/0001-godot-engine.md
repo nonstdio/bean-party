@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-Bean Battles needs a shared, approachable foundation so friends can begin contributing independently designed minigames. The project needs 2D and 3D capability, a scene model that supports modular minigames, local multiplayer input, source-control-friendly project files, and no per-contributor licensing cost.
+Bean Party needs a shared, approachable foundation so friends can begin contributing independently designed minigames. The project needs 2D and 3D capability, a scene model that supports modular minigames, local multiplayer input, source-control-friendly project files, and no per-contributor licensing cost.
 
 ## Options considered
 
