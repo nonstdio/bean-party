@@ -215,6 +215,18 @@ func _push_board_sync_to_peer(peer_id: int) -> void:
 	)
 
 
+func host_replace_board_state(board: BoardStub, slots: Array[PlayerSlot]) -> void:
+	if not is_authority() or _authority == null or not _is_active:
+		return
+
+	_authority.board_stub = board.duplicate_stub()
+	_authority.match_slots.clear()
+	for slot in slots:
+		_authority.match_slots.append(slot.duplicate_slot())
+	_sync_board_from_authority()
+	_broadcast_board_sync()
+
+
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_request_advance_turn(player_id: String) -> void:
 	if not is_authority():
