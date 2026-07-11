@@ -23,6 +23,7 @@ func _ready() -> void:
 	_match_session.session_state_changed.connect(_refresh)
 	_match_session.connection_failed.connect(_on_connection_failed)
 	_match_session.server_disconnected.connect(_on_server_disconnected)
+	_match_session.session_ended.connect(_on_session_ended)
 	_match_session.echo_completed.connect(_on_echo_completed)
 	_refresh()
 
@@ -55,19 +56,21 @@ func _on_join_pressed() -> void:
 	_refresh()
 
 
+func _on_session_ended(reason: MatchSession.SessionEndReason, message: String) -> void:
+	_status_label.text = message
+	_refresh()
+
+
 func _on_disconnect_pressed() -> void:
 	_match_session.disconnect_session()
-	_status_label.text = "Session disconnected."
 	_refresh()
 
 
 func _on_connection_failed() -> void:
-	_status_label.text = "Connection failed."
 	_refresh()
 
 
 func _on_server_disconnected() -> void:
-	_status_label.text = "Server disconnected."
 	_refresh()
 
 
@@ -123,7 +126,7 @@ func _refresh() -> void:
 func _is_terminal_status() -> bool:
 	return (
 		_status_label.text == "Connection failed."
-		or _status_label.text == "Server disconnected."
+		or _status_label.text == "Host left the match."
 		or _status_label.text == "Session disconnected."
 	)
 

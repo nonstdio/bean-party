@@ -26,7 +26,12 @@ static func apply_move(position: Vector2, move: Vector2, delta: float) -> Vector
 	return next
 
 
-func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
+
+func tick(
+		inputs_by_player_id: Dictionary,
+		delta: float,
+		eligible_winners: Dictionary = {},
+) -> void:
 	if not winner_player_id.is_empty():
 		return
 
@@ -40,6 +45,8 @@ func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 		positions_by_player_id[player_id] = position
 
 		if position.distance_to(GOAL_CENTER) <= GOAL_RADIUS:
+			if not eligible_winners.is_empty() and not eligible_winners.has(player_id):
+				continue
 			winner_player_id = String(player_id)
 			return
 

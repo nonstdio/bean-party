@@ -30,8 +30,8 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 5 | Authoritative board stub | Implemented proof with authority, frozen-roster, and hash agreement unit coverage; manual peer testing is not stored | 2, 4 |
 | 6 | Networked scene flow (briefing → results) | In progress: placeholder flow, phase agreement, and result/reward idempotency are covered; disconnect behavior and required manual two-peer validation are absent | 2, 4, 5 |
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Implemented proof: Snapshot Arena, `NetworkMinigameSession`, result/hash agreement unit coverage; online lobby enforces one player per peer; durable 4-player and bandwidth evidence not stored | 6 |
-| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | In progress: client prediction, correction overlay, blend reconciliation; preliminary manual findings at 0 ms and 50 ms; 100 ms and loss/jitter profiles still open | 7 |
-| 9 | Disconnect recovery (non-host reconnect, clean host exit) | Not started; basic transport teardown is not match recovery | 2, 6, 7 |
+| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | Implemented proof: client prediction, input replay, blend reconciliation; preliminary manual findings at 0 ms, 50 ms, and 50 ms + 10% drop | 7 |
+| 9 | Disconnect recovery (non-host reconnect, clean host exit) | In progress: session-end signal, inactive slots during match, board-phase reclaim; manual disconnect matrix still open | 2, 6, 7 |
 | 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Not started | 7, 8 |
 | 11 | Steam transport investigation | Not started | 3 |
 | 12 | Formal minigame networking API stabilization | Not started | 7, 9, 10 |
@@ -460,14 +460,15 @@ Local player movement feels responsive; remote players interpolate smoothly; hit
 
 | Scenario | Notes |
 | --- | --- |
-| 4 `PlayerSlot`s | e.g. 2 peers × 2 local |
-| 2 local players on one peer | Both inputs in same upstream frame |
+| 4 `PlayerSlot`s | 4 peers × 1 player (launch policy) |
 | Latency 50, 100, 150 ms | Clumsy, `tc netem`, or OS QoS |
 | Jitter + 1–2% loss | Document tools used |
 | Different host vs client frame rates | 30 vs 60 vs 120 render |
 | Simultaneous shots and kills | No double-death or missed scoring |
 | Lost, duplicated, delayed, reordered inputs | Adversarial or simulated |
 | Host vs client responsiveness | Subjective notes + correction rate / input-to-ack sample |
+
+**Deferred (multi-local online couch):** 2 peers × 2 local `PlayerSlot`s on one host PC; 2 local players on one peer submitting both inputs in the same upstream frame. Offline milestone 1 still supports multiple local players on one offline peer.
 
 Record bandwidth (KB/s, msgs/sec) for 2 and 4 players.
 
@@ -601,8 +602,9 @@ Run these environments in addition to per-milestone manual tests. Record measure
 | Two LAN machines | Real NIC latency, MTU |
 | Four LAN machines | Phase agreement under N>2 (**when milestone requires**) |
 | Two internet machines | NAT, variable RTT |
-| 2 peers × 2 local `PlayerSlot`s | Couch + online on one host PC (4 players total) |
-| 4 single-player peers | `MAX_PLAYERS` stress |
+| 4 single-player peers | `MAX_PLAYERS` stress (**launch validation layout**) |
+
+**Deferred:** 2 peers × 2 local `PlayerSlot`s (couch + online on one host PC).
 
 ### Latency and impairment profiles
 

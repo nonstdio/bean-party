@@ -29,8 +29,11 @@ func advance_turn(slots: Array[PlayerSlot]) -> void:
 
 	turn_index += 1
 	var active_index := _index_for_player_id(slots, active_player_id)
-	var next_index := (active_index + 1) % slots.size()
-	active_player_id = slots[next_index].player_id
+	for _attempt in slots.size():
+		active_index = (active_index + 1) % slots.size()
+		if PlayerSlotConnectivity.is_participating(slots[active_index]):
+			active_player_id = slots[active_index].player_id
+			return
 
 
 func award_beans(player_id: String, amount: int) -> void:

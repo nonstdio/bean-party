@@ -38,6 +38,10 @@ func _ready() -> void:
 	add_child(_runner)
 	_runner.minigame_finished.connect(_on_minigame_finished)
 
+	var match_session := _match_session()
+	if match_session != null:
+		match_session.peer_disconnected.connect(_on_peer_disconnected)
+
 
 func _process(delta: float) -> void:
 	if not is_active:
@@ -174,6 +178,19 @@ func force_complete_round() -> void:
 	_submit_host_result()
 
 
+func mark_peer_inactive(peer_id: int) -> void:
+	if not is_active:
+		return
+	if not PlayerSlotConnectivity.mark_peer_inactive(_slots, peer_id):
+		return
+	for slot in _slots:
+		if slot.owning_peer_id != peer_id:
+			continue
+		_remote_inputs.erase(slot.player_id)
+		if _simulator.winner_player_id == slot.player_id:
+			_simulator.winner_player_id = ""
+
+
 func is_authority() -> bool:
 	var match_session := _match_session()
 	return match_session != null and match_session.is_server()
@@ -273,7 +290,11 @@ func _sample_local_inputs(delta: float) -> void:
 
 func _host_tick(delta: float) -> void:
 	var inputs := _collect_host_inputs()
-	_simulator.tick(inputs, delta)
+	var eligible_winners: Dictionary = {}
+	for slot in _slots:
+		if PlayerSlotConnectivity.is_participating(slot):
+			eligible_winners[slot.player_id] = true
+	_simulator.tick(inputs, delta, eligible_winners)
 	_sync_display_from_simulator()
 
 	_snapshot_accumulator += delta
@@ -298,6 +319,9 @@ func _collect_host_inputs() -> Dictionary:
 	var inputs: Dictionary = {}
 	for slot in _slots:
 		var player_id := slot.player_id
+		if not PlayerSlotConnectivity.is_participating(slot):
+			inputs[player_id] = Vector2.ZERO
+			continue
 		if _owns_local_player_ids.has(player_id) and _input_source != null:
 			inputs[player_id] = _input_source.get_move_vector(player_id)
 		else:
@@ -407,7 +431,8 @@ func _submit_host_result() -> void:
 
 	var participant_ids := PackedStringArray()
 	for slot in _slots:
-		participant_ids.append(slot.player_id)
+		if PlayerSlotConnectivity.is_participating(slot):
+			participant_ids.append(slot.player_id)
 
 	var result := _simulator.build_result(participant_ids)
 	var controller := _runner.get_active_controller()
@@ -445,6 +470,8 @@ func _rpc_submit_input(player_id: String, move_x: float, move_y: float, input_ti
 
 func _host_apply_remote_input(peer_id: int, player_id: String, move: Vector2, input_tick: int) -> void:
 	if not _peer_owns_player(peer_id, player_id):
+		return
+	if not _player_id_is_participating(player_id):
 		return
 	var player_key := String(player_id)
 	var latest_tick: int = int(_latest_input_tick_by_player.get(player_key, 0))
@@ -506,6 +533,19 @@ func _peer_owns_player(peer_id: int, player_id: String) -> bool:
 		if slot.player_id == player_id:
 			return slot.owning_peer_id == peer_id
 	return false
+
+
+func _player_id_is_participating(player_id: String) -> bool:
+	for slot in _slots:
+		if slot.player_id == player_id:
+			return PlayerSlotConnectivity.is_participating(slot)
+	return false
+
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	if not is_authority():
+		return
+	mark_peer_inactive(peer_id)
 
 
 @rpc("authority", "call_remote", "unreliable")

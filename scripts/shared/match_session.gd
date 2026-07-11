@@ -8,11 +8,19 @@ enum SessionState {
 	HOSTING,
 }
 
+enum SessionEndReason {
+	NONE,
+	HOST_LEFT,
+	LOCAL_LEFT,
+	CONNECTION_FAILED,
+}
+
 signal session_state_changed
 signal peer_connected(peer_id: int)
 signal peer_disconnected(peer_id: int)
 signal connection_failed
 signal server_disconnected
+signal session_ended(reason: SessionEndReason, message: String)
 signal echo_completed(from_peer_id: int, message: String)
 signal ping_updated(peer_id: int, ping_ms: int)
 
@@ -22,6 +30,8 @@ var _pending_echoes: Dictionary = {}
 var _ping_ms_by_peer_id: Dictionary = {}
 var _connect_started_msec: int = 0
 var _ping_accumulator: float = 0.0
+var _last_join_address: String = ""
+var _last_join_port: int = MatchConstants.DEFAULT_ENET_PORT
 
 const CONNECT_TIMEOUT_MSEC := 5000
 const PING_INTERVAL_SEC := 1.0
@@ -63,6 +73,9 @@ func join(
 ) -> Error:
 	disconnect_session()
 
+	_last_join_address = address
+	_last_join_port = port
+
 	_peer = EnetTransportAdapter.create_client_peer(address, port)
 	if _peer == null:
 		return ERR_CANT_CREATE
@@ -76,9 +89,9 @@ func join(
 
 
 func disconnect_session() -> void:
-	_teardown_peer()
-	_state = SessionState.IDLE
-	session_state_changed.emit()
+	if is_server() and is_session_established():
+		_rpc_session_ended.rpc(SessionEndReason.HOST_LEFT, _default_end_message(SessionEndReason.HOST_LEFT))
+	_end_session(SessionEndReason.LOCAL_LEFT, _default_end_message(SessionEndReason.LOCAL_LEFT))
 
 
 func get_session_peer_ids() -> Array[int]:
@@ -108,6 +121,14 @@ func get_remote_peer_ids() -> Array[int]:
 
 func get_ping_ms(peer_id: int) -> int:
 	return int(_ping_ms_by_peer_id.get(peer_id, -1))
+
+
+func get_last_join_address() -> String:
+	return _last_join_address
+
+
+func get_last_join_port() -> int:
+	return _last_join_port
 
 
 func send_echo(peer_id: int, message: String) -> int:
@@ -200,20 +221,19 @@ func _on_connection_failed() -> void:
 	if _state != SessionState.CONNECTING:
 		return
 
-	_teardown_peer()
-	_state = SessionState.IDLE
+	_end_session(
+		SessionEndReason.CONNECTION_FAILED,
+		_default_end_message(SessionEndReason.CONNECTION_FAILED),
+	)
 	connection_failed.emit()
-	session_state_changed.emit()
 
 
 func _on_server_disconnected() -> void:
 	if _state != SessionState.CONNECTED:
 		return
 
-	_teardown_peer()
-	_state = SessionState.IDLE
+	_end_session(SessionEndReason.HOST_LEFT, _default_end_message(SessionEndReason.HOST_LEFT))
 	server_disconnected.emit()
-	session_state_changed.emit()
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -226,6 +246,36 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	_ping_ms_by_peer_id.erase(peer_id)
 	peer_disconnected.emit(peer_id)
 	session_state_changed.emit()
+
+
+func _end_session(reason: SessionEndReason, message: String) -> void:
+	if _state == SessionState.IDLE:
+		return
+
+	if reason != SessionEndReason.NONE:
+		session_ended.emit(reason, message)
+	_teardown_peer()
+	_state = SessionState.IDLE
+	session_state_changed.emit()
+
+
+func _default_end_message(reason: SessionEndReason) -> String:
+	match reason:
+		SessionEndReason.HOST_LEFT:
+			return "Host left the match."
+		SessionEndReason.LOCAL_LEFT:
+			return "Session disconnected."
+		SessionEndReason.CONNECTION_FAILED:
+			return "Connection failed."
+		_:
+			return ""
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_session_ended(reason: int, message: String) -> void:
+	if _state != SessionState.CONNECTED:
+		return
+	_end_session(reason as SessionEndReason, message)
 
 
 @rpc("any_peer", "call_remote", "reliable")
