@@ -32,7 +32,7 @@ func _collect_markdown_files(root: String, paths: PackedStringArray) -> void:
 		if file_name.ends_with(".md"):
 			paths.append(root.path_join(file_name))
 	for folder in directory.get_directories():
-		if folder in [".git", ".godot", "addons"]:
+		if folder in [".git", ".godot", "addons", "node_modules"]:
 			continue
 		_collect_markdown_files(root.path_join(folder), paths)
 
