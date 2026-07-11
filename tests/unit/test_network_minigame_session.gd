@@ -138,3 +138,78 @@ func test_early_win_broadcasts_final_snapshot() -> void:
 		host_session._simulator.export_positions(),
 	)
 	assert_eq(client_session.get_snapshot_hash(), host_session.get_snapshot_hash())
+
+
+func test_prediction_reconciles_local_player_on_snapshot() -> void:
+	var client_session := NetworkMinigameSession.new()
+	add_child_autofree(client_session)
+
+	var slots := _make_slots()
+	assert_true(client_session.start_minigame(slots, "minigame_test"))
+	client_session.prediction_enabled = true
+	client_session._local_player_ids = PackedStringArray([slots[1].player_id])
+	client_session._predicted_positions[slots[1].player_id] = Vector2(200.0, 200.0)
+
+	var payload := {
+		slots[1].player_id: {"x": 120.0, "y": 88.0},
+	}
+	client_session._apply_snapshot_payload(1, payload)
+
+	var stats := client_session.get_prediction_stats()
+	assert_eq(int(stats.get("correction_count", 0)), 1)
+	assert_eq(
+		client_session._predicted_positions[slots[1].player_id],
+		Vector2(120.0, 88.0),
+	)
+	assert_eq(
+		client_session.get_display_position(slots[1].player_id),
+		Vector2(200.0, 200.0),
+	)
+
+
+func test_prediction_correction_offset_decays_toward_authoritative() -> void:
+	var client_session := NetworkMinigameSession.new()
+	add_child_autofree(client_session)
+
+	var slots := _make_slots()
+	assert_true(client_session.start_minigame(slots, "minigame_test"))
+	client_session.prediction_enabled = true
+	client_session._local_player_ids = PackedStringArray([slots[1].player_id])
+	client_session._predicted_positions[slots[1].player_id] = Vector2(200.0, 200.0)
+	client_session._display_positions[slots[1].player_id] = Vector2(200.0, 200.0)
+
+	var payload := {
+		slots[1].player_id: {"x": 120.0, "y": 88.0},
+	}
+	client_session._apply_snapshot_payload(1, payload)
+
+	var player_id := String(slots[1].player_id)
+	assert_not_null(client_session._input_source)
+	var offset_before: Vector2 = client_session._correction_offsets.get(player_id, Vector2.ZERO)
+	assert_gt(offset_before.length(), 1.0)
+
+	client_session._client_predict_local(0.05)
+	var offset_after: Vector2 = client_session._correction_offsets.get(player_id, Vector2.ZERO)
+	assert_lt(offset_after.length(), offset_before.length())
+
+
+func test_client_predict_local_moves_display_position() -> void:
+	var client_session := NetworkMinigameSession.new()
+	add_child_autofree(client_session)
+
+	var slots := _make_slots()
+	assert_true(client_session.start_minigame(slots, "minigame_test"))
+	client_session.prediction_enabled = true
+	client_session._local_player_ids = PackedStringArray([slots[1].player_id])
+	client_session._predicted_positions[slots[1].player_id] = Vector2(100.0, 100.0)
+	client_session._display_positions[slots[1].player_id] = Vector2(100.0, 100.0)
+	client_session._input_source.set_action_strength(
+		slots[1].player_id,
+		MinigameInputSource.ACTION_MOVE_RIGHT,
+		1.0,
+	)
+
+	client_session._client_predict_local(0.1)
+
+	var moved := client_session.get_display_position(slots[1].player_id)
+	assert_gt(moved.x, 100.0)

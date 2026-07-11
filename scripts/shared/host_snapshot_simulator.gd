@@ -19,6 +19,13 @@ func reset_for_player_ids(player_ids: PackedStringArray) -> void:
 		positions_by_player_id[player_ids[index]] = spawn_points[index]
 
 
+static func apply_move(position: Vector2, move: Vector2, delta: float) -> Vector2:
+	var next := position + move.limit_length(1.0) * MOVE_SPEED * delta
+	next.x = clampf(next.x, PLAYER_RADIUS, ARENA_SIZE.x - PLAYER_RADIUS)
+	next.y = clampf(next.y, PLAYER_RADIUS, ARENA_SIZE.y - PLAYER_RADIUS)
+	return next
+
+
 func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 	if not winner_player_id.is_empty():
 		return
@@ -29,9 +36,7 @@ func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 			move = Vector2.ZERO
 
 		var position: Vector2 = positions_by_player_id[player_id]
-		position += move.limit_length(1.0) * MOVE_SPEED * delta
-		position.x = clampf(position.x, PLAYER_RADIUS, ARENA_SIZE.x - PLAYER_RADIUS)
-		position.y = clampf(position.y, PLAYER_RADIUS, ARENA_SIZE.y - PLAYER_RADIUS)
+		position = apply_move(position, move, delta)
 		positions_by_player_id[player_id] = position
 
 		if position.distance_to(GOAL_CENTER) <= GOAL_RADIUS:

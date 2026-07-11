@@ -5,7 +5,9 @@ signal minigame_result_ready(result: MinigameResult)
 
 const SNAPSHOT_ARENA_MANIFEST_PATH := "res://minigames/snapshot-arena/minigame.tres"
 const SNAPSHOT_HZ := 20.0
+const RECONCILE_DECAY_RATE := 12.0
 
+var prediction_enabled: bool = true
 var is_active: bool = false
 
 var _runner: MinigameRunner
@@ -16,6 +18,9 @@ var _local_player_ids: PackedStringArray = PackedStringArray()
 var _remote_inputs: Dictionary = {}
 var _display_positions: Dictionary = {}
 var _target_positions: Dictionary = {}
+var _predicted_positions: Dictionary = {}
+var _correction_offsets: Dictionary = {}
+var _prediction_tracker: HostSnapshotPredictionTracker = HostSnapshotPredictionTracker.new()
 var _snapshot_accumulator: float = 0.0
 var _snapshot_serial: int = 0
 var _authoritative_snapshot_serial: int = 0
@@ -40,7 +45,7 @@ func _process(delta: float) -> void:
 	if is_authority():
 		_host_tick(delta)
 	else:
-		_client_interpolate(delta)
+		_client_tick(delta)
 
 	if _input_source != null:
 		_input_source.finish_frame()
@@ -70,11 +75,15 @@ func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> b
 
 	_input_source = MinigameInputSource.new(player_ids)
 	_remote_inputs.clear()
+	_predicted_positions.clear()
+	_correction_offsets.clear()
+	_prediction_tracker.reset()
 	_simulator.reset_for_player_ids(player_ids)
 	_snapshot_accumulator = 0.0
 	_snapshot_serial = 0
 	_minigame_instance_id = minigame_instance_id
 	_sync_display_from_simulator()
+	_init_predicted_positions()
 	_publish_authoritative_snapshot(0, _simulator.export_positions())
 
 	var context := MinigameContext.create(
@@ -108,7 +117,10 @@ func stop_minigame() -> void:
 	_remote_inputs.clear()
 	_display_positions.clear()
 	_target_positions.clear()
+	_predicted_positions.clear()
+	_correction_offsets.clear()
 	_owns_local_player_ids.clear()
+	_prediction_tracker.reset()
 	_minigame_instance_id = ""
 	_authoritative_snapshot_serial = 0
 	_authoritative_snapshot_hash = 0
@@ -124,6 +136,23 @@ func get_snapshot_hash() -> int:
 
 func get_snapshot_serial() -> int:
 	return _authoritative_snapshot_serial
+
+
+func get_prediction_stats() -> Dictionary:
+	return _prediction_tracker.export_stats()
+
+
+func is_using_prediction() -> bool:
+	return prediction_enabled and not is_authority() and is_networked()
+
+
+func _predicts_local_player(player_id: String) -> bool:
+	return (
+		prediction_enabled
+		and not is_authority()
+		and _local_player_ids.has(player_id)
+		and (is_networked() or is_active)
+	)
 
 
 func force_complete_round() -> void:
@@ -254,9 +283,37 @@ func _broadcast_snapshot() -> void:
 		_rpc_apply_snapshot.rpc(_snapshot_serial, payload)
 
 
-func _client_interpolate(delta: float) -> void:
+func _client_tick(delta: float) -> void:
+	if prediction_enabled and not is_authority():
+		_client_predict_local(delta)
+	_client_interpolate_remotes(delta)
+
+
+func _client_predict_local(delta: float) -> void:
+	if _input_source == null:
+		return
+
+	for player_id in _local_player_ids:
+		var player_key := String(player_id)
+		var move := _input_source.get_move_vector(player_key)
+		var position: Vector2 = _predicted_positions.get(
+			player_key,
+			_display_positions.get(player_key, Vector2.ZERO),
+		)
+		position = HostSnapshotSimulator.apply_move(position, move, delta)
+		_predicted_positions[player_key] = position
+		var offset: Vector2 = _correction_offsets.get(player_key, Vector2.ZERO)
+		_display_positions[player_key] = position + offset
+		var decay := clampf(delta * RECONCILE_DECAY_RATE, 0.0, 1.0)
+		_correction_offsets[player_key] = offset.lerp(Vector2.ZERO, decay)
+
+
+func _client_interpolate_remotes(delta: float) -> void:
 	var blend := clampf(delta * SNAPSHOT_HZ, 0.0, 1.0)
 	for player_id in _target_positions.keys():
+		if _predicts_local_player(player_id):
+			continue
+
 		var from_pos: Vector2 = _display_positions.get(player_id, _target_positions[player_id])
 		var to_pos: Vector2 = _target_positions[player_id]
 		_display_positions[player_id] = from_pos.lerp(to_pos, blend)
@@ -284,8 +341,27 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 				float(entry.get("y", 0.0)),
 			)
 			_target_positions[player_key] = target
-			if not _display_positions.has(player_key):
+			if _predicts_local_player(player_key):
+				var predicted: Vector2 = _predicted_positions.get(player_key, target)
+				_prediction_tracker.record_correction(predicted, target)
+				var correction := predicted - target
+				if correction.length_squared() >= HostSnapshotPredictionTracker.CORRECTION_EPSILON * HostSnapshotPredictionTracker.CORRECTION_EPSILON:
+					var offset: Vector2 = _correction_offsets.get(player_key, Vector2.ZERO)
+					_correction_offsets[player_key] = offset + correction
+				_predicted_positions[player_key] = target
+				_display_positions[player_key] = target + _correction_offsets.get(player_key, Vector2.ZERO)
+			elif not _display_positions.has(player_key):
 				_display_positions[player_key] = target
+
+
+func _init_predicted_positions() -> void:
+	_predicted_positions.clear()
+	if not prediction_enabled or is_authority():
+		return
+
+	for player_id in _local_player_ids:
+		var position := _simulator.get_position(player_id)
+		_predicted_positions[player_id] = position
 
 
 func _publish_authoritative_snapshot(serial: int, payload: Dictionary) -> void:

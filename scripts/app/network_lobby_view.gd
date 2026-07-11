@@ -1,12 +1,5 @@
 extends VBoxContainer
 
-const _CONTROLLER_LABELS: Array[String] = [
-	"Controller 1",
-	"Controller 2",
-	"Controller 3",
-	"Controller 4",
-]
-
 @onready var _match_session: MatchSession = %MatchSession
 @onready var _lobby_session: NetworkLobbySession = %NetworkLobbySession
 @onready var _slots_list: VBoxContainer = %NetworkSlotsList
@@ -14,13 +7,13 @@ const _CONTROLLER_LABELS: Array[String] = [
 @onready var _status_label: Label = %NetworkLobbyStatusLabel
 
 var _row_nodes: Dictionary = {}
-var _syncing_controller_pickers := false
 
 
 func _ready() -> void:
 	_lobby_session.slots_structure_changed.connect(_on_slots_structure_changed)
 	_lobby_session.session_state_changed.connect(_on_session_state_changed)
 	_match_session.session_state_changed.connect(_update_chrome)
+	_match_session.ping_updated.connect(_on_ping_updated)
 	_add_player_button.pressed.connect(_on_add_player_pressed)
 	_sync_slot_rows()
 	_update_chrome()
@@ -39,6 +32,10 @@ func _on_add_player_pressed() -> void:
 func _on_slots_structure_changed() -> void:
 	_sync_slot_rows()
 	_update_chrome()
+
+
+func _on_ping_updated(_peer_id: int, _ping_ms: int) -> void:
+	_refresh_all_slot_rows()
 
 
 func _sync_slot_rows() -> void:
@@ -70,13 +67,16 @@ func _update_chrome() -> void:
 	if not visible:
 		return
 
+	var local_slots := _lobby_session.get_local_slots()
+	_add_player_button.visible = local_slots.is_empty() and _lobby_session.can_add_local_slot()
+	_add_player_button.text = "Join match"
 	_add_player_button.disabled = not _lobby_session.can_add_local_slot()
 	_status_label.text = _build_status_text()
 
 
 func _build_status_text() -> String:
 	if _lobby_session.slots.is_empty():
-		return "Network lobby active. Add local players for this peer (up to %d total)." % (
+		return "Network lobby active. One player per screen; up to %d peers." % (
 			MatchConstants.MAX_PLAYERS
 		)
 
@@ -85,7 +85,7 @@ func _build_status_text() -> String:
 		_lobby_session.slots.size(),
 	]
 	var role := "host" if _match_session.is_server() else "client"
-	return "%s · %s · local peer %d" % [ready_line, role, _match_session.multiplayer.get_unique_id()]
+	return "%s · %s · one player per screen" % [ready_line, role]
 
 
 func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
@@ -101,7 +101,7 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 
 	var peer_label := Label.new()
 	peer_label.text = _format_peer_label(slot)
-	peer_label.custom_minimum_size = Vector2(110, 0)
+	peer_label.custom_minimum_size = Vector2(72, 0)
 	row.set_meta(&"peer_label", peer_label)
 	row.add_child(peer_label)
 
@@ -139,24 +139,14 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	)
 	row.add_child(ready_toggle)
 
-	if _lobby_session.owns_slot(slot.player_id):
-		var controller_picker := OptionButton.new()
-		for label in _CONTROLLER_LABELS:
-			controller_picker.add_item(label)
-		var device_slot := _lobby_session.get_local_device_slot(slot.player_id)
-		if device_slot >= 0:
-			controller_picker.select(mini(device_slot, _CONTROLLER_LABELS.size() - 1))
-		controller_picker.item_selected.connect(func(index: int) -> void:
-			if _syncing_controller_pickers:
-				return
-			if _lobby_session.set_local_device_slot(slot.player_id, index):
-				_sync_all_controller_pickers()
-		)
-		row.set_meta(&"controller_picker", controller_picker)
-		row.add_child(controller_picker)
+	var ping_label := Label.new()
+	ping_label.custom_minimum_size = Vector2(56, 0)
+	ping_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	ping_label.text = _format_ping_for_slot(slot)
+	row.set_meta(&"ping_label", ping_label)
+	row.add_child(ping_label)
 
-		_update_remove_button(row, slot.player_id)
-	else:
+	if not _lobby_session.owns_slot(slot.player_id):
 		var remote_label := Label.new()
 		remote_label.text = "Remote"
 		row.add_child(remote_label)
@@ -166,8 +156,24 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 
 func _format_peer_label(slot: PlayerSlot) -> String:
 	if slot.owning_peer_id == 1:
-		return "Host · P%d" % (slot.local_player_index + 1)
-	return "Peer %d · P%d" % [slot.owning_peer_id, slot.local_player_index + 1]
+		return "Host"
+	return "Peer %d" % slot.owning_peer_id
+
+
+func _format_ping_for_slot(slot: PlayerSlot) -> String:
+	var local_peer_id := _match_session.multiplayer.get_unique_id()
+	if slot.owning_peer_id == local_peer_id:
+		if _match_session.is_server():
+			return "local"
+		return _format_ping_ms(_match_session.get_ping_ms(1))
+
+	return _format_ping_ms(_match_session.get_ping_ms(slot.owning_peer_id))
+
+
+func _format_ping_ms(ping_ms: int) -> String:
+	if ping_ms < 0:
+		return "…"
+	return "%d ms" % ping_ms
 
 
 func _refresh_slot_row(row: HBoxContainer, slot: PlayerSlot) -> void:
@@ -187,8 +193,9 @@ func _refresh_slot_row(row: HBoxContainer, slot: PlayerSlot) -> void:
 		if child is CheckBox:
 			child.button_pressed = slot.ready
 
-	if _lobby_session.owns_slot(slot.player_id):
-		_update_remove_button(row, slot.player_id)
+	if row.has_meta(&"ping_label"):
+		var ping_label: Label = row.get_meta(&"ping_label")
+		ping_label.text = _format_ping_for_slot(slot)
 
 
 func _refresh_all_slot_rows() -> void:
@@ -216,33 +223,3 @@ func _commit_display_name(player_id: String, display_name: String) -> void:
 		return
 
 	_lobby_session.request_set_display_name(player_id, trimmed)
-
-
-func _update_remove_button(row: HBoxContainer, player_id: String) -> void:
-	var existing: Node = row.get_node_or_null(^"RemoveButton")
-	var local_slots := _lobby_session.get_local_slots()
-	if local_slots.size() <= 1:
-		if existing != null:
-			existing.queue_free()
-		return
-
-	if existing == null:
-		var remove_button := Button.new()
-		remove_button.name = &"RemoveButton"
-		remove_button.text = "Remove"
-		remove_button.pressed.connect(func() -> void:
-			_lobby_session.request_remove_local_slot(player_id)
-		)
-		row.add_child(remove_button)
-
-
-func _sync_all_controller_pickers() -> void:
-	_syncing_controller_pickers = true
-	for player_id in _row_nodes:
-		var row: HBoxContainer = _row_nodes[player_id]
-		if not row.has_meta(&"controller_picker"):
-			continue
-		var picker: OptionButton = row.get_meta(&"controller_picker")
-		var device_slot := _lobby_session.get_local_device_slot(player_id)
-		picker.select(mini(device_slot, _CONTROLLER_LABELS.size() - 1))
-	_syncing_controller_pickers = false

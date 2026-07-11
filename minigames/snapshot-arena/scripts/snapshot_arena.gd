@@ -49,10 +49,18 @@ func _update_status() -> void:
 		return
 
 	if _network_session != null and _network_session.is_active:
-		_status.text = "Reach the center goal. Snap %d hash %d" % [
+		var status := "Reach the center goal. Snap %d hash %d" % [
 			_network_session.get_snapshot_serial(),
 			_network_session.get_snapshot_hash(),
 		]
+		if _network_session.is_using_prediction():
+			var stats: Dictionary = _network_session.get_prediction_stats()
+			status += " · pred corrections %d (last %.1fpx max %.1fpx)" % [
+				int(stats.get("correction_count", 0)),
+				float(stats.get("last_correction_distance", 0.0)),
+				float(stats.get("max_correction_distance", 0.0)),
+			]
+		_status.text = status
 	else:
 		_status.text = "Reach the center goal with move inputs."
 

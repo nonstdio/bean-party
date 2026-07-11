@@ -29,8 +29,8 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 4 | Networked lobby (multi-local per peer) | Implemented proof with ownership/cap/round-trip unit coverage; manual malformed-RPC and multi-peer evidence is not stored | 1, 3 |
 | 5 | Authoritative board stub | Implemented proof with authority, frozen-roster, and hash agreement unit coverage; manual peer testing is not stored | 2, 4 |
 | 6 | Networked scene flow (briefing → results) | In progress: placeholder flow, phase agreement, and result/reward idempotency are covered; disconnect behavior and required manual two-peer validation are absent | 2, 4, 5 |
-| 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Not started | 6 |
-| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | Not started | 7 |
+| 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Implemented proof: Snapshot Arena, `NetworkMinigameSession`, result/hash agreement unit coverage; online lobby enforces one player per peer; durable 4-player and bandwidth evidence not stored | 6 |
+| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | In progress: client prediction, correction overlay, blend reconciliation; preliminary manual findings at 0 ms and 50 ms; 100 ms and loss/jitter profiles still open | 7 |
 | 9 | Disconnect recovery (non-host reconnect, clean host exit) | Not started; basic transport teardown is not match recovery | 2, 6, 7 |
 | 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | Not started | 7, 8 |
 | 11 | Steam transport investigation | Not started | 3 |
@@ -279,6 +279,8 @@ Phase agreement test green; manual 2-peer loop completes without duplicate rewar
 
 ## Milestone 7: One simple movement minigame using host snapshots
 
+Implementation status: **Implemented proof; durable manual 4-player and bandwidth evidence remain.**
+
 ### Purpose
 
 Validate `HOST_SNAPSHOT` profile end-to-end: input upstream, host sim, snapshots downstream, interpolation on clients.
@@ -307,13 +309,23 @@ Validate `HOST_SNAPSHOT` profile end-to-end: input upstream, host sim, snapshots
 
 Result agreement automated test passes; manual playtest at 4 players with no persistent desync.
 
+### Spike outcomes and remaining questions
+
+- Snapshot Arena (`minigames/snapshot-arena/`) is the milestone 7 graybox. The shell drives it through `NetworkMinigameSession` with host-authoritative simulation at **20 Hz** snapshots and client interpolation for remote players.
+- Automated coverage includes result agreement, snapshot hash agreement after apply, remote input ownership validation, and early-win final snapshot broadcast.
+- The main debug shell no longer exposes offline couch sessions; network host/join is the primary manual path. Local minigame work remains on `res://scenes/dev/minigame_harness.tscn`.
+- Online lobby policy is **one local player per peer** (four players still means up to four peers). The lobby UI auto-joins each connected peer with a single slot and shows per-peer RTT from periodic echo probes.
+- Durable manual evidence for 4 `PlayerSlot`s across peers, messages/sec, and KB/s is not stored in the repository.
+
 ### Open questions before milestone 8
 
-- 30 vs 60 Hz sim for this minigame
+- 30 vs 60 Hz sim for this minigame — current proof uses 20 Hz host snapshots
 
 ---
 
 ## Milestone 8: Prediction and reconciliation experiment (`HOST_SNAPSHOT`)
+
+Implementation status: **In progress.** Client prediction, correction telemetry, and blend reconciliation are implemented; the full latency matrix and default recommendation are not finalized.
 
 ### Purpose
 
@@ -342,10 +354,24 @@ Same minigame with optional prediction on local player; debug overlay shows corr
 
 Documented table: latency vs correction frequency vs player verdict; recommendation to adopt or skip default prediction.
 
+### Spike outcomes (preliminary)
+
+Manual testing used two Godot instances on one machine (host + client), Clumsy `outbound and loopback` lag on the client, and the Snapshot Arena status overlay (`pred corrections`, `last`, `max` px). Prediction defaults **on** for networked clients.
+
+| Added latency | Reconcile mode | Corrections (order of magnitude) | Max correction (order of magnitude) | Player verdict (informal) |
+| --- | --- | --- | --- | --- |
+| ~0 ms | Snap (initial) | ~100+ per short session | ~2–3 px | Responsive; corrections barely visible |
+| ~50 ms | Snap (initial) | Frequent (~20 Hz) | Larger than baseline | Visible jitter and snap-back to prior position |
+| ~50 ms | Blend (error decay) | Similar counts to snap | Similar magnitudes | **Significantly less jitter**; smoother drift-in |
+
+**Working recommendation:** keep client prediction enabled for local movement; reconcile sim state to authority on each snapshot; use **blend (error decay)** for display correction rather than hard snap. Snap reconciliation remains useful as a debug/baseline mode.
+
+Still open: 100 ms and ~150 ms profiles, jitter + 1–2% loss, differing render FPS, prediction-off baseline at each tier, and whether blend parameters should be shared-shell defaults vs minigame-tuned.
+
 ### Open questions before milestone 9
 
-- Snap vs blend correction default
-- Whether prediction ships as the default recommendation for all `HOST_SNAPSHOT` minigames or only this one
+- ~~Snap vs blend correction default~~ — preliminary evidence favors **blend** for player-facing movement at moderate latency
+- Whether prediction ships as the default recommendation for all `HOST_SNAPSHOT` minigames or only Snapshot Arena until milestone 12
 
 ---
 
