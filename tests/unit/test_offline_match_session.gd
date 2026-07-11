@@ -75,3 +75,84 @@ func test_player_id_not_reused_after_remove() -> void:
 	var replacement := session.add_local_slot("Replacement")
 
 	assert_ne(replacement.player_id, removed_id)
+
+
+func test_add_after_remove_uses_unused_controller_and_color() -> void:
+	var session := OfflineMatchSession.new()
+	session.add_local_slot("One")
+	session.add_local_slot("Two")
+	var third := session.add_local_slot("Three")
+
+	session.remove_slot(third.player_id)
+	var fourth := session.add_local_slot("Four")
+
+	assert_eq(session.get_local_device_slot(fourth.player_id), 2)
+	assert_eq(fourth.slot_color, MatchConstants.SLOT_COLORS[2])
+	_assert_unique_device_slots(session)
+	_assert_unique_slot_colors(session)
+
+
+func test_set_local_device_slot_rejects_invalid_range() -> void:
+	var session := OfflineMatchSession.new()
+	var slot := session.add_local_slot("Player")
+
+	assert_false(session.set_local_device_slot(slot.player_id, -1))
+	assert_false(session.set_local_device_slot(slot.player_id, MatchConstants.MAX_PLAYERS))
+	assert_eq(session.get_local_device_slot(slot.player_id), 0)
+
+
+func test_set_local_device_slot_swaps_occupied_controller() -> void:
+	var session := OfflineMatchSession.new()
+	var first := session.add_local_slot("First")
+	var second := session.add_local_slot("Second")
+
+	assert_true(session.set_local_device_slot(second.player_id, 0))
+	assert_eq(session.get_local_device_slot(second.player_id), 0)
+	assert_eq(session.get_local_device_slot(first.player_id), 1)
+
+
+func test_set_display_name_does_not_emit_structure_changed() -> void:
+	var session := OfflineMatchSession.new()
+	var slot := session.add_local_slot("Original")
+	var structure_changes := [0]
+	session.slots_structure_changed.connect(func() -> void:
+		structure_changes[0] += 1
+	)
+
+	session.set_display_name(slot.player_id, "Renamed")
+
+	assert_eq(slot.display_name, "Renamed")
+	assert_eq(structure_changes[0], 0)
+
+
+func test_set_ready_emits_session_state_not_structure() -> void:
+	var session := OfflineMatchSession.new()
+	var slot := session.add_local_slot("Ready Bean")
+	var structure_changes := [0]
+	var state_changes := [0]
+	session.slots_structure_changed.connect(func() -> void:
+		structure_changes[0] += 1
+	)
+	session.session_state_changed.connect(func() -> void:
+		state_changes[0] += 1
+	)
+
+	session.set_ready(slot.player_id, true)
+
+	assert_eq(structure_changes[0], 0)
+	assert_eq(state_changes[0], 1)
+
+
+func _assert_unique_device_slots(session: OfflineMatchSession) -> void:
+	var used: Dictionary = {}
+	for slot in session.slots:
+		var device_slot := session.get_local_device_slot(slot.player_id)
+		assert_false(used.has(device_slot), "device slot %d assigned twice" % device_slot)
+		used[device_slot] = true
+
+
+func _assert_unique_slot_colors(session: OfflineMatchSession) -> void:
+	var used: Dictionary = {}
+	for slot in session.slots:
+		assert_false(used.has(slot.slot_color), "slot color assigned twice")
+		used[slot.slot_color] = true
