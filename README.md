@@ -13,17 +13,23 @@ It takes structural inspiration from Mario Party-style board-and-minigame games,
 
 ## Project status
 
-The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. A **proposed** peer-hosted networking architecture ([Decision 0003](docs/decisions/0003-peer-hosted-networking.md)) targets 2–4 players online; it is not validated netcode yet. Target platforms, final art pipeline, and board economy remain open decisions.
+The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. The repository currently contains:
 
-## Run the starter project
+- a local 2–4 player `PlayerSlot` model, debug phase flow, board stub, and phase-boundary snapshot restore;
+- accepted local minigame contract version 1, a scaffold, a development harness, and the `reference-tap` executable example; and
+- an ENet debug slice covering host/join, a host-authoritative multi-local-player lobby, a board stub, and synchronized placeholder minigame phases through results and return to board.
+
+These are contributor and architecture proofs, not a playable game or validated production netcode. The local minigame harness is not yet connected to the app's local or network match flows, and the network flow still uses an internal placeholder scene. [Decision 0003](docs/decisions/0003-peer-hosted-networking.md) therefore remains **Proposed**. See the [networking plan status](docs/plans/networking.md#milestone-overview) for implemented evidence and validation still outstanding. Target platforms, final art pipeline, licensing, and board economy remain open decisions.
+
+## Run the current project
 
 Agents should first follow [Godot setup for agents](docs/guides/godot-setup.md), which installs the pinned editor and runs the terminal-first validation and test commands on Windows, macOS, and Linux.
 
 1. Install [Godot 4.7 stable](https://godotengine.org/download/archive/).
 2. Import the repository’s `project.godot` file in the Godot Project Manager.
-3. Select the project and press `F6`/`F5`, or run `godot --editor --path .` from the repository root.
+3. Select the project and press `F5`, or run `godot --editor --path .` from the repository root and run the main scene.
 
-The starter scene is deliberately small: it proves that the project loads and gives contributors a safe place to begin. See the [Godot project architecture](docs/architecture/godot-project.md) before adding shared systems or a minigame.
+The main scene is a deliberately utilitarian debug shell. It exposes the local session and phase proofs plus the ENet milestones implemented so far. Follow [Use the runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) for the exact workflows and limitations. For local minigame development, run `res://scenes/dev/minigame_harness.tscn` as the current scene with `F6`. See the [Godot project architecture](docs/architecture/godot-project.md) before adding shared systems or a minigame.
 
 ## Contributing
 
@@ -36,15 +42,14 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Creative direction](docs/design/creative-direction.md) — how to evoke Bean Battles without copying it.
 - [Minigame design guide](docs/design/minigames.md) — how proposals become clear, testable minigame briefs.
 - [Create a minigame](docs/guides/create-a-minigame.md) — scaffold, implement, run, test, and prepare a local minigame for review.
+- [Runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) — exercise the implemented local and ENet architecture proofs and understand their limits.
 - [Minigame integration contract](docs/architecture/minigame-integration.md) — runtime, ownership, result, cleanup, and networking boundaries.
-- [Networking architecture](docs/architecture/networking.md) — proposed online topology, authority, and phase machine.
-- [Networking implementation plan](docs/plans/networking.md) — milestones and test matrix for future netcode work.
+- [Networking architecture](docs/architecture/networking.md) — implemented debug boundaries plus the proposed online topology, authority, and phase machine.
+- [Networking implementation plan](docs/plans/networking.md) — current milestone status, future sequence, and test matrix.
 - [Godot project architecture](docs/architecture/godot-project.md) — repository layout and Godot conventions.
 - [Engine evaluation](docs/research/engine-evaluation.md) — the evaluation that led to the Godot decision.
 - [Project governance](docs/project/governance.md) — pull requests and the `main` branch rules.
 - [Agent guide](AGENTS.md) — instructions for AI-assisted work in this repository.
-
-- [Godot setup for agents](docs/guides/godot-setup.md) — exact installation, validation, and test commands on Windows, macOS, and Linux.
 
 ## Open decisions
 
