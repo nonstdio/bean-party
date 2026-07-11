@@ -20,6 +20,12 @@ Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`
 4. Test the experience with the intended number of players when possible. Record what you tested in the pull request.
 5. Open a pull request using the repository template. Respond to review feedback and resolve conversations before requesting merge.
 
+## Documentation
+
+Follow the [contributor documentation responsibilities](docs/README.md#contributor-documentation-responsibilities). Read the documents relevant to the work, and treat documentation as part of the implementation by creating or updating the canonical guidance for durable behavior, interfaces, conventions, setup requirements, and decisions in the same change. Correct clear errors and small evidence-backed gaps when they remain focused; report substantial or uncertain gaps in the pull request or to a maintainer.
+
+If documentation, code, tests, or recorded decisions disagree, investigate and distinguish intended behavior from current implementation. Reconcile the sources when the evidence is clear and the correction is within scope. Otherwise describe the discrepancy and ask a maintainer rather than silently choosing an interpretation or treating a proposal as accepted policy.
+
 ## Designing a minigame
 
 The [minigame design guide](docs/design/minigames.md) is the canonical source for proposal contents and design review criteria. The GitHub issue remains canonical while an idea is being discussed; once implementation begins, keep the current brief in `minigames/<slug>/README.md` and link it back to the proposal.
