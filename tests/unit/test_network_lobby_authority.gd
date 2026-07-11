@@ -75,6 +75,17 @@ func test_ready_count_tracks_authority_state() -> void:
 	assert_eq(authority.ready_count(), 2)
 
 
+func test_display_name_change_survives_export_round_trip() -> void:
+	var authority := NetworkLobbyAuthority.new()
+	var slot := authority.try_add_slot(1, "Host")
+
+	assert_true(authority.try_set_display_name(1, slot.player_id, "Captain Bean"))
+
+	var replica := NetworkLobbyAuthority.new()
+	replica.load_slots(authority.export_slots())
+	assert_eq(replica.slots[0].display_name, "Captain Bean")
+
+
 func test_export_and_load_round_trip_preserves_slots() -> void:
 	var authority := NetworkLobbyAuthority.new()
 	authority.try_add_slot(1, "Host")

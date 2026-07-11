@@ -19,10 +19,15 @@ var _syncing_controller_pickers := false
 
 func _ready() -> void:
 	_lobby_session.slots_structure_changed.connect(_on_slots_structure_changed)
-	_lobby_session.session_state_changed.connect(_update_chrome)
+	_lobby_session.session_state_changed.connect(_on_session_state_changed)
 	_match_session.session_state_changed.connect(_update_chrome)
 	_add_player_button.pressed.connect(_on_add_player_pressed)
 	_sync_slot_rows()
+	_update_chrome()
+
+
+func _on_session_state_changed() -> void:
+	_refresh_all_slot_rows()
 	_update_chrome()
 
 
@@ -99,28 +104,37 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	peer_label.custom_minimum_size = Vector2(36, 0)
 	row.add_child(peer_label)
 
-	var name_field := LineEdit.new()
-	name_field.text = slot.display_name
-	name_field.placeholder_text = "Display name"
-	name_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_field.editable = _lobby_session.owns_slot(slot.player_id)
-	name_field.focus_exited.connect(func() -> void:
-		if _lobby_session.owns_slot(slot.player_id):
-			_lobby_session.request_set_display_name(slot.player_id, name_field.text)
-	)
-	name_field.text_submitted.connect(func(new_text: String) -> void:
-		if _lobby_session.owns_slot(slot.player_id):
-			_lobby_session.request_set_display_name(slot.player_id, new_text)
-	)
-	row.add_child(name_field)
+	var name_control: Control
+	if _lobby_session.owns_slot(slot.player_id):
+		var name_field := LineEdit.new()
+		name_field.text = slot.display_name
+		name_field.placeholder_text = "Display name"
+		name_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_field.focus_exited.connect(func() -> void:
+			_commit_display_name(slot.player_id, name_field.text)
+		)
+		name_field.text_submitted.connect(func(new_text: String) -> void:
+			_commit_display_name(slot.player_id, new_text)
+		)
+		name_control = name_field
+	else:
+		var name_label := Label.new()
+		name_label.text = slot.display_name
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_control = name_label
+
+	row.set_meta(&"name_display", name_control)
+	row.add_child(name_control)
 
 	var ready_toggle := CheckBox.new()
 	ready_toggle.text = "Ready"
 	ready_toggle.button_pressed = slot.ready
 	ready_toggle.disabled = not _lobby_session.owns_slot(slot.player_id)
 	ready_toggle.toggled.connect(func(is_pressed: bool) -> void:
-		if _lobby_session.owns_slot(slot.player_id):
-			_lobby_session.request_set_ready(slot.player_id, is_pressed)
+		if not _lobby_session.owns_slot(slot.player_id):
+			return
+		_commit_display_name_from_row(row, slot.player_id)
+		_lobby_session.request_set_ready(slot.player_id, is_pressed)
 	)
 	row.add_child(ready_toggle)
 
@@ -150,17 +164,47 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 
 
 func _refresh_slot_row(row: HBoxContainer, slot: PlayerSlot) -> void:
+	var name_display: Control = row.get_meta(&"name_display")
+	if name_display is LineEdit:
+		var name_field: LineEdit = name_display
+		if not name_field.has_focus():
+			name_field.text = slot.display_name
+	elif name_display is Label:
+		name_display.text = slot.display_name
+
 	for child in row.get_children():
-		if child is LineEdit:
-			var name_field: LineEdit = child
-			if not name_field.has_focus():
-				name_field.text = slot.display_name
-		elif child is CheckBox:
-			var ready_toggle: CheckBox = child
-			ready_toggle.button_pressed = slot.ready
+		if child is CheckBox:
+			child.button_pressed = slot.ready
 
 	if _lobby_session.owns_slot(slot.player_id):
 		_update_remove_button(row, slot.player_id)
+
+
+func _refresh_all_slot_rows() -> void:
+	for slot in _lobby_session.slots:
+		if _row_nodes.has(slot.player_id):
+			_refresh_slot_row(_row_nodes[slot.player_id], slot)
+
+
+func _commit_display_name_from_row(row: HBoxContainer, player_id: String) -> void:
+	var name_display: Control = row.get_meta(&"name_display")
+	if name_display is LineEdit:
+		_commit_display_name(player_id, name_display.text)
+
+
+func _commit_display_name(player_id: String, display_name: String) -> void:
+	if not _lobby_session.owns_slot(player_id):
+		return
+
+	var slot := _lobby_session.get_slot(player_id)
+	if slot == null:
+		return
+
+	var trimmed := display_name.strip_edges()
+	if slot.display_name == trimmed:
+		return
+
+	_lobby_session.request_set_display_name(player_id, trimmed)
 
 
 func _update_remove_button(row: HBoxContainer, player_id: String) -> void:
