@@ -11,7 +11,7 @@ Bean Party is a short-session social party game: a board frames the match and 30
 Constraints that matter for this decision:
 
 - **2–4 logical players** per match (**architectural direction**). A match may have 1–4 network peers depending on couch/online mix; one peer may own multiple local `PlayerSlot`s.
-- The shared **shell** (lobby, board, phase transitions, economy, results) must stay separate from independently contributed **minigames** ([minigame contract](../architecture/minigame-integration.md), [Godot architecture](../architecture/godot-project.md)).
+- The shared **shell** (lobby, board, phase transitions, economy, results) must stay separate from independently contributed **minigames** ([minigame integration contract](../architecture/minigame-integration.md), [Godot architecture](../architecture/godot-project.md)).
 - Contributors need a path that works for LAN/direct-IP development now and a future Steam release without rewriting board or minigame rules.
 - This record proposes a baseline aligned with the 2–4 player compatibility target in [game design](../design/game.md).
 

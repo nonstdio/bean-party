@@ -1,18 +1,19 @@
-# Minigame contribution contract
+# Minigame integration contract
 
 ## Purpose
 
-This document describes how independently designed minigames should join the shared game without each contributor changing the board or another minigame. It is an interface *goal*, not an engine-specific API. The final code-level contract will be written after the engine spike.
+This document describes how independently designed minigames join the shared shell without changing the board or another minigame. It defines ownership, runtime lifecycle, result, cleanup, and networking boundaries. It is an interface *goal*, not an engine-specific API; the final code-level contract will be written after the required engine and networking spikes.
 
-## Contribution lifecycle
+Use the [minigame design guide](../design/minigames.md) for proposal requirements, player-facing review criteria, and the transition from a proposal issue to `minigames/<slug>/README.md`.
 
-Every minigame should have five stages:
+## Runtime lifecycle
 
-1. **Proposal** — an issue captures the player count, controls, objective, timing, scoring, and art note.
-2. **Setup** — the shared shell provides player identities, teams, input assignments, and any approved configuration.
-3. **Briefing** — the minigame presents a short, accessible explanation and a ready state.
-4. **Play and result** — it runs a bounded round, produces an unambiguous result, and exposes any result data required by the board.
-5. **Teardown** — it releases its own scene, audio, temporary state, and input hooks so another minigame can start cleanly.
+Every minigame should support four runtime stages:
+
+1. **Setup** — the shared shell provides player identities, teams, input assignments, and any approved configuration.
+2. **Briefing** — the minigame presents its explanation, controls, and ready state using shared conventions when available.
+3. **Play and result** — it runs a bounded round, produces an unambiguous result, and exposes only the result data required by the shell.
+4. **Teardown** — it releases its scene, audio, temporary state, input hooks, signals, and network registrations so another minigame can start cleanly.
 
 ## Intended repository layout
 
@@ -46,17 +47,19 @@ Do not place minigame-specific logic in the board or shared-system area without 
 - briefing and controls display that uses shared conventions when available;
 - cleanup of everything it creates.
 
-## Definition of done
+## Local integration definition of done
 
-A minigame is ready for review when it has an approved brief, supports its stated player counts, explains its controls, returns a deterministic result for the same final state, cleans up on restart or exit, credits every third-party asset, and has been tested with people rather than only in a solo editor session.
+A minigame is ready for integration review when it satisfies the [design definition of done](../design/minigames.md#design-definition-of-done), stays within its documented repository boundary, consumes shell-owned player and input assignments, returns a deterministic result for the same final state, and cleans up on restart or exit without leaking state into the next scene.
 
-## Integration questions for the engine spike
+Until the concrete code-level API is accepted, the pull request should document how it was tested for setup, result delivery, retry, early exit, and teardown. A dependency on a new shared interface requires explicit design review rather than placing minigame-specific behavior in the shell.
+
+## Open integration questions
 
 The prototype must answer how the shell loads a minigame, passes player/input information, receives results, handles pause/quit/retry, and prevents a minigame from leaking state into the next scene. Those answers will become the code-level interface before multiple minigames are accepted.
 
 ## Networking
 
-Network-capable minigames plug into the shared shell through a proposed session interface documented in [networking architecture](networking.md). The code-level API will be formalized in milestone 12 of the [networking implementation plan](../plans/networking.md), **after** the milestone 10 `HOST_ACTION` combat spike validates the shared action-netcode kit. Names below are **proposals**.
+Network-capable minigames plug into the shared shell through a proposed session interface documented in [networking architecture](networking.md). The code-level API will be formalized in milestone 12 of the [networking implementation plan](../plans/networking.md), **after** the milestone 10 `HOST_ACTION` combat spike validates the shared action-netcode kit. Names below are **proposals**. Proposal and implemented-design-brief declarations follow the [minigame design guide](../design/minigames.md).
 
 ### Capability declaration
 
@@ -97,7 +100,7 @@ At result time the minigame returns:
 ### Networking rules
 
 1. **Only the authoritative host** may finalize a minigame result. Clients may predict locally for display but must accept host results.
-2. **Declare `local_only` or `network_capable`** in the minigame README and proposal.
+2. **Declare `local_only` or `network_capable`** in the proposal and implemented minigame README.
 3. **Declare a sync profile** for every `network_capable` minigame.
 4. **Do not construct** an independent session, ENet peer, or Steam connection inside a minigame.
 5. **Clean up network state** during teardown: disconnect signal handlers, RPC registrations, buffered snapshots, per-minigame network nodes, and action-netcode kit registrations.
@@ -152,9 +155,9 @@ Spawns, despawns, deaths, pickups, and confirmed hits must be **reliable and ide
 
 See [networking architecture — action-game requirements](networking.md#action-game-requirements-host_action) for hitscan/projectile flows and physics authority.
 
-### Definition of done (network-capable minigames)
+### Network integration definition of done
 
-In addition to the local definition of done, a network-capable minigame is review-ready when:
+In addition to the design and local integration definitions of done, a network-capable minigame is review-ready when:
 
 - it declares its sync profile and supported player counts (2–4 `PlayerSlot`s or a documented subset);
 - it runs without creating its own transport;

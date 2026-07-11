@@ -34,7 +34,8 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Documentation index](docs/README.md) — where project documentation belongs and how it evolves.
 - [Game design target](docs/design/game.md) — what “Mario Party-style” means for this project.
 - [Creative direction](docs/design/creative-direction.md) — how to evoke Bean Battles without copying it.
-- [Minigame contribution contract](docs/architecture/minigame-integration.md) — the intended shape of an independently developed minigame.
+- [Minigame design guide](docs/design/minigames.md) — how proposals become clear, testable minigame briefs.
+- [Minigame integration contract](docs/architecture/minigame-integration.md) — runtime, ownership, result, cleanup, and networking boundaries.
 - [Networking architecture](docs/architecture/networking.md) — proposed online topology, authority, and phase machine.
 - [Networking implementation plan](docs/plans/networking.md) — milestones and test matrix for future netcode work.
 - [Godot project architecture](docs/architecture/godot-project.md) — repository layout and Godot conventions.

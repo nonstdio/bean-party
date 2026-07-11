@@ -21,7 +21,7 @@ The required `Godot tests` status check runs the headless import and GUT suite o
 
 Reviewers should check gameplay clarity, minigame integration boundaries, asset provenance, accessibility, and whether the change matches its proposal. A reviewer does not need to be an expert in the chosen engine to spot unclear setup instructions, missing credits, scope creep, or a confusing player experience.
 
-GitHub does not permit pull-request authors to approve their own work. While no approval is required, authors should still request feedback when another contributor is available. If a change affects the shared shell, minigame contract, engine version, or project-wide art conventions, request review from a maintainer when possible and update the appropriate document.
+GitHub does not permit pull-request authors to approve their own work. While no approval is required, authors should still request feedback when another contributor is available. If a change affects the shared shell, minigame design guide or integration contract, engine version, or project-wide art conventions, request review from a maintainer when possible and update the appropriate document.
 
 ## Decision records
 

@@ -5,7 +5,7 @@ This plan breaks Bean Party online networking into reviewable milestones. Each m
 Related documents:
 
 - [Networking architecture](../architecture/networking.md) — topology, authority, phases, messages
-- [Minigame contribution contract](../architecture/minigame-integration.md) — network-facing minigame rules
+- [Minigame integration contract](../architecture/minigame-integration.md) — network-facing minigame rules
 - [Godot project architecture](../architecture/godot-project.md) — repository layout
 
 ## Principles
@@ -470,7 +470,7 @@ Written report: go / no-go / conditional go for Steam adapter; list channel/limi
 
 ### Purpose
 
-Freeze the shell → minigame network contract as GDScript types/interfaces **after** milestones 7, 9, and 10 validate both `HOST_SNAPSHOT` and `HOST_ACTION` paths. Update [minigame contract](../architecture/minigame-integration.md) with real symbols.
+Freeze the shell → minigame network contract as GDScript types/interfaces **after** milestones 7, 9, and 10 validate both `HOST_SNAPSHOT` and `HOST_ACTION` paths. Update the [minigame integration contract](../architecture/minigame-integration.md) with real symbols.
 
 ### Player-facing proof
 
@@ -479,7 +479,7 @@ A second minimal network-capable minigame (or refactor of milestone 7 or 10) int
 ### Implementation boundary
 
 - `scripts/shared/` public API surface
-- Documentation update in minigame contract
+- Documentation update in the minigame integration contract
 - Example minigame README section
 
 ### Automated tests
