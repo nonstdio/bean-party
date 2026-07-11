@@ -1,6 +1,6 @@
-# Contributing to Bean Battles
+# Contributing to Bean Party
 
-Thank you for helping make Bean Battles. We want the project to feel like a party built by friends: ideas should be easy to pitch, minigames should be easy to try, and changes should be easy to review.
+Thank you for helping make Bean Party. We want the project to feel like a party built by friends: ideas should be easy to pitch, minigames should be easy to try, and changes should be easy to review.
 
 ## Before you begin
 
@@ -28,7 +28,7 @@ The first supported target is a minigame that is understandable at a glance, fai
 - Is it free-for-all, 2v2, 1v3, cooperative, or another clearly named format?
 - What information must the player understand in the first ten seconds?
 - How does the game avoid an early mistake making the rest of the round pointless?
-- What makes it feel at home in Bean Battles rather than a generic party-game scene?
+- What makes it feel at home in Bean Party rather than a generic party-game scene?
 
 Use Godot scenes and GDScript, but do not assume a shared API beyond what [docs/minigame-contract.md](docs/minigame-contract.md) documents. The concrete code-level minigame API is still an open design task.
 

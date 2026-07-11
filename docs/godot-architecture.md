@@ -2,7 +2,7 @@
 
 ## Foundation
 
-Bean Battles uses **Godot 4.7 stable**, **GDScript**, and the **Compatibility renderer**. This is a small, runnable foundation, not the final game architecture. It exists so contributors can open the project immediately while the team evolves the board, minigame API, art kit, and release targets through reviewed decisions.
+Bean Party uses **Godot 4.7 stable**, **GDScript**, and the **Compatibility renderer**. This is a small, runnable foundation, not the final game architecture. It exists so contributors can open the project immediately while the team evolves the board, minigame API, art kit, and release targets through reviewed decisions.
 
 Godot stores the main scene in `project.godot`; `res://` refers to this repository root. The initial entry point is `res://scenes/app/main.tscn`.
 

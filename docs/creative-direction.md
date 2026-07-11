@@ -4,7 +4,7 @@
 
 The visual and tonal reference is [Bean Battles on Steam](https://store.steampowered.com/app/765410/Bean_Battles/), a fast-round multiplayer battle-royale game by Gupa Games. Its store description emphasizes short, action-forward rounds, player customization, equipment, vehicles, teams, and a deliberately chaotic “last bean standing” energy.
 
-Our project should translate that energy into a party-game setting. It must not copy Bean Battles’ assets, code, logos, characters, names, maps, UI, audio, or written text. The Steam page is a reference point, not an asset library. This project is not endorsed by or affiliated with Gupa Games.
+Bean Party should translate that energy into a party-game setting. It must not copy Bean Battles’ assets, code, logos, characters, names, maps, UI, audio, or written text. The Steam page is a reference point, not an asset library. Bean Party is not endorsed by or affiliated with Gupa Games.
 
 ## Desired feeling
 
@@ -16,7 +16,7 @@ The player should feel that they have entered a scrappy, absurd bean combat game
 - **Chaotic, readable arenas.** Use compact spaces, bold landmarks, obvious hazards, and strong contrast between playable areas and decoration. Readability wins when the party gets busy.
 - **Improvised competitive energy.** Props can suggest equipment, vehicles, arenas, and survival-game tension, but the objective must remain playful and understandable.
 - **Comedic impact.** Favor exaggerated motion, clear reactions, surprising outcomes, and visual punctuation over realism or graphic violence.
-- **One shared world.** A minigame can have its own twist, but it should still look like it belongs in the same Bean Battles-inspired universe through a shared palette, prop vocabulary, UI language, and character treatment.
+- **One shared world.** A minigame can have its own twist, but it should still look like it belongs in the Bean Party universe, informed by Bean Battles-inspired direction through a shared palette, prop vocabulary, UI language, and character treatment.
 - **Original-by-default.** Sketch from high-level traits—speed, absurdity, bean identity, and multiplayer chaos—then make a new setting, composition, and asset set.
 
 ## Asset process

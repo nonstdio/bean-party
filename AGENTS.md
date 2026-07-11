@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository is pre-production work for a collaborative Bean Battles-inspired party game. It uses Godot 4.7 stable and GDScript for the initial shared codebase.
+This repository is pre-production work for Bean Party, a collaborative party game inspired by Bean Battles. It uses Godot 4.7 stable and GDScript for the initial shared codebase.
 
 ## Start here
 
