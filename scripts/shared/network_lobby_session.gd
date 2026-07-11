@@ -100,6 +100,9 @@ func request_add_local_slot(display_name: String = "") -> void:
 	if is_authority():
 		_host_apply_add_slot(_local_peer_id(), display_name)
 	else:
+		if not _can_send_client_rpc():
+			call_deferred("request_add_local_slot", display_name)
+			return
 		_rpc_request_add_slot.rpc_id(1, display_name)
 
 
@@ -195,6 +198,20 @@ func _match_session() -> MatchSession:
 	if parent is MatchSession:
 		return parent
 	return null
+
+
+func _can_send_client_rpc() -> bool:
+	var match_session := _match_session()
+	if match_session == null or not match_session.is_session_established():
+		return false
+	if match_session.multiplayer.multiplayer_peer == null:
+		return false
+	if (
+		match_session.multiplayer.multiplayer_peer.get_connection_status()
+		!= MultiplayerPeer.CONNECTION_CONNECTED
+	):
+		return false
+	return 1 in match_session.multiplayer.get_peers()
 
 
 func _local_peer_id() -> int:

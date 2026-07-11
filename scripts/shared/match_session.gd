@@ -199,6 +199,9 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
+	if _webrtc_coordinator != null:
+		_webrtc_coordinator.poll_peer_connections()
+
 	if _state == SessionState.CONNECTING:
 		var timeout_msec := _connect_timeout_msec()
 		if Time.get_ticks_msec() - _connect_started_msec > timeout_msec:
@@ -207,6 +210,14 @@ func _process(delta: float) -> void:
 
 		if _peer != null and _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
 			_on_connection_failed()
+			return
+
+		if (
+			get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC
+			and not is_server()
+			and _is_webrtc_client_transport_ready()
+		):
+			_on_connected_to_server()
 			return
 
 	if not is_session_established():
@@ -328,7 +339,18 @@ func _on_webrtc_peer_ready(peer: MultiplayerPeer, is_host: bool) -> void:
 		_ping_accumulator = PING_INTERVAL_SEC
 		return
 
-	_on_connected_to_server()
+	# Wait for ICE/channel setup; _process will promote to CONNECTED when ready.
+
+
+func _is_webrtc_client_transport_ready() -> bool:
+	if _peer == null or is_server():
+		return false
+	if _peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return false
+	for peer_id in multiplayer.get_peers():
+		if peer_id == 1:
+			return true
+	return false
 
 
 func _on_webrtc_lobby_code_ready(lobby_code: String) -> void:

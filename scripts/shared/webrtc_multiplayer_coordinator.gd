@@ -68,6 +68,20 @@ func _bind_signaling_signals() -> void:
 
 func _process(_delta: float) -> void:
 	_signaling.poll()
+	poll_peer_connections()
+
+
+func poll_peer_connections() -> void:
+	if _rtc_mp == null:
+		return
+
+	for peer_id in range(1, MatchConstants.MAX_PEERS + 1):
+		if not _rtc_mp.has_peer(peer_id):
+			continue
+		var peer_data: Dictionary = _rtc_mp.get_peer(peer_id)
+		var connection: WebRTCPeerConnection = peer_data.get("connection")
+		if connection != null:
+			connection.poll()
 
 
 func _exit_tree() -> void:
