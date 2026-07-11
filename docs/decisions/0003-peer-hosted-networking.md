@@ -6,14 +6,14 @@ Status: Proposed
 
 ## Context
 
-Bean Party is a short-session social party game: a board frames the match and 30–90 second minigames create the memorable moments. The project has accepted **Godot 4.7 stable** with **GDScript** ([Decision 0001](0001-godot-engine.md)) and a local-first contributor workflow. Online play is a later milestone, not a blocker for the first local vertical slice, but the networking design must not assume a four-player ceiling.
+Bean Party is a short-session social party game: a board frames the match and 30–90 second minigames create the memorable moments. The project has accepted **Godot 4.7 stable** with **GDScript** ([Decision 0001](0001-godot-engine.md)) and a local-first contributor workflow. Online play is a later milestone, not a blocker for the first local vertical slice.
 
 Constraints that matter for this decision:
 
-- **Up to 8 logical players** per match (**architectural direction**). A match may have 1–8 network peers depending on couch/online mix; one peer may own multiple local `PlayerSlot`s.
+- **2–4 logical players** per match (**architectural direction**). A match may have 1–4 network peers depending on couch/online mix; one peer may own multiple local `PlayerSlot`s.
 - The shared **shell** (lobby, board, phase transitions, economy, results) must stay separate from independently contributed **minigames** ([minigame contract](../minigame-contract.md), [Godot architecture](../godot-architecture.md)).
 - Contributors need a path that works for LAN/direct-IP development now and a future Steam release without rewriting board or minigame rules.
-- This record proposes a baseline. Early spikes may prove with 2–4 players first (**spike assumption**), but session, snapshot, and message schemas must size for eight `PlayerSlot`s.
+- This record proposes a baseline aligned with the 2–4 player compatibility target in [game design](../game-design.md).
 
 ## Options considered
 
@@ -29,7 +29,7 @@ Adopt the following baseline (**architectural direction** unless labeled otherwi
 
 | Area | Choice |
 | --- | --- |
-| Match topology | **Host-authoritative, peer-hosted** matches for **2–8** logical players (hard cap: 8 `PlayerSlot`s) |
+| Match topology | **Host-authoritative, peer-hosted** matches for **2–4** logical players (hard cap: 4 `PlayerSlot`s) |
 | Game-facing API | Godot **high-level Multiplayer API** |
 | Initial transport | **`ENetMultiplayerPeer`** for LAN/direct-IP spike ([ENetMultiplayerPeer](https://docs.godotengine.org/en/4.7/classes/class_enetmultiplayerpeer.html)) |
 | Future transport | **Transport abstraction** so [Steam Networking Sockets](https://partner.steamgames.com/doc/features/networking) / [Steam Datagram Relay](https://partner.steamgames.com/doc/features/multiplayer/steamdatagramrelay) can replace ENet without changing board or minigame rules |
@@ -76,7 +76,7 @@ Dedicated servers excel when sessions are long-lived, competitive integrity is p
 
 - The host peer runs authoritative simulation; host advantage is possible in real-time minigames—mitigate with server-side scoring and validation, not client-reported wins.
 - **Host migration at phase boundaries** is the highest-risk open design: election, snapshot handoff, and RPC rebinding are undefined until milestone 9 validates them. Until then, this decision stays **Proposed**.
-- Bandwidth scales with player count; 8-player `HOST_SNAPSHOT` minigames need measurement (**open question**: snapshot aggregation vs interest management).
+- Bandwidth scales with player count; 4-player `HOST_SNAPSHOT` minigames need measurement (**open question**: snapshot aggregation vs interest management).
 - Every network-capable minigame must declare a sync profile and clean up network state on teardown.
 - Automated tests must cover phase agreement, result agreement, and disconnect recovery—not only “feels fine” playtests.
 
@@ -110,7 +110,7 @@ This decision moves to **Accepted** only when spike milestones in [networking im
 2. **Result agreement** — placements, scores, and board rewards match on all peers after each minigame.
 3. **Board-state consistency** — canonical snapshot hash (or equivalent) matches across peers at phase boundaries.
 4. **Disconnect recovery** — documented matrix passes for non-host disconnect and host disconnect (Case A abort/replay; Case B continue from snapshot at phase boundaries).
-5. **Bandwidth sampling** — message rates and payload sizes recorded for at least one `HOST_SNAPSHOT` minigame at 4 and 8 `PlayerSlot`s.
-6. **8-player session** — e.g. 4 peers × 2 local players, or 8 single-player peers when hardware allows.
+5. **Bandwidth sampling** — message rates and payload sizes recorded for at least one `HOST_SNAPSHOT` minigame at 2 and 4 `PlayerSlot`s.
+6. **4-player session** — e.g. 2 peers × 2 local players, or 4 single-player peers.
 
 Human playtesting remains required for perceived input responsiveness; it is not sufficient on its own.

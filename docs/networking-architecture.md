@@ -29,20 +29,20 @@ Related documents:
 
 ## Match topology
 
-**Architectural direction:** a match has exactly one **host peer** (authority) and zero or more **client peers**, with **up to 8 `PlayerSlot`s** total across all peers.
+**Architectural direction:** a match has exactly one **host peer** (authority) and zero or more **client peers**, with **up to 4 `PlayerSlot`s** total across all peers.
 
 Proposed capacity constants:
 
 | Constant | Value | Notes |
 | --- | --- | --- |
-| `MAX_PLAYERS` | 8 | Logical `PlayerSlot` hard cap |
-| `MAX_PEERS` | TBD by spike | Bounded by ENet/Steam connection limits; likely ≤ 8 for friend sessions |
+| `MAX_PLAYERS` | 4 | Logical `PlayerSlot` hard cap |
+| `MAX_PEERS` | TBD by spike | Bounded by ENet/Steam connection limits; likely ≤ 4 for friend sessions |
 
 Example layouts:
 
-- **8 remote friends** — 8 peers × 1 `PlayerSlot` each
-- **Couch + online** — 4 peers × 2 local `PlayerSlot`s each
-- **Local-only (no network)** — 1 peer × up to 8 `PlayerSlot`s (offline milestone 1)
+- **4 remote friends** — 4 peers × 1 `PlayerSlot` each
+- **Couch + online** — 2 peers × 2 local `PlayerSlot`s each
+- **Local-only (no network)** — 1 peer × up to 4 `PlayerSlot`s (offline milestone 1)
 
 ```text
                     ┌──────────────── Host peer (authority) ────────────────┐
@@ -339,10 +339,10 @@ sequenceDiagram
 - Split-brain double host
 - Stale snapshot restore after rewards visible
 - RPCs targeting old `peer_id` after migration
-- Exceeding 8 `PlayerSlot`s or claiming another peer's slot
+- Exceeding 4 `PlayerSlot`s or claiming another peer's slot
 
 See [networking implementation plan](networking-implementation-plan.md) for the disconnect recovery matrix and acceptance measurements.
 
-## 8-player scale note
+## Player-count scale note
 
-**Secondary open question:** whether peer-hosted `HOST_SNAPSHOT` sync remains acceptable at 8 players without interest management or per-tick aggregation. Measure in milestones 7 and 10. This affects bandwidth and minigame authoring but does not determine whether a match survives host loss—that is the migration problem above.
+**Secondary open question:** whether peer-hosted `HOST_SNAPSHOT` sync remains acceptable at 4 players without interest management or per-tick aggregation. Measure in milestones 7 and 10. This affects bandwidth and minigame authoring but does not determine whether a match survives host loss—that is the migration problem above.

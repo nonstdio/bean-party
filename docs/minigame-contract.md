@@ -119,7 +119,7 @@ A timing-based minigame will usually use `TURN_OR_EVENT`. A movement arena will 
 
 In addition to the local definition of done, a network-capable minigame is review-ready when:
 
-- it declares its sync profile and supported player counts (2–8 `PlayerSlot`s or a documented subset);
+- it declares its sync profile and supported player counts (2–4 `PlayerSlot`s or a documented subset);
 - it runs without creating its own transport;
 - host and all clients agree on results in manual multi-peer tests documented in the PR;
 - teardown leaves no registered RPCs or session listeners.

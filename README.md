@@ -13,7 +13,7 @@ It takes structural inspiration from Mario Party-style board-and-minigame games,
 
 ## Project status
 
-The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. A **proposed** peer-hosted networking architecture ([Decision 0003](docs/decisions/0003-peer-hosted-networking.md)) targets up to 8 players online; it is not validated netcode yet. Target platforms, final art pipeline, and board economy remain open decisions.
+The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. A **proposed** peer-hosted networking architecture ([Decision 0003](docs/decisions/0003-peer-hosted-networking.md)) targets 2–4 players online; it is not validated netcode yet. Target platforms, final art pipeline, and board economy remain open decisions.
 
 ## Run the starter project
 

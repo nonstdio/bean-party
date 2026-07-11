@@ -41,23 +41,23 @@ Separate **network peers** from logical **`PlayerSlot`s** so local couch play an
 
 ### Player-facing proof
 
-From the starter app, two to eight local players can join a couch session with distinct names/colors; the UI shows who occupies each slot without any network connection.
+From the starter app, two to four local players can join a couch session with distinct names/colors; the UI shows who occupies each slot without any network connection.
 
 ### Implementation boundary
 
 - `scripts/shared/` — proposed `PlayerSlot` data, session registry (proposal names)
-- `tests/unit/` — slot assignment, cap at `MAX_PLAYERS = 8`
+- `tests/unit/` — slot assignment, cap at `MAX_PLAYERS = 4`
 - No `MultiplayerPeer`, no board, no minigame changes required
 
 ### Automated tests
 
-- Cannot exceed 8 `PlayerSlot`s
+- Cannot exceed 4 `PlayerSlot`s
 - `player_id` stable when toggling ready
 - Multiple `local_device_slot` values on one offline “peer”
 
 ### Manual tests
 
-- 4-player and 8-player couch assignment on one machine
+- 2-player and 4-player couch assignment on one machine
 - Reassign controller slot without duplicating `player_id`
 
 ### Stop condition
@@ -160,12 +160,12 @@ Peer A joins with 2 local players; Peer B joins with 1; lobby shows 3 `PlayerSlo
 ### Implementation boundary
 
 - `scripts/shared/` — lobby authority on host, slot claim validation
-- `tests/unit/` — reject slot claim from wrong `peer_id`, reject 9th player
+- `tests/unit/` — reject slot claim from wrong `peer_id`, reject fifth player
 
 ### Automated tests
 
 - Host rejects `PlayerSlot` claim for another peer's `local_device_slot`
-- Host rejects match start when over `MAX_PLAYERS`
+- Host rejects match start when over `MAX_PLAYERS` (fifth player)
 
 ### Manual tests
 
@@ -264,7 +264,7 @@ Validate `HOST_SNAPSHOT` profile end-to-end: input upstream, host sim, snapshots
 
 ### Player-facing proof
 
-2–4 peers (scaling toward 8) play a graybox movement minigame (e.g. arena with position sync); remote beans move smoothly; host declares winner; results match on all peers.
+2–4 peers play a graybox movement minigame (e.g. arena with position sync); remote beans move smoothly; host declares winner; results match on all peers.
 
 ### Implementation boundary
 
@@ -280,7 +280,6 @@ Validate `HOST_SNAPSHOT` profile end-to-end: input upstream, host sim, snapshots
 ### Manual tests
 
 - 4 `PlayerSlot`s, 2 peers × 2 local
-- 8 `PlayerSlot`s when hardware allows
 - Record messages/sec and KB/s for results table
 
 ### Stop condition
@@ -290,7 +289,6 @@ Result agreement automated test passes; manual playtest at 4 players with no per
 ### Open questions before milestone 8
 
 - 30 vs 60 Hz sim for this minigame
-- Whether 8-player snapshot rate must throttle
 
 ---
 
@@ -356,7 +354,7 @@ Implement and measure **Case A** (abort/replay) and **Case B** (continue from sn
 ### Manual tests
 
 - Host disconnect during each major phase (matrix below)
-- 4-peer and 8-`PlayerSlot` Case B sessions
+- 4-peer Case B sessions
 - Reconnecting client at phase boundary restores correct slot
 
 ### Stop condition
@@ -454,8 +452,8 @@ Run these environments in addition to per-milestone manual tests. Record measure
 | Two LAN machines | Real NIC latency, MTU |
 | Four LAN machines | Phase agreement under N>2 (**when milestone requires**) |
 | Two internet machines | NAT, variable RTT |
-| 4 peers × 2 local `PlayerSlot`s | Couch + online on one host PC |
-| 8 single-player peers | `MAX_PLAYERS` stress (when hardware allows) |
+| 2 peers × 2 local `PlayerSlot`s | Couch + online on one host PC (4 players total) |
+| 4 single-player peers | `MAX_PLAYERS` stress |
 
 ### Latency and impairment profiles
 
@@ -488,7 +486,7 @@ Mark each cell: **pass**, **fail**, **abort replay (Case A)**, or **continue (Ca
 ### Adversarial and edge cases
 
 - Conflicting move requests same tick
-- Client claims extra `PlayerSlot` or ninth player
+- Client claims extra `PlayerSlot` or fifth player
 - Client sends results RPC (must be ignored)
 - Host and client at different render frame rates
 - Two local players on one peer: both inputs in same upstream frame
@@ -503,7 +501,7 @@ Mark each cell: **pass**, **fail**, **abort replay (Case A)**, or **continue (Ca
 | Correction frequency | Prediction overlay / logs (milestone 8) | Documented per latency tier |
 | Correction magnitude | Max position error after reconcile | Documented per latency tier |
 | Disconnect recovery | Matrix above | Case A reliable; Case B same epoch + hash |
-| Bandwidth | KB/s and msgs/sec sampled | Recorded for 4 and 8 players; no fixed cap yet |
+| Bandwidth | KB/s and msgs/sec sampled | Recorded for 2 and 4 players; no fixed cap yet |
 | Input responsiveness | Human playtest | Subjective notes **plus** one of: input-to-ack latency sample, correction rate |
 
 “Feels good” alone is not sufficient for merge to milestones 7–9; pair with at least one quantitative metric.
