@@ -1,8 +1,18 @@
 extends VBoxContainer
 
+enum TransportMode {
+	ENET,
+	WEBRTC,
+}
+
 @onready var _match_session: MatchSession = %MatchSession
+@onready var _transport_field: OptionButton = %TransportField
+@onready var _enet_fields: HBoxContainer = %EnetFields
+@onready var _webrtc_fields: HBoxContainer = %WebRtcFields
 @onready var _address_field: LineEdit = %AddressField
 @onready var _port_field: LineEdit = %PortField
+@onready var _signaling_url_field: LineEdit = %SignalingUrlField
+@onready var _room_code_field: LineEdit = %RoomCodeField
 @onready var _host_button: Button = %HostButton
 @onready var _join_button: Button = %JoinButton
 @onready var _disconnect_button: Button = %DisconnectButton
@@ -14,8 +24,12 @@ var _last_echo_message := ""
 
 
 func _ready() -> void:
+	_transport_field.add_item("ENet (LAN)", TransportMode.ENET)
+	_transport_field.add_item("WebRTC (internet)", TransportMode.WEBRTC)
 	_port_field.text = str(MatchConstants.DEFAULT_ENET_PORT)
 	_address_field.text = "127.0.0.1"
+	_signaling_url_field.text = MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL
+	_transport_field.item_selected.connect(_on_transport_selected)
 	_host_button.pressed.connect(_on_host_pressed)
 	_join_button.pressed.connect(_on_join_pressed)
 	_disconnect_button.pressed.connect(_on_disconnect_pressed)
@@ -25,10 +39,21 @@ func _ready() -> void:
 	_match_session.server_disconnected.connect(_on_server_disconnected)
 	_match_session.session_ended.connect(_on_session_ended)
 	_match_session.echo_completed.connect(_on_echo_completed)
+	_on_transport_selected(0)
 	_refresh()
 
 
+func _on_transport_selected(_index: int) -> void:
+	var mode := _selected_transport_mode()
+	_enet_fields.visible = mode == TransportMode.ENET
+	_webrtc_fields.visible = mode == TransportMode.WEBRTC
+
+
 func _on_host_pressed() -> void:
+	if _selected_transport_mode() == TransportMode.WEBRTC:
+		_host_webrtc()
+		return
+
 	var port := _read_port()
 	if port < 0:
 		return
@@ -39,7 +64,28 @@ func _on_host_pressed() -> void:
 	_refresh()
 
 
+func _host_webrtc() -> void:
+	var signaling_url := _read_signaling_url()
+	if signaling_url == "":
+		return
+	var error := _match_session.host_with_transport(
+		TransportAdapterRegistry.TRANSPORT_WEBRTC,
+		{"signaling_url": signaling_url},
+	)
+	if error == OK:
+		_status_label.text = "Connecting to signaling and creating room..."
+	elif error == ERR_CANT_CREATE:
+		_status_label.text = "WebRTC host failed. Install webrtc-native (see docs/guides/webrtc-setup.md)."
+	else:
+		_status_label.text = "WebRTC host failed (%d)." % error
+	_refresh()
+
+
 func _on_join_pressed() -> void:
+	if _selected_transport_mode() == TransportMode.WEBRTC:
+		_join_webrtc()
+		return
+
 	var port := _read_port()
 	if port < 0:
 		return
@@ -53,6 +99,30 @@ func _on_join_pressed() -> void:
 		if error == OK
 		else "Join failed (%d)." % error
 	)
+	_refresh()
+
+
+func _join_webrtc() -> void:
+	var signaling_url := _read_signaling_url()
+	if signaling_url == "":
+		return
+	var room_code := _room_code_field.text.strip_edges()
+	if room_code == "":
+		_status_label.text = "Enter a room code to join."
+		return
+	var error := _match_session.join_with_transport(
+		TransportAdapterRegistry.TRANSPORT_WEBRTC,
+		{
+			"signaling_url": signaling_url,
+			"room_code": room_code,
+		},
+	)
+	if error == OK:
+		_status_label.text = "Joining room %s..." % room_code
+	elif error == ERR_CANT_CREATE:
+		_status_label.text = "WebRTC join failed. Install webrtc-native (see docs/guides/webrtc-setup.md)."
+	else:
+		_status_label.text = "WebRTC join failed (%d)." % error
 	_refresh()
 
 
@@ -99,6 +169,7 @@ func _refresh() -> void:
 	_host_button.disabled = in_session
 	_join_button.disabled = in_session
 	_disconnect_button.disabled = not in_session
+	_transport_field.disabled = in_session
 	_echo_button.disabled = (
 		not _match_session.is_session_established()
 		or _match_session.get_remote_peer_ids().is_empty()
@@ -107,28 +178,68 @@ func _refresh() -> void:
 	match state:
 		MatchSession.SessionState.CONNECTING:
 			_peers_label.text = "Peers: connecting..."
+			if _match_session.get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+				var room_code := _match_session.get_last_join_room_code()
+				if room_code != "":
+					_room_code_field.text = room_code
+					_status_label.text = "Room code: %s (share with friends)" % room_code
 		MatchSession.SessionState.CONNECTED:
 			var peer_ids := _match_session.get_session_peer_ids()
 			_peers_label.text = "Peers (client): %s" % ", ".join(peer_ids)
 			if not _is_terminal_status():
-				_status_label.text = "Connected as client."
+				_status_label.text = _connected_status_text()
 		MatchSession.SessionState.HOSTING:
 			var peer_ids := _match_session.get_session_peer_ids()
 			_peers_label.text = "Peers (host): %s" % ", ".join(peer_ids)
 			if not _is_terminal_status():
-				var port := _read_port(true)
-				if port > 0:
-					_status_label.text = "Hosting on port %d." % port
+				_status_label.text = _hosting_status_text()
 		_:
 			_peers_label.text = "Peers: none"
 
 
+func _connected_status_text() -> String:
+	if _match_session.get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		return "Connected (WebRTC room %s)." % _match_session.get_last_join_room_code()
+	return "Connected as client."
+
+
+func _hosting_status_text() -> String:
+	if _match_session.get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		var room_code := _match_session.get_last_join_room_code()
+		if room_code != "":
+			_room_code_field.text = room_code
+		return "Hosting WebRTC room %s." % room_code
+
+	var port := _read_port(true)
+	if port > 0:
+		return "Hosting on port %d." % port
+	return "Hosting."
+
+
 func _is_terminal_status() -> bool:
 	return (
-		_status_label.text == "Connection failed."
+		_status_label.text.begins_with("Connection failed")
 		or _status_label.text == "Host left the match."
 		or _status_label.text == "Session disconnected."
+		or _status_label.text.begins_with("WebRTC host failed")
+		or _status_label.text.begins_with("WebRTC join failed")
+		or _status_label.text.begins_with("Signaling disconnected")
 	)
+
+
+func _selected_transport_mode() -> TransportMode:
+	return _transport_field.get_selected_id() as TransportMode
+
+
+func _read_signaling_url() -> String:
+	var url := _signaling_url_field.text.strip_edges()
+	if url == "":
+		_status_label.text = "Enter a signaling server URL."
+		return ""
+	if not url.begins_with("ws://") and not url.begins_with("wss://"):
+		_status_label.text = "Signaling URL must start with ws:// or wss://."
+		return ""
+	return url
 
 
 func _read_port(quiet := false) -> int:

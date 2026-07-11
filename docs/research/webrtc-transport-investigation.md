@@ -41,7 +41,7 @@ Constants live in `TransportMessageLanes.WEBRTC_CHANNEL_BY_LANE`. RPC wiring is 
 | Signaling server (dev) | Done |
 | webrtc-native install docs | Done |
 | 2-peer internet echo (manual) | **Open** |
-| Join-code production UI | Phase 1 |
+| Join-code production UI | Done (debug shell) |
 | TURN relay | Phase 2 |
 | 4-peer NAT matrix | Phase 2 |
 
@@ -51,6 +51,6 @@ Constants live in `TransportMessageLanes.WEBRTC_CHANNEL_BY_LANE`. RPC wiring is 
 
 ## Follow-up
 
-- Phase 1: join-code UX in `network_session_view`, reconnect keys by `room_code`
+- Phase 1: join-code UX in `network_session_view`, reconnect keys by `room_code` — **done**
 - Phase 2: TURN, lane RPC wiring, ops runbook
 - Update [networking plan](../plans/networking.md) milestone table when Phase 0 manual spike completes

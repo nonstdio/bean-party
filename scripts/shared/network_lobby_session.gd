@@ -255,8 +255,11 @@ func _capture_reconnect_state() -> void:
 			phase_session.get_match_epoch(),
 			recovery_session_id,
 			reconnect_token,
+			match_session.get_transport_id(),
 			match_session.get_last_join_address(),
 			match_session.get_last_join_port(),
+			match_session.get_last_join_address(),
+			match_session.get_last_join_room_code(),
 		)
 		return
 
@@ -302,8 +305,10 @@ func _ensure_local_slot() -> void:
 			and match_session != null
 			and NetworkReconnectState.matches_target(
 				board_session.get_recovery_session_id(),
+				match_session.get_transport_id(),
 				match_session.get_last_join_address(),
 				match_session.get_last_join_port(),
+				match_session.get_last_join_room_code(),
 			)
 		):
 			request_reclaim_slot(
