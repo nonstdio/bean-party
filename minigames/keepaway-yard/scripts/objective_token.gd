@@ -46,7 +46,7 @@ func attach_to_holder(new_holder_id: int) -> void:
 
 
 func follow_position(target_position: Vector2) -> void:
-	global_position = target_position + Vector2(0, -8)
+	position = target_position + Vector2(0, -8)
 
 
 func _build_visuals() -> void:

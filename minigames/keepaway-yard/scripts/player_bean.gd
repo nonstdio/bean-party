@@ -37,7 +37,7 @@ var _knockback_velocity := Vector2.ZERO
 
 func setup(new_player_id: int, spawn_position: Vector2) -> void:
 	player_id = new_player_id
-	global_position = spawn_position
+	position = spawn_position
 	_build_visuals()
 	queue_redraw()
 

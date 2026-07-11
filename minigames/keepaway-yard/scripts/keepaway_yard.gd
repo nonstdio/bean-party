@@ -213,7 +213,7 @@ func _show_briefing() -> void:
 	hud_panel.visible = false
 	results_panel.visible = false
 	objective.set_loose()
-	objective.global_position = Vector2.ZERO
+	_reset_objective_to_center()
 	for player_id in range(PLAYER_COUNT):
 		players[player_id].visible = player_id < player_count_setting
 
@@ -304,7 +304,7 @@ func _update_objective() -> void:
 	if rules.holder_id >= 0:
 		var holder: CharacterBody2D = players[rules.holder_id]
 		objective.attach_to_holder(rules.holder_id)
-		objective.follow_position(holder.global_position)
+		objective.follow_position(holder.position)
 	else:
 		objective.set_loose()
 
@@ -314,7 +314,7 @@ func _check_objective_pickups() -> void:
 		return
 	for player_id in range(player_count_setting):
 		var player: CharacterBody2D = players[player_id]
-		if player.global_position.distance_to(objective.global_position) <= 28.0:
+		if player.position.distance_to(objective.position) <= 28.0:
 			if rules.try_acquire_possession(player_id):
 				objective.attach_to_holder(player_id)
 				return
@@ -331,14 +331,14 @@ func _update_bump_collisions() -> void:
 		var attacker: CharacterBody2D = players[player_id]
 		if not attacker.is_bump_window_active():
 			continue
-		var distance := attacker.global_position.distance_to(holder.global_position)
+		var distance := attacker.position.distance_to(holder.position)
 		if distance > BUMP_HIT_RANGE:
 			continue
 		if rules.apply_holder_bump(player_id):
-			var knock_dir := (holder.global_position - attacker.global_position).normalized()
+			var knock_dir := (holder.position - attacker.position).normalized()
 			holder.apply_knockback(knock_dir)
 			objective.set_loose()
-			objective.global_position = holder.global_position + knock_dir * 24.0
+			objective.position = holder.position + knock_dir * 24.0
 
 
 func _on_objective_touched(player_id: int) -> void:
@@ -354,7 +354,7 @@ func _restart_round() -> void:
 	hud_panel.visible = true
 	status_label.text = "Ready — press confirm to start countdown"
 	objective.set_loose()
-	objective.global_position = Vector2.ZERO
+	_reset_objective_to_center()
 	var spawns := [
 		Vector2(-260, -120),
 		Vector2(260, -120),
@@ -363,7 +363,7 @@ func _restart_round() -> void:
 	]
 	for player_id in range(player_count_setting):
 		var player: CharacterBody2D = players[player_id]
-		player.global_position = spawns[player_id]
+		player.position = spawns[player_id]
 		player.velocity = Vector2.ZERO
 
 
@@ -398,6 +398,10 @@ func _refresh_ui() -> void:
 			score_labels[player_id].text = (
 				"P%d: %.1f%s" % [player_id + 1, rules.scores[player_id], cooldown_text]
 			)
+
+
+func _reset_objective_to_center() -> void:
+	objective.position = Vector2.ZERO
 
 
 func _confirm_pressed() -> bool:
