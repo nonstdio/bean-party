@@ -87,3 +87,54 @@ func test_authoritative_snapshot_hash_matches_after_apply() -> void:
 
 	assert_eq(host_session.get_snapshot_serial(), client_session.get_snapshot_serial())
 	assert_eq(host_session.get_snapshot_hash(), client_session.get_snapshot_hash())
+
+
+func test_remote_input_rejects_spoofed_player_id() -> void:
+	var minigame_session := NetworkMinigameSession.new()
+	add_child_autofree(minigame_session)
+
+	var slots := _make_slots()
+	assert_true(minigame_session.start_minigame(slots, "minigame_test"))
+
+	var victim_id := slots[0].player_id
+	var attacker_peer_id := slots[1].owning_peer_id
+	minigame_session._host_apply_remote_input(attacker_peer_id, victim_id, Vector2.RIGHT)
+
+	assert_false(minigame_session._remote_inputs.has(victim_id))
+
+
+func test_remote_input_accepts_owned_player_id() -> void:
+	var minigame_session := NetworkMinigameSession.new()
+	add_child_autofree(minigame_session)
+
+	var slots := _make_slots()
+	assert_true(minigame_session.start_minigame(slots, "minigame_test"))
+
+	var player_id := slots[1].player_id
+	var peer_id := slots[1].owning_peer_id
+	minigame_session._host_apply_remote_input(peer_id, player_id, Vector2.UP)
+
+	assert_eq(minigame_session._remote_inputs[player_id], Vector2.UP)
+
+
+func test_early_win_broadcasts_final_snapshot() -> void:
+	var host_session := NetworkMinigameSession.new()
+	var client_session := NetworkMinigameSession.new()
+	add_child_autofree(host_session)
+	add_child_autofree(client_session)
+
+	var slots := _make_slots()
+	assert_true(host_session.start_minigame(slots, "minigame_test"))
+
+	host_session._simulator.winner_player_id = slots[0].player_id
+	host_session._simulator.positions_by_player_id[slots[0].player_id] = HostSnapshotSimulator.GOAL_CENTER
+	var starting_serial := host_session.get_snapshot_serial()
+
+	host_session._host_tick(0.01)
+
+	assert_gt(host_session.get_snapshot_serial(), starting_serial)
+	client_session._apply_snapshot_payload(
+		host_session.get_snapshot_serial(),
+		host_session._simulator.export_positions(),
+	)
+	assert_eq(client_session.get_snapshot_hash(), host_session.get_snapshot_hash())

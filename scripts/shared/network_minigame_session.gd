@@ -223,6 +223,8 @@ func _host_tick(delta: float) -> void:
 	_snapshot_accumulator += delta
 	if _snapshot_accumulator < 1.0 / SNAPSHOT_HZ:
 		if not _simulator.winner_player_id.is_empty():
+			_snapshot_serial += 1
+			_broadcast_snapshot()
 			_submit_host_result()
 		return
 
@@ -248,7 +250,8 @@ func _collect_host_inputs() -> Dictionary:
 func _broadcast_snapshot() -> void:
 	var payload := _simulator.export_positions()
 	_publish_authoritative_snapshot(_snapshot_serial, payload)
-	_rpc_apply_snapshot.rpc(_snapshot_serial, payload)
+	if is_networked():
+		_rpc_apply_snapshot.rpc(_snapshot_serial, payload)
 
 
 func _client_interpolate(delta: float) -> void:
@@ -324,7 +327,20 @@ func is_networked() -> bool:
 func _rpc_submit_input(player_id: String, move_x: float, move_y: float) -> void:
 	if not is_authority():
 		return
-	_remote_inputs[player_id] = Vector2(move_x, move_y)
+	_host_apply_remote_input(multiplayer.get_remote_sender_id(), player_id, Vector2(move_x, move_y))
+
+
+func _host_apply_remote_input(peer_id: int, player_id: String, move: Vector2) -> void:
+	if not _peer_owns_player(peer_id, player_id):
+		return
+	_remote_inputs[player_id] = move
+
+
+func _peer_owns_player(peer_id: int, player_id: String) -> bool:
+	for slot in _slots:
+		if slot.player_id == player_id:
+			return slot.owning_peer_id == peer_id
+	return false
 
 
 @rpc("authority", "call_remote", "unreliable")

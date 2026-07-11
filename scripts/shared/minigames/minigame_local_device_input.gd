@@ -4,6 +4,9 @@ extends RefCounted
 ## Shell-owned keyboard bindings for couch device slots 0–3.
 ## Device-slot mapping is local to each peer and is not replicated.
 
+const SLOT_3_HORIZONTAL_KEYS := [KEY_KP_4, KEY_KP_6]
+const SLOT_3_VERTICAL_KEYS := [KEY_KP_8, KEY_KP_2]
+
 
 static func read_move_vector(device_slot: int) -> Vector2:
 	var vector := Vector2.ZERO
@@ -18,16 +21,6 @@ static func read_move_vector(device_slot: int) -> Vector2:
 			vector.x = float(Input.is_key_pressed(KEY_L)) - float(Input.is_key_pressed(KEY_J))
 			vector.y = float(Input.is_key_pressed(KEY_K)) - float(Input.is_key_pressed(KEY_I))
 		3:
-			vector.x = (
-				float(Input.is_key_pressed(KEY_KP_6))
-				+ float(Input.is_key_pressed(KEY_RIGHT))
-				- float(Input.is_key_pressed(KEY_KP_4))
-				- float(Input.is_key_pressed(KEY_LEFT))
-			)
-			vector.y = (
-				float(Input.is_key_pressed(KEY_KP_2))
-				+ float(Input.is_key_pressed(KEY_DOWN))
-				- float(Input.is_key_pressed(KEY_KP_8))
-				- float(Input.is_key_pressed(KEY_UP))
-			)
+			vector.x = float(Input.is_key_pressed(KEY_KP_6)) - float(Input.is_key_pressed(KEY_KP_4))
+			vector.y = float(Input.is_key_pressed(KEY_KP_2)) - float(Input.is_key_pressed(KEY_KP_8))
 	return vector.limit_length(1.0)
