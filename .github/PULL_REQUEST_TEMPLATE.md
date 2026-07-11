@@ -12,7 +12,7 @@ What does this change add or improve for players or contributors?
 
 - [ ] I tested the documented behavior.
 - [ ] I tested with the intended player count, or explained why that was not possible.
-- [ ] I ran the available formatter, tests, and build (if applicable).
+- [ ] I ran `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS/Linux.
 - [ ] I updated documentation affected by this change.
 
 ## Assets and credits

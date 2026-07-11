@@ -10,6 +10,7 @@ Godot stores the main scene in `project.godot`; `res://` refers to this reposito
 
 ```text
 assets/                 # Original source art, audio, fonts, and third-party license notes
+addons/                 # Reviewed, vendored Godot editor/runtime add-ons
 docs/                   # Design, architecture, and decision records
 minigames/              # One self-contained folder per contributed minigame
 scenes/
@@ -18,6 +19,8 @@ scenes/
 scripts/
   app/                  # Controllers for app-level scenes
   shared/               # Shared GDScript only after a reviewed need exists
+tests/                  # Project-level GUT tests; minigames may keep local tests
+tools/                  # Platform runners for agent setup, validation, and tests
 project.godot           # Godot project configuration and main-scene setting
 ```
 
@@ -33,6 +36,8 @@ The foundation intentionally does not create a board manager, global singleton, 
 - Use tabs for GDScript indentation and LF line endings. The repository’s `.editorconfig` and `.gitattributes` state this explicitly.
 
 ## Running and validating
+
+Follow [Godot setup for agents](godot-agent-setup.md) for the pinned engine and terminal-first workflow. Run `powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS and Linux; `all` imports the project headlessly and then runs the GUT suite. Use `validate` or `test` in place of `all` when only one action is needed.
 
 Install Godot 4.7 stable, then either import `project.godot` through the Project Manager or run:
 

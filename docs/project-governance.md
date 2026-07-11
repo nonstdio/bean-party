@@ -15,7 +15,7 @@ The current protection baseline for `main` is:
 
 Restore one required independent approval when at least two active contributors are available. This preserves a lightweight pull-request record now without treating an unavailable reviewer as a permanent merge blocker.
 
-No code owner or required status check exists yet. Add those only after the project has a stable directory layout and a repeatable build. At that point, require formatting, tests, and a build before merge.
+The required `Godot tests` status check runs the headless import and GUT suite on Windows, macOS, and Linux. Keep it required for pull requests to `main`; add formatter, export, and additional test checks as those workflows become repeatable.
 
 ## Review expectations
 

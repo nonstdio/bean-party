@@ -8,7 +8,7 @@ Read the [game design target](docs/game-design.md), [creative direction](docs/cr
 
 ## Godot setup
 
-The project standard is **Godot 4.7 stable** with **GDScript**. Install that version from the [official Godot archive](https://godotengine.org/download/archive/), import `project.godot` through the Project Manager, and run the starter scene with `F6`/`F5`. See [docs/godot-architecture.md](docs/godot-architecture.md) for the repository layout and `res://` paths.
+The project standard is **Godot 4.7 stable** with **GDScript**. Follow [Godot setup for agents](docs/godot-agent-setup.md) for the exact Windows, macOS, or Linux installation and non-interactive validation commands. Run `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS or Linux before opening a pull request. See [docs/godot-architecture.md](docs/godot-architecture.md) for the repository layout and `res://` paths.
 
 Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`, and do not add exported builds to the repository. Use a decision record before upgrading the engine, adding C#, changing renderer defaults, or adding a project-wide Godot plugin.
 
@@ -44,7 +44,7 @@ The project has not selected a software or content license yet. Until one is add
 
 When the project has at least two active contributors, restore one required independent approval before merge.
 
-Continuous integration is not configured yet, so no automated checks are required today. When build and test workflows exist, they will become part of the merge requirements.
+The required `Godot tests` check runs headless validation and GUT tests on Windows, macOS, and Linux. It must pass before a pull request merges; run the same command locally before requesting review.
 
 ## Good pull requests
 
