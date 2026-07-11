@@ -51,6 +51,7 @@ Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for opera
 - Pair a scene with a nearby script when the script is specific to that scene, for example `scenes/app/main.tscn` and `scripts/app/main.gd`.
 - Use `res://` paths in project resources. Do not use machine-specific absolute paths.
 - Minigame-local scenes, scripts, and assets stay within `minigames/<slug>/`; only promote something to `scenes/shared/` or `scripts/shared/` when two or more minigames genuinely need it.
+- Player-controlled 3D movement follows the [Godot 3D movement standards](godot-3d-movement.md), including simulation/render separation, physics ownership, interpolation, camera, networking, and validation requirements.
 - Commit original assets and their source files when practical. Do not commit generated Godot folders, exports, or builds.
 - Keep `.uid` sidecar files untracked under the current ignore policy; Godot may regenerate them locally.
 - Use tabs for GDScript indentation and LF line endings. The repository’s `.editorconfig` and `.gitattributes` state this explicitly.
