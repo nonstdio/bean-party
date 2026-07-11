@@ -31,14 +31,7 @@ The design work should answer two questions early: what does a bean mean in the 
 
 The initial compatibility target is 2–4 local players using a shared screen and controllers or keyboard. Online play follows the same 2–4 player target ([networking architecture](../architecture/networking.md)). More players and asynchronous modes may follow, but should not complicate the first slice.
 
-Each minigame proposal should specify:
-
-- supported player counts and team format;
-- objective and scoring;
-- controls, camera, and accessibility needs;
-- expected time: briefing, active round, and results;
-- how the game stays interesting after a player falls behind;
-- any dependency on board state or shared systems.
+Use the [minigame design guide](minigames.md) for proposal requirements, review criteria, the implemented design brief, and the minigame design definition of done.
 
 ## Boundaries
 
