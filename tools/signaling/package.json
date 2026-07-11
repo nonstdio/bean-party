@@ -1,0 +1,13 @@
+{
+  "name": "bean-party-webrtc-signaling",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WebSocket signaling server for Bean Party WebRTC sessions.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

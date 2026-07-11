@@ -425,13 +425,13 @@ func _stop_active_minigame() -> void:
 		_action_minigame_session.stop_minigame()
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_briefing_ready(player_id: String, is_ready: bool) -> void:
 	if not is_authority():
 		return
 	_host_apply_briefing_ready(multiplayer.get_remote_sender_id(), player_id, is_ready)
 
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "call_remote", "reliable", 0)
 func _rpc_apply_phase_sync(payload: Dictionary) -> void:
 	_apply_remote_phase_state(payload)

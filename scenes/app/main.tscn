@@ -84,7 +84,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 20
-text = "Host or join an ENet session to exercise the networked lobby, board, and minigame flow."
+text = "Host or join a session over ENet (LAN) or WebRTC (internet room code) to exercise the networked lobby, board, and minigame flow."
 horizontal_alignment = 1
 
 [node name="NetworkSession" type="VBoxContainer" parent="Margin/Scroll/Content"]
@@ -261,25 +261,60 @@ text = "Return to board"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
-text = "ENet session (debug)"
+text = "Network session (debug)"
 horizontal_alignment = 1
 
-[node name="ConnectionFields" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
+[node name="TransportRow" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 12
 
-[node name="AddressField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/ConnectionFields"]
+[node name="TransportLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/TransportRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
+text = "Transport"
+
+[node name="TransportField" type="OptionButton" parent="Margin/Scroll/Content/NetworkSession/TransportRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(220, 0)
+
+[node name="EnetFields" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="AddressField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/EnetFields"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
 placeholder_text = "Address"
 
-[node name="PortField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/ConnectionFields"]
+[node name="PortField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/EnetFields"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(80, 0)
 placeholder_text = "Port"
+
+[node name="WebRtcFields" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="SignalingUrlField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/WebRtcFields"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+placeholder_text = "Signaling URL"
+
+[node name="RoomCodeField" type="LineEdit" parent="Margin/Scroll/Content/NetworkSession/WebRtcFields"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+placeholder_text = "Room code (join)"
 
 [node name="NetworkActions" type="HBoxContainer" parent="Margin/Scroll/Content/NetworkSession"]
 layout_mode = 2

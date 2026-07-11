@@ -23,6 +23,7 @@ func describe_capabilities() -> Dictionary:
 	return {
 		"supports_direct_address_join": false,
 		"supports_steam_lobby_join": false,
+		"supports_room_code_join": false,
 		"supports_transfer_channels": false,
 		"max_transfer_channels": 1,
 		"notes": "",

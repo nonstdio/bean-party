@@ -456,7 +456,7 @@ func is_networked() -> bool:
 	return match_session != null and match_session.is_session_established()
 
 
-@rpc("any_peer", "call_remote", "unreliable")
+@rpc("any_peer", "call_remote", "unreliable_ordered", 0)
 func _rpc_submit_input(player_id: String, move_x: float, move_y: float, input_tick: int) -> void:
 	if not is_authority():
 		return
@@ -548,7 +548,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	mark_peer_inactive(peer_id)
 
 
-@rpc("authority", "call_remote", "unreliable")
+@rpc("authority", "call_remote", "unreliable", 0)
 func _rpc_apply_snapshot(serial: int, payload: Dictionary) -> void:
 	if is_authority():
 		return

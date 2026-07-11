@@ -9,6 +9,9 @@ var slots: Array[PlayerSlot] = []
 var _authority: NetworkLobbyAuthority = null
 var _local_device_slots: Dictionary = {}
 var _local_reconnect_credentials: Dictionary = {}
+var _pending_client_rpcs: Array[Callable] = []
+var _pending_lobby_sync_peer_ids: Dictionary = {}
+var _client_rpc_retry_connected: bool = false
 
 
 func _ready() -> void:
@@ -100,7 +103,9 @@ func request_add_local_slot(display_name: String = "") -> void:
 	if is_authority():
 		_host_apply_add_slot(_local_peer_id(), display_name)
 	else:
-		_rpc_request_add_slot.rpc_id(1, display_name)
+		_issue_client_rpc(func() -> void:
+			_rpc_request_add_slot.rpc_id(1, display_name)
+		)
 
 
 func request_remove_local_slot(player_id: String) -> void:
@@ -110,7 +115,9 @@ func request_remove_local_slot(player_id: String) -> void:
 	if is_authority():
 		_host_apply_remove_slot(_local_peer_id(), player_id)
 	else:
-		_rpc_request_remove_slot.rpc_id(1, player_id)
+		_issue_client_rpc(func() -> void:
+			_rpc_request_remove_slot.rpc_id(1, player_id)
+		)
 
 
 func request_set_ready(player_id: String, is_ready: bool) -> void:
@@ -120,7 +127,9 @@ func request_set_ready(player_id: String, is_ready: bool) -> void:
 	if is_authority():
 		_host_apply_set_ready(_local_peer_id(), player_id, is_ready)
 	else:
-		_rpc_request_set_ready.rpc_id(1, player_id, is_ready)
+		_issue_client_rpc(func() -> void:
+			_rpc_request_set_ready.rpc_id(1, player_id, is_ready)
+		)
 
 
 func request_reclaim_slot(
@@ -141,12 +150,14 @@ func request_reclaim_slot(
 			reconnect_token,
 		)
 	else:
-		_rpc_request_reclaim_slot.rpc_id(
-			1,
-			player_id,
-			match_epoch,
-			recovery_session_id,
-			reconnect_token,
+		_issue_client_rpc(func() -> void:
+			_rpc_request_reclaim_slot.rpc_id(
+				1,
+				player_id,
+				match_epoch,
+				recovery_session_id,
+				reconnect_token,
+			)
 		)
 
 
@@ -162,7 +173,9 @@ func request_set_display_name(player_id: String, display_name: String) -> void:
 	if is_authority():
 		_host_apply_set_display_name(_local_peer_id(), player_id, display_name)
 	else:
-		_rpc_request_set_display_name.rpc_id(1, player_id, display_name)
+		_issue_client_rpc(func() -> void:
+			_rpc_request_set_display_name.rpc_id(1, player_id, display_name)
+		)
 
 
 func _board_session() -> NetworkBoardSession:
@@ -197,6 +210,84 @@ func _match_session() -> MatchSession:
 	return null
 
 
+func _can_send_client_rpc() -> bool:
+	var match_session := _match_session()
+	return match_session != null and match_session.is_client_rpc_ready()
+
+
+func _issue_client_rpc(action: Callable) -> void:
+	if _can_send_client_rpc():
+		action.call()
+		return
+	_pending_client_rpcs.append(action)
+	_ensure_transport_retry_listener()
+
+
+func _ensure_transport_retry_listener() -> void:
+	var match_session := _match_session()
+	if match_session == null or _client_rpc_retry_connected:
+		return
+	match_session.session_state_changed.connect(_retry_pending_transport_work)
+	_client_rpc_retry_connected = true
+
+
+func _retry_pending_transport_work() -> void:
+	_flush_pending_client_rpcs()
+	_flush_pending_lobby_syncs()
+
+
+func _flush_pending_client_rpcs() -> void:
+	if _pending_client_rpcs.is_empty() or not _can_send_client_rpc():
+		return
+	var pending := _pending_client_rpcs.duplicate()
+	_pending_client_rpcs.clear()
+	for action in pending:
+		action.call()
+	_clear_transport_retry_listener_if_idle()
+
+
+func _flush_pending_lobby_syncs() -> void:
+	if _pending_lobby_sync_peer_ids.is_empty() or not is_authority():
+		return
+	var match_session := _match_session()
+	if match_session == null:
+		return
+
+	var ready_peer_ids: Array[int] = []
+	for peer_id in _pending_lobby_sync_peer_ids:
+		if match_session.is_peer_route_ready(peer_id):
+			ready_peer_ids.append(peer_id)
+
+	for peer_id in ready_peer_ids:
+		_pending_lobby_sync_peer_ids.erase(peer_id)
+		_push_lobby_sync_to_peer(peer_id)
+
+	_clear_transport_retry_listener_if_idle()
+
+
+func _clear_transport_retry_listener_if_idle() -> void:
+	if not _pending_client_rpcs.is_empty() or not _pending_lobby_sync_peer_ids.is_empty():
+		return
+	var match_session := _match_session()
+	if match_session == null or not _client_rpc_retry_connected:
+		return
+	if match_session.session_state_changed.is_connected(_retry_pending_transport_work):
+		match_session.session_state_changed.disconnect(_retry_pending_transport_work)
+	_client_rpc_retry_connected = false
+
+
+func _reconnect_host_address(match_session: MatchSession) -> String:
+	if match_session.get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		return ""
+	return match_session.get_last_join_address()
+
+
+func _reconnect_signaling_url(match_session: MatchSession) -> String:
+	if match_session.get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		return match_session.get_last_join_address()
+	return ""
+
+
 func _local_peer_id() -> int:
 	var match_session := _match_session()
 	if match_session == null or not match_session.is_session_established():
@@ -216,6 +307,7 @@ func _on_match_session_state_changed() -> void:
 			_start_host_lobby()
 		elif not is_authority():
 			call_deferred("_ensure_local_slot")
+		_retry_pending_transport_work()
 		return
 
 	_reset_lobby()
@@ -255,8 +347,11 @@ func _capture_reconnect_state() -> void:
 			phase_session.get_match_epoch(),
 			recovery_session_id,
 			reconnect_token,
-			match_session.get_last_join_address(),
+			match_session.get_transport_id(),
+			_reconnect_host_address(match_session),
 			match_session.get_last_join_port(),
+			_reconnect_signaling_url(match_session),
+			match_session.get_last_join_room_code(),
 		)
 		return
 
@@ -265,7 +360,18 @@ func _on_peer_connected(peer_id: int) -> void:
 	if not is_authority():
 		return
 
-	_push_lobby_sync_to_peer(peer_id)
+	_queue_lobby_sync_to_peer(peer_id)
+
+
+func _queue_lobby_sync_to_peer(peer_id: int) -> void:
+	if _authority == null:
+		return
+	var match_session := _match_session()
+	if match_session != null and match_session.is_peer_route_ready(peer_id):
+		_push_lobby_sync_to_peer(peer_id)
+		return
+	_pending_lobby_sync_peer_ids[peer_id] = true
+	_ensure_transport_retry_listener()
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
@@ -302,8 +408,10 @@ func _ensure_local_slot() -> void:
 			and match_session != null
 			and NetworkReconnectState.matches_target(
 				board_session.get_recovery_session_id(),
+				match_session.get_transport_id(),
 				match_session.get_last_join_address(),
 				match_session.get_last_join_port(),
+				match_session.get_last_join_room_code(),
 			)
 		):
 			request_reclaim_slot(
@@ -325,6 +433,9 @@ func _ensure_local_slot() -> void:
 
 
 func _reset_lobby() -> void:
+	_pending_client_rpcs.clear()
+	_pending_lobby_sync_peer_ids.clear()
+	_clear_transport_retry_listener_if_idle()
 	_authority = null
 	slots.clear()
 	_local_device_slots.clear()
@@ -557,35 +668,35 @@ func _export_slots() -> Array:
 	return payload
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_add_slot(display_name: String) -> void:
 	if not is_authority():
 		return
 	_host_apply_add_slot(multiplayer.get_remote_sender_id(), display_name)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_remove_slot(player_id: String) -> void:
 	if not is_authority():
 		return
 	_host_apply_remove_slot(multiplayer.get_remote_sender_id(), player_id)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_set_ready(player_id: String, is_ready: bool) -> void:
 	if not is_authority():
 		return
 	_host_apply_set_ready(multiplayer.get_remote_sender_id(), player_id, is_ready)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_set_display_name(player_id: String, display_name: String) -> void:
 	if not is_authority():
 		return
 	_host_apply_set_display_name(multiplayer.get_remote_sender_id(), player_id, display_name)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_reclaim_slot(
 		player_id: String,
 		match_epoch: int,
@@ -603,7 +714,7 @@ func _rpc_request_reclaim_slot(
 	)
 
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "call_remote", "reliable", 0)
 func _rpc_assign_reconnect_credential(
 		player_id: String,
 		recovery_session_id: String,
@@ -615,12 +726,12 @@ func _rpc_assign_reconnect_credential(
 	}
 
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "call_remote", "reliable", 0)
 func _rpc_reclaim_rejected() -> void:
 	NetworkReconnectState.clear()
 	call_deferred("_ensure_local_slot")
 
 
-@rpc("authority", "call_remote", "reliable")
+@rpc("authority", "call_remote", "reliable", 0)
 func _rpc_apply_lobby_sync(payload: Array) -> void:
 	_apply_remote_slots(payload)

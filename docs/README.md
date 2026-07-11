@@ -123,6 +123,9 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 - [Godot setup for agents](guides/godot-setup.md)
 - [Create a minigame](guides/create-a-minigame.md)
 - [Runtime debug harnesses](guides/runtime-debug-harnesses.md)
+- [WebRTC setup](guides/webrtc-setup.md)
+- [WebRTC operations runbook](guides/webrtc-ops.md)
+- [WebRTC implementation notes](guides/webrtc-implementation-notes.md)
 
 ### Plans
 
@@ -132,7 +135,8 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 
 - [Research notes](research/README.md)
 - [Engine evaluation](research/engine-evaluation.md)
-- [Steam transport investigation](research/steam-transport-investigation.md)
+- [Steam transport investigation](research/steam-transport-investigation.md) — Backlog
+- [WebRTC transport investigation](research/webrtc-transport-investigation.md) — Phase 2 in progress
 
 ### Decisions
 

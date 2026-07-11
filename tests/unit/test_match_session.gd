@@ -173,3 +173,45 @@ func test_ping_ms_recorded_from_echo_reply() -> void:
 
 	session._apply_echo_reply(2, "ping-test", nonce)
 	assert_gte(session.get_ping_ms(2), 37)
+
+
+func test_client_rpc_not_ready_while_connecting() -> void:
+	var session := MatchSession.new()
+	add_child_autofree(session)
+
+	session._state = MatchSession.SessionState.CONNECTING
+	session._transport_adapter = WebRtcTransportAdapter.new()
+	assert_false(session.is_client_rpc_ready())
+
+
+func test_exit_tree_resets_transport_adapter() -> void:
+	var session := MatchSession.new()
+	add_child(session)
+
+	assert_eq(session.host(_test_port), OK)
+	session._transport_adapter = WebRtcTransportAdapter.new()
+	session._exit_tree()
+
+	assert_false(session.is_active())
+	assert_eq(session.get_transport_id(), TransportAdapterRegistry.TRANSPORT_ENET)
+	assert_null(session.multiplayer.multiplayer_peer)
+
+	session.free()
+
+
+func test_failed_webrtc_host_does_not_leave_coordinator_child() -> void:
+	if WebRtcAvailability.is_extension_loaded():
+		pass_test("Skipping fail-closed coordinator test because webrtc-native is installed.")
+		return
+
+	var session := MatchSession.new()
+	add_child_autofree(session)
+	assert_eq(
+		session.host_with_transport(
+			TransportAdapterRegistry.TRANSPORT_WEBRTC,
+			{"signaling_url": "ws://127.0.0.1:9080"},
+		),
+		ERR_CANT_CREATE,
+	)
+	for child in session.get_children():
+		assert_false(child is WebRtcMultiplayerCoordinator)
