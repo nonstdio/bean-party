@@ -12,6 +12,12 @@ Desktop.ini
 *.tmp
 *.bak
 
+# Optional local WebRTC GDExtension (install via tools/setup-webrtc-native.ps1)
+addons/webrtc_native/
+
+# Signaling server dependencies (npm install in tools/signaling/)
+tools/signaling/node_modules/
+
 # Godot-generated files
 .godot/
 .import/

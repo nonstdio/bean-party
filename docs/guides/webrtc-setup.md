@@ -17,6 +17,8 @@ powershell -ExecutionPolicy Bypass -File .\tools\setup-webrtc-native.ps1
 powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 validate
 ```
 
+The script extracts `addons/webrtc_native/` into the **repository root** (`bean-party/`, not the parent `beansinc/` folder). If WebRTC errors mention `No default WebRTC extension configured`, re-run the script from the repo root and restart the editor.
+
 On macOS or Linux, download [`godot-extension-webrtc_native.zip`](https://github.com/godotengine/webrtc-native/releases/download/1.2.1-stable/godot-extension-webrtc_native.zip) and extract it to the repository root.
 
 The extension is MIT-licensed. Do not commit generated `.godot/` import output.
