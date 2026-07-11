@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/main.gd" id="1_41s4j"]
 [ext_resource type="Script" path="res://scripts/app/couch_session_view.gd" id="2_couch"]
+[ext_resource type="Script" path="res://scripts/app/match_flow_debug_view.gd" id="3_flow"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -39,6 +40,7 @@ theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
 [node name="Content" type="VBoxContainer" parent="Margin"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
@@ -66,7 +68,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 20
-text = "Assign names, colors, and controllers for up to four local players."
+text = "Assign players, then use the debug match flow to walk phases and restore board snapshots."
 horizontal_alignment = 1
 
 [node name="CouchSession" type="VBoxContainer" parent="Margin/Content"]
@@ -97,6 +99,57 @@ theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 16
 text = "Loading couch session..."
 horizontal_alignment = 1
+
+[node name="MatchFlowDebug" type="VBoxContainer" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+script = ExtResource("3_flow")
+
+[node name="PhaseLabel" type="Label" parent="Margin/Content/MatchFlowDebug"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
+theme_override_font_sizes/font_size = 18
+text = "Phase: Lobby"
+horizontal_alignment = 1
+
+[node name="BoardLabel" type="Label" parent="Margin/Content/MatchFlowDebug"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
+theme_override_font_sizes/font_size = 16
+text = "Board stub idle."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SnapshotLabel" type="Label" parent="Margin/Content/MatchFlowDebug"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
+theme_override_font_sizes/font_size = 14
+text = "match_epoch 0"
+horizontal_alignment = 1
+
+[node name="FlowActions" type="HBoxContainer" parent="Margin/Content/MatchFlowDebug"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="AdvanceButton" type="Button" parent="Margin/Content/MatchFlowDebug/FlowActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Advance phase"
+
+[node name="BoardTurnButton" type="Button" parent="Margin/Content/MatchFlowDebug/FlowActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Advance board turn"
+
+[node name="RestoreButton" type="Button" parent="Margin/Content/MatchFlowDebug/FlowActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Restore board snapshot"
 
 [node name="Hint" type="Label" parent="Margin/Content"]
 layout_mode = 2
