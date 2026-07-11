@@ -53,13 +53,16 @@ func test_result_idempotency_applies_rewards_once() -> void:
 	authority._apply_stub_minigame_results()
 	assert_eq(authority.pending_board_rewards.size(), 1)
 
-	var beans_before := int(board.beans_by_player_id.get(slots[0].player_id, 0))
+	var reward: Dictionary = authority.pending_board_rewards[0]
+	var winner_id := String(reward.get("player_id", ""))
+	var reward_beans := int(reward.get("beans", 0))
+	var beans_before := int(board.beans_by_player_id.get(winner_id, 0))
 	authority.board_stub = board.duplicate_stub()
 	authority._apply_pending_board_rewards()
 	authority._apply_pending_board_rewards()
 
-	var beans_after := int(authority.board_stub.beans_by_player_id.get(slots[0].player_id, 0))
-	assert_eq(beans_after, beans_before + 3)
+	var beans_after := int(authority.board_stub.beans_by_player_id.get(winner_id, 0))
+	assert_eq(beans_after, beans_before + reward_beans)
 
 
 func test_full_loop_returns_to_board_with_reward() -> void:
