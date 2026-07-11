@@ -1,5 +1,7 @@
 # Engine evaluation
 
+Status: **Concluded**
+
 ## Decision status
 
 **Accepted: Godot 4.7 stable with GDScript.** The decision is recorded in [Decision 0001](../decisions/0001-godot-engine.md). The first priority is a sustainable contributor workflow for a party-game prototype, not maximum graphical power.

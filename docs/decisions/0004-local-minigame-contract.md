@@ -4,6 +4,10 @@ Date: 2026-07-11
 
 Status: Accepted
 
+## Implementation checkpoint
+
+Contract version 1 is implemented in `scripts/shared/minigames/` with a scaffold generator, development harness, `reference-tap` example, and automated conformance checks. It is not yet connected to the main app's local phase proof or ENet placeholder flow; that current boundary is documented in the [minigame integration contract](../architecture/minigame-integration.md#current-implementation-boundary).
+
 ## Context
 
 Bean Party wants independently contributed minigames to integrate without changing the board, the shared shell, or another minigame. The design and integration documents already describe ownership and lifecycle goals, but contributors do not yet have a code-level contract, an executable example, or automated conformance checks.

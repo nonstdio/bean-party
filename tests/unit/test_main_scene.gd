@@ -10,3 +10,4 @@ func test_main_scene_instantiates() -> void:
 
 	assert_true(main is Control)
 	assert_eq(main.name, &"Main")
+	assert_eq(ProjectSettings.get_setting("application/config/name"), "Bean Party")

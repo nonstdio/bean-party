@@ -9,6 +9,7 @@ This directory contains the durable design, architecture, operating guidance, re
 1. Read the repository [README](../README.md) and [contribution guide](../CONTRIBUTING.md).
 2. Follow the [Godot setup guide](guides/godot-setup.md).
 3. Review the [Godot project architecture](architecture/godot-project.md) before adding shared systems or a minigame.
+4. Use the [runtime debug harness guide](guides/runtime-debug-harnesses.md) to exercise the currently implemented local, minigame, and networking proofs.
 
 ### Minigame authors
 
@@ -118,6 +119,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 
 - [Godot setup for agents](guides/godot-setup.md)
 - [Create a minigame](guides/create-a-minigame.md)
+- [Runtime debug harnesses](guides/runtime-debug-harnesses.md)
 
 ### Plans
 
@@ -131,6 +133,9 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 ### Decisions
 
 - [Decision record process and index](decisions/README.md)
+- [Decision 0001: Godot 4.7](decisions/0001-godot-engine.md) — Accepted
+- [Decision 0002: GUT testing](decisions/0002-gut-testing.md) — Accepted
+- [Decision 0003: peer-hosted networking](decisions/0003-peer-hosted-networking.md) — Proposed
 - [Decision 0004: local minigame contract](decisions/0004-local-minigame-contract.md)
 
 ### Project

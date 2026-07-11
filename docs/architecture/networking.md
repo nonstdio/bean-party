@@ -1,12 +1,30 @@
 # Networking architecture
 
-This guide describes the proposed online architecture for Bean Party. It is implementation guidance for a future networking spike, not production netcode. Class and API names are **proposals** until code lands.
+Status: **Active for the milestone 1–6 debug foundation; proposed for later online architecture**
+
+This guide describes Bean Party's proposed online architecture and the debug slice implemented to evaluate it. The implemented slice is not production netcode and does not by itself satisfy the validation gates in proposed [Decision 0003](../decisions/0003-peer-hosted-networking.md). Symbols named in the implementation-status section are current code; later minigame, transport, reconnect, and migration APIs remain proposals unless explicitly labeled otherwise.
 
 Related documents:
 
 - [Decision 0003: peer-hosted networking](../decisions/0003-peer-hosted-networking.md) — chosen baseline and validation gates
 - [Networking implementation plan](../plans/networking.md) — milestones and test matrix
 - [Minigame integration contract](minigame-integration.md) — network-facing minigame inputs, outputs, and sync profiles
+- [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) — operating steps and current limitations
+
+## Current implementation status
+
+The repository implements architecture proofs through part of networking milestone 6:
+
+| Area | Implemented symbols and behavior | Not implemented or not validated |
+| --- | --- | --- |
+| Player/session model | `PlayerSlot`, `OfflineMatchSession`, four-player logical cap, session-local controller-slot map | Physical device input routing and a production match coordinator |
+| Offline phases/snapshots | `LocalMatchPhaseController`, `MatchSnapshot`, canonical JSON serializer, board stub, boundary restore | Persistence, schema migration, or use of these snapshots by network recovery |
+| ENet session | `MatchSession`, `EnetTransportAdapter`, direct host/join, five-second client timeout, reliable echo, teardown | Discovery, join codes, NAT traversal, heartbeat, Steam, reconnect, or host migration |
+| Network lobby | `NetworkLobbyAuthority` / `NetworkLobbySession`; host-assigned slots, per-peer ownership validation, names and ready flags | A readiness requirement for starting the board and trust/profanity policy |
+| Network board | `NetworkBoardAuthority` / `NetworkBoardSession`; frozen roster, owner-only turn requests, reliable state sync and hashes | Real board movement/rules, command ids, reconnect reconciliation, or non-host inactivity handling |
+| Network phases | `NetworkMatchPhaseAuthority` / `NetworkMatchPhaseSession`; host-driven briefing readiness, three-second countdown, placeholder scene load, idempotent result/reward application | A contract minigame, real inputs/simulation/results, network snapshots, scene-load failure handling, disconnect recovery, and recorded manual multi-peer completion evidence |
+
+The offline phase proof, local minigame harness, and network phase proof are separate paths. In particular, the network placeholder does not use local minigame contract version 1. The [networking plan](../plans/networking.md#milestone-overview) records which milestone gates remain open.
 
 ## Terminology
 
@@ -16,7 +34,7 @@ Related documents:
 | **PlayerSlot** | Logical in-match player identity; stable across phases; may be local to one peer |
 | **Host / authority** | The peer that owns canonical match state and validates client intentions |
 | **Phase-boundary snapshot** | Serialized recoverable state stored only at safe match phases |
-| **Session layer** | Proposed boundary between gameplay and the concrete `MultiplayerPeer` |
+| **Session layer** | Boundary between gameplay and the concrete `MultiplayerPeer`; implemented for the ENet debug slice, still provisional as a public game/minigame API |
 | **Sync profile** | Minigame-declared networking behavior: `TURN_OR_EVENT`, `HOST_SNAPSHOT`, `HOST_ACTION`, `CUSTOM_APPROVED` |
 | **match_epoch** | Proposed monotonic counter bumped when authority or snapshot generation changes |
 
@@ -41,12 +59,12 @@ Distinguish three concepts that must not be conflated in gameplay code:
 
 **Architectural direction:** gameplay systems query authority through the session layer, not through “am I player 1?” checks alone. This preserves a future path to a headless dedicated authority without rewriting minigames. Dedicated servers are **deferred**; the separation is a design constraint now.
 
-Proposed capacity constants:
+Implemented debug-slice capacity constants:
 
 | Constant | Value | Notes |
 | --- | --- | --- |
 | `MAX_PLAYERS` | 4 | Logical `PlayerSlot` hard cap |
-| `MAX_PEERS` | TBD by spike | Bounded by ENet/Steam connection limits; likely ≤ 4 for friend sessions |
+| `MAX_PEERS` | 4 | Total ENet peers including the listen-server host; provisional until later scale validation |
 
 Example layouts:
 
@@ -55,24 +73,23 @@ Example layouts:
 - **Local-only (no network)** — 1 peer × up to 4 `PlayerSlot`s (offline milestone 1)
 
 ```text
-                    ┌──────────────── Host peer (authority) ────────────────┐
-                    │  PlayerSlot A (local)   PlayerSlot B (local, couch) │
-                    └───────────────┬─────────────────────────────────────┘
-                                    │ reliable + unreliable messages
-          ┌─────────────────────────┼─────────────────────────┐
-          ▼                         ▼                         ▼
-   Client peer 2              Client peer 3              Client peer 4
-   PlayerSlot C               PlayerSlot D               PlayerSlot E, F
+┌──────────────── Host peer (authority) ────────────────┐
+│  PlayerSlot A (local)   PlayerSlot B (local, couch)   │
+└───────────────────────────┬────────────────────────────┘
+                            │ reliable + unreliable messages
+                            ▼
+                     Client peer 2
+                     PlayerSlot C, D
 ```
 
 A **network peer** represents a connection endpoint. A **`PlayerSlot`** represents who is playing in the match. Multiple `PlayerSlot`s may share one `owning_peer_id` when one computer runs several local controllers.
 
-### Proposed `PlayerSlot` schema
+### Implemented `PlayerSlot` schema
 
-Documentation only—not a requirement to implement this GDScript class yet.
+`scripts/shared/player_slot.gd` currently implements and serializes this match-scoped model:
 
 ```text
-player_id:            stable match-scoped ID (e.g. UUID)
+player_id:            stable match-scoped incremental ID (`player_N` today)
 owning_peer_id:       int — network peer that submits inputs for this slot
 local_player_index:   int — stable 0..N-1 index for this slot on the owning peer (replicated)
 display_name:         string
@@ -80,11 +97,12 @@ team_id:              optional int or string
 character_id:         optional resource ID or cosmetic bundle ref
 ready:                bool — briefing / lobby readiness
 connection_status:    connected | disconnected | migrating | inactive
+slot_color:           replicated display color
 ```
 
 **Architectural direction:** `local_player_index` is the only couch identity replicated across the network. The mapping from `local_player_index` to physical controller/device (`local_device_slot`) stays **local to the owning peer** and is never replicated.
 
-**Spike assumption:** `player_id` is assigned at lobby join and never reused within a match even if the player reconnects (reconnect binds to the same `player_id`).
+**Implemented for current session creation:** `player_id` is assigned incrementally and is not reused after local removal. Reconnect binding to an existing id remains unimplemented.
 
 ## Authority boundaries
 
@@ -359,20 +377,22 @@ This reinforces the decision against universal rollback: rewinding an arena full
 
 **Architectural direction:** board and minigames do **not** create `ENetMultiplayerPeer` or Steam peers directly. A shared **session layer** establishes connections and exposes multiplayer state to the shell.
 
-### Proposed responsibilities
+### Responsibilities and current symbols
 
-| Component (proposal) | Owns |
-| --- | --- |
-| `TransportAdapter` | Create/bind `MultiplayerPeer`; swap ENet vs Steam implementation |
-| `MatchSession` | Join codes / addresses; peer connect/disconnect events; maps `peer_id` ↔ connection metadata |
-| Shell phase controller | Phase machine, snapshot store, host-only mutation APIs |
+| Component | Status | Owns |
+| --- | --- | --- |
+| `EnetTransportAdapter` | Implemented debug adapter | Creates ENet server/client peers; no general transport interface exists yet |
+| `MatchSession` | Implemented debug session | Direct address/port, connection state, peer events, reliable echo, peer teardown |
+| `NetworkLobbySession`, `NetworkBoardSession`, `NetworkMatchPhaseSession` | Implemented debug shell slices | Host-authoritative lobby, board stub, and placeholder phase synchronization |
+| Future transport/session API | Proposed | Steam substitution, connection metadata, reconnect, and capability-limited access for minigames |
+| Shell phase coordinator | Partial | Offline and network debug controllers exist, but no unified production coordinator |
 
 ### Lifetime and ownership
 
 **Architectural direction:** document ownership before adding a networking singleton.
 
-- **Proposed:** `MatchSession` is owned by the app-level flow (e.g. match coordinator scene/controller), created when a player hosts or joins, torn down when returning to main menu.
-- Minigames receive a read-only or capability-limited handle for sending inputs and receiving phase events—they do not own the peer.
+- **Implemented for the debug shell:** a `MatchSession` node is owned by the main scene. It creates and binds an ENet peer when hosting or joining, and clears it on explicit disconnect, failure, server loss, or tree exit.
+- **Proposed for network-capable minigames:** receive a read-only or capability-limited handle for sending inputs and receiving phase events; they do not own the peer.
 - On teardown, minigames must unregister RPCs, disconnect signals, and clear buffered state ([minigame integration contract](minigame-integration.md)).
 
 ### Transport message lanes
@@ -438,6 +458,8 @@ Without a surviving authority peer, no client can authoritatively restore snapsh
 - automated testing and debug restore in offline/single-peer harnesses;
 - **non-host reconnect** at safe phases;
 - future recovery work in milestone 13.
+
+This policy is **not implemented end to end**. The client `MatchSession` currently returns to idle when the server disconnects, but there is no complete player-facing session-end flow. Non-host disconnect/reconnect handling for an active frozen board roster is also absent; during briefing, a departed slot can leave the ready gate unsatisfied. These are milestone 9 work, not evidence that the proposed policy has passed validation.
 
 ### Disconnect rules
 
