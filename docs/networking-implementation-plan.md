@@ -26,11 +26,12 @@ Related documents:
 | 5 | Authoritative board stub | 2, 4 |
 | 6 | Networked scene flow (briefing → results) | 2, 4, 5 |
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | 6 |
-| 8 | Prediction / reconciliation experiment | 7 |
+| 8 | Prediction / reconciliation experiment (`HOST_SNAPSHOT`, optional) | 7 |
 | 9 | Disconnect recovery (non-host reconnect, clean host exit) | 2, 6, 7 |
-| 10 | Steam transport investigation | 3 |
-| 11 | Formal minigame networking API | 7, 9 |
-| 12 | Host migration (Case B) — post-acceptance | 9, 11 |
+| 10 | 3D combat spike (`HOST_ACTION`) + action-netcode kit | 7, 8 |
+| 11 | Steam transport investigation | 3 |
+| 12 | Formal minigame networking API stabilization | 7, 9, 10 |
+| 13 | Host migration (Case B) — post-acceptance | 9, 12 |
 
 ---
 
@@ -179,7 +180,7 @@ All peers display identical lobby `PlayerSlot` list and ready flags after each c
 
 ### Open questions before milestone 5
 
-- Lobby host migration needed before match start? (**deferred** until 12)
+- Lobby host migration needed before match start? (**deferred** until 13)
 - Display name profanity/trust (**deferred**)
 
 ---
@@ -293,11 +294,11 @@ Result agreement automated test passes; manual playtest at 4 players with no per
 
 ---
 
-## Milestone 8: Prediction and reconciliation experiment
+## Milestone 8: Prediction and reconciliation experiment (`HOST_SNAPSHOT`)
 
 ### Purpose
 
-Measure whether milestone 7 needs local prediction for acceptable responsiveness at 50–100 ms simulated latency.
+Measure whether milestone 7 needs local prediction for acceptable responsiveness at 50–100 ms simulated latency. Scope is **`HOST_SNAPSHOT` only**—`HOST_ACTION` requires prediction by design and is validated in milestone 10.
 
 ### Player-facing proof
 
@@ -325,7 +326,7 @@ Documented table: latency vs correction frequency vs player verdict; recommendat
 ### Open questions before milestone 9
 
 - Snap vs blend correction default
-- Whether prediction ships for all `HOST_SNAPSHOT` minigames or only this one
+- Whether prediction ships as the default recommendation for all `HOST_SNAPSHOT` minigames or only this one
 
 ---
 
@@ -333,7 +334,7 @@ Documented table: latency vs correction frequency vs player verdict; recommendat
 
 ### Purpose
 
-Implement **non-host disconnect**, **non-host reconnect at phase boundaries**, and **clean session end when the host leaves in any phase**. **Host migration and abort/replay after host loss are out of scope**—see milestone 12.
+Implement **non-host disconnect**, **non-host reconnect at phase boundaries**, and **clean session end when the host leaves in any phase**. **Host migration and abort/replay after host loss are out of scope**—see milestone 13.
 
 ### Player-facing proof
 
@@ -360,7 +361,7 @@ Implement **non-host disconnect**, **non-host reconnect at phase boundaries**, a
 
 ### Stop condition
 
-Non-host disconnect/reconnect tests pass; **every host-departure scenario ends the session cleanly** with explicit UI. **Decision 0003 may move toward Accepted after milestones 1–7 and this milestone pass review**—milestone 12 is not required.
+Non-host disconnect/reconnect tests pass; **every host-departure scenario ends the session cleanly** with explicit UI. **Decision 0003 may move toward Accepted after milestones 1–7 and this milestone pass review**—milestones 10, 12, and 13 are not required for **Accepted**.
 
 ### Open questions before milestone 10
 
@@ -369,7 +370,67 @@ Non-host disconnect/reconnect tests pass; **every host-departure scenario ends t
 
 ---
 
-## Milestone 10: Steam transport investigation and spike
+## Milestone 10: 3D combat spike (`HOST_ACTION`) and action-netcode kit
+
+### Purpose
+
+Validate the networking contract for Bean Battles-like 3D combat **before** the minigame API is frozen. A movement-only `HOST_SNAPSHOT` minigame (milestone 7) is insufficient to prove hitscan, projectiles, damage, physics props, and entity lifecycles.
+
+### Player-facing proof
+
+2–4 peers play a bounded **45–60 second** graybox combat arena containing:
+
+- character movement and jumping;
+- one hitscan weapon;
+- one physical projectile;
+- a movable or explosive physics prop;
+- damage and knockback;
+- death and respawn;
+- authoritative scoring.
+
+Local player movement feels responsive; remote players interpolate smoothly; hits and deaths agree on all peers.
+
+### Implementation boundary
+
+- Shared **action-netcode kit** in `scripts/shared/` (prediction, reconciliation, entity registry, lag-compensated hitscan, projectile authority helpers, debug overlay)
+- One minigame under `minigames/<slug>/` — network-capable, `HOST_ACTION`
+- Shell integration only through approved session interface
+- Transport message lanes separated per [networking architecture](networking-architecture.md#transport-message-lanes)
+
+### Automated tests
+
+- Result agreement: placements and scores match host vs each client after forced end
+- Entity lifecycle idempotency: duplicate spawn/despawn/damage messages ignored
+- Hit confirmation: host raycast outcome matches client-visible damage event
+
+### Manual tests (required)
+
+| Scenario | Notes |
+| --- | --- |
+| 4 `PlayerSlot`s | e.g. 2 peers × 2 local |
+| 2 local players on one peer | Both inputs in same upstream frame |
+| Latency 50, 100, 150 ms | Clumsy, `tc netem`, or OS QoS |
+| Jitter + 1–2% loss | Document tools used |
+| Different host vs client frame rates | 30 vs 60 vs 120 render |
+| Simultaneous shots and kills | No double-death or missed scoring |
+| Lost, duplicated, delayed, reordered inputs | Adversarial or simulated |
+| Host vs client responsiveness | Subjective notes + correction rate / input-to-ack sample |
+
+Record bandwidth (KB/s, msgs/sec) for 2 and 4 players.
+
+### Stop condition
+
+Combat spike completes a full round without persistent desync; action-netcode kit APIs are documented in PR; any contract changes needed for shooters are identified **before** milestone 12 freezes the API.
+
+### Open questions before milestone 11
+
+- Lag-compensation rewind cap (ms or ticks)
+- Projectile merge policy for cosmetic vs authoritative spawn
+- Whether 30 or 60 Hz sim is required for `HOST_ACTION` v1
+
+---
+
+## Milestone 11: Steam transport investigation and spike
 
 ### Purpose
 
@@ -390,29 +451,30 @@ Spike branch or gated build: host/join via Steam (or LAN simulation through Stea
 
 ### Manual tests
 
-- Compare RPC channel behavior vs ENet
+- Compare RPC **channel** behavior vs ENet (session, lifecycle, inputs, snapshots, cosmetic lanes)
 - Note SDR NAT traversal result
+- **Channel parity is a release blocker** for Steam—not a minor note
 
 ### Stop condition
 
 Written report: go / no-go / conditional go for Steam adapter; list channel/limitation gaps.
 
-### Open questions before milestone 11
+### Open questions before milestone 12
 
 - Ship Steam as required transport or optional
 - Godot Steam peer extension choice
 
 ---
 
-## Milestone 11: Formal stabilization of minigame networking API
+## Milestone 12: Formal stabilization of minigame networking API
 
 ### Purpose
 
-Freeze the shell → minigame network contract as GDScript types/interfaces; update [minigame contract](minigame-contract.md) with real symbols.
+Freeze the shell → minigame network contract as GDScript types/interfaces **after** milestones 7, 9, and 10 validate both `HOST_SNAPSHOT` and `HOST_ACTION` paths. Update [minigame contract](minigame-contract.md) with real symbols.
 
 ### Player-facing proof
 
-A second minimal network-capable minigame (or refactor of milestone 7) integrates using only the documented API—no new ad hoc RPCs in shell.
+A second minimal network-capable minigame (or refactor of milestone 7 or 10) integrates using only the documented API—no new ad hoc RPCs in shell.
 
 ### Implementation boundary
 
@@ -431,20 +493,20 @@ A second minimal network-capable minigame (or refactor of milestone 7) integrate
 
 ### Stop condition
 
-Two minigames (or one minigame + stub) use identical integration path; API reviewed and merged.
+Two minigames covering **both** `HOST_SNAPSHOT` and `HOST_ACTION` (or one minigame + stub per profile) use identical integration paths; API reviewed and merged.
 
-### Open questions after milestone 11
+### Open questions after milestone 12
 
 - Versioning policy for breaking API changes
 - Promotion path for shared helpers from minigames to `scripts/shared/`
 
 ---
 
-## Milestone 12: Host migration (Case B) — post-acceptance
+## Milestone 13: Host migration (Case B) — post-acceptance
 
 ### Purpose
 
-Explore **continuing a match after host loss** without requiring everyone to re-host manually. After migration works at phase boundaries, validate **abort + replay** when the host leaves during `Countdown` or `ActiveMinigame` (restore last phase-boundary snapshot, replay round). This is **deferred** and does not block Decision 0003 **Accepted** or milestones 1–11.
+Explore **continuing a match after host loss** without requiring everyone to re-host manually. After migration works at phase boundaries, validate **abort + replay** when the host leaves during `Countdown` or `ActiveMinigame` (restore last phase-boundary snapshot, replay round). This is **deferred** and does not block Decision 0003 **Accepted** or milestones 1–12.
 
 ### Player-facing proof
 
@@ -491,7 +553,7 @@ Run these environments in addition to per-milestone manual tests. Record measure
 
 ### Latency and impairment profiles
 
-Apply to milestones 7–9 at minimum:
+Apply to milestones 7–10 at minimum:
 
 | Profile | Target | Tools (spike options, no addon required) |
 | --- | --- | --- |
@@ -503,7 +565,7 @@ Apply to milestones 7–9 at minimum:
 
 ### Disconnect recovery matrix
 
-Mark each cell: **pass**, **fail**, **session end (v1)**, **continue (milestone 12)**, or **abort replay (milestone 12 only)**. In milestones 1–11, **every host disconnect should end the session cleanly**. Milestone 12 adds continue/replay behaviors that require surviving authority.
+Mark each cell: **pass**, **fail**, **session end (v1)**, **continue (milestone 13)**, or **abort replay (milestone 13 only)**. In milestones 1–12, **every host disconnect should end the session cleanly**. Milestone 13 adds continue/replay behaviors that require surviving authority.
 
 | Phase | Non-host disconnect | Host disconnect |
 | --- | --- | --- |
@@ -533,17 +595,17 @@ Mark each cell: **pass**, **fail**, **session end (v1)**, **continue (milestone 
 | Phase agreement | All peers report same phase enum after each transition | 100% in automated runs |
 | Result agreement | Placements and scores equal host vs each client | 100% |
 | Board-state hash | Canonical snapshot hash at phase boundaries | Match on all connected peers |
-| Correction frequency | Prediction overlay / logs (milestone 8) | Documented per latency tier |
+| Correction frequency | Prediction overlay / logs (milestones 8, 10) | Documented per latency tier |
 | Correction magnitude | Max position error after reconcile | Documented per latency tier |
-| Disconnect recovery | Matrix above | Host loss → session end in v1; non-host reconnect reliable; milestone 12 tracked separately |
-| Bandwidth | KB/s and msgs/sec sampled | Recorded for 2 and 4 players; no fixed cap yet |
+| Disconnect recovery | Matrix above | Host loss → session end in v1; non-host reconnect reliable; milestone 13 tracked separately |
+| Bandwidth | KB/s and msgs/sec sampled | Recorded for 2 and 4 players in milestones 7 and 10; no fixed cap yet |
 | Input responsiveness | Human playtest | Subjective notes **plus** one of: input-to-ack latency sample, correction rate |
 
 “Feels good” alone is not sufficient for merge to milestones 7–9; pair with at least one quantitative metric.
 
 ### Human playtesting
 
-Required for milestones 6–9 before merge. Minimum: two people on two machines when CI cannot cover internet path; four people for 4-slot couch-online hybrid when testing slot ownership.
+Required for milestones 6–10 before merge. Minimum: two people on two machines when CI cannot cover internet path; four people for 4-slot couch-online hybrid when testing slot ownership.
 
 ---
 
@@ -553,6 +615,6 @@ Required for milestones 6–9 before merge. Minimum: two people on two machines 
 - Mid-minigame late join or spectators
 - Dedicated servers
 - Third-party networking addons
-- Production Steam release integration (milestone 10 is investigation)
+- Production Steam release integration (milestone 11 is investigation)
 
-Update [Decision 0003](decisions/0003-peer-hosted-networking.md) to **Accepted** after milestones 1–7 and milestone 9 pass review. **Host migration (milestone 12) is not a gate** for accepting the peer-hosted architecture decision.
+Update [Decision 0003](decisions/0003-peer-hosted-networking.md) to **Accepted** after milestones 1–7 and milestone 9 pass review. **Host migration (milestone 13) is not a gate** for accepting the peer-hosted architecture decision. **Do not treat the minigame networking API as frozen** until milestone 12 completes after milestone 10.

@@ -17,7 +17,7 @@ Related documents:
 | **Host / authority** | The peer that owns canonical match state and validates client intentions |
 | **Phase-boundary snapshot** | Serialized recoverable state stored only at safe match phases |
 | **Session layer** | Proposed boundary between gameplay and the concrete `MultiplayerPeer` |
-| **Sync profile** | Minigame-declared networking behavior: `TURN_OR_EVENT`, `HOST_SNAPSHOT`, `CUSTOM_APPROVED` |
+| **Sync profile** | Minigame-declared networking behavior: `TURN_OR_EVENT`, `HOST_SNAPSHOT`, `HOST_ACTION`, `CUSTOM_APPROVED` |
 | **match_epoch** | Proposed monotonic counter bumped when authority or snapshot generation changes |
 
 ### Status labels
@@ -29,7 +29,17 @@ Related documents:
 
 ## Match topology
 
-**Architectural direction:** a match has exactly one **host peer** (authority) and zero or more **client peers**, with **up to 4 `PlayerSlot`s** total across all peers.
+**Architectural direction:** a match has exactly one **authority process** (today: the host peer in listen-server configuration) and zero or more **client peers**, with **up to 4 `PlayerSlot`s** total across all peers.
+
+Distinguish three concepts that must not be conflated in gameplay code:
+
+| Concept | Meaning | v1 notes |
+| --- | --- | --- |
+| **Authority process** | Owns canonical simulation, hits, scoring, RNG | Runs on the host peer today; **must not assume** the authority always controls a `PlayerSlot` |
+| **Network peer** | One connected machine (`peer_id`) | May own zero or more `PlayerSlot`s |
+| **Logical `PlayerSlot`** | In-match player identity | Submits inputs through its owning peer |
+
+**Architectural direction:** gameplay systems query authority through the session layer, not through “am I player 1?” checks alone. This preserves a future path to a headless dedicated authority without rewriting minigames. Dedicated servers are **deferred**; the separation is a design constraint now.
 
 Proposed capacity constants:
 
@@ -163,7 +173,7 @@ Each snapshot should include: `match_epoch`, phase name, RNG stream position, an
 
 **Open question:** snapshot schema versioning and migration across engine iterations.
 
-Do **not** capture mid-`ActiveMinigame` snapshots for recovery in v1—without host migration, host loss during a minigame ends the session (see disconnect policy). After milestone 12, host loss mid-minigame may restore the last boundary and replay the round.
+Do **not** capture mid-`ActiveMinigame` snapshots for recovery in v1—without host migration, host loss during a minigame ends the session (see disconnect policy). After milestone 13, host loss mid-minigame may restore the last boundary and replay the round.
 
 ## Message categories
 
@@ -230,20 +240,120 @@ Measure and revise in milestones 7–8. Do not lock packet sizes or rates in thi
 
 ### Local player (**spike assumption**)
 
-- **Optional prediction** for the locally controlled entity: apply input immediately on the client, reconcile when host state arrives.
-- Not all minigames must implement prediction; `TURN_OR_EVENT` minigames may wait for host acknowledgment.
+- **`HOST_SNAPSHOT`:** prediction for the locally controlled character is **optional** but recommended when latency testing shows visible lag.
+- **`HOST_ACTION`:** prediction and reconciliation for **player-controlled movement are required** (see below).
+- **`TURN_OR_EVENT`:** may wait for host acknowledgment; no continuous transform prediction required.
 - **Open question:** snap vs blend correction policy per sync profile.
 
-### Minigame categories
+### Sync profiles
 
-| Style | Typical sync profile | Network notes |
+| Profile | Intended games | Client simulation |
 | --- | --- | --- |
-| Movement / physics | `HOST_SNAPSHOT` | Tick-numbered input upstream (unreliable + redundant history); snapshots downstream; interpolation required |
-| Timing / button press | `TURN_OR_EVENT` | Tick-numbered press/hold frames (unreliable + redundant history); host adjudicates windows—**not** reliable per-button RPCs |
-| Turn-based microgame | `TURN_OR_EVENT` | Host validates discrete actions; reliable messages only for phase/result side effects with idempotency keys |
-| Latency-critical custom | `CUSTOM_APPROVED` | May add rollback; requires design review |
+| `TURN_OR_EVENT` | Board-like, trivia, timing, discrete actions | Tick-numbered input frames (unreliable + redundant history); host adjudicates; reliable messages only for idempotent side effects |
+| `HOST_SNAPSHOT` | Slower movement, racing, obstacle courses, bump arenas | Input upstream; interpolate remotes; **optional** local movement prediction |
+| `HOST_ACTION` | Shooters, melee combat, vehicles, physics-heavy 3D arenas | Fixed-tick host sim; **required** local movement prediction + reconciliation; remote interpolation; lag-compensated hitscan; see [action-game requirements](#action-game-requirements-host_action) |
+| `CUSTOM_APPROVED` | Rollback or unusual requirements | Design review required; stricter test plan |
 
-Short timing minigames may emphasize event timestamps and host adjudication rather than continuous transform sync.
+A timing minigame will usually use `TURN_OR_EVENT`. A movement arena will usually use `HOST_SNAPSHOT`. Bean Battles-like 3D combat is expected to use `HOST_ACTION`, not `HOST_SNAPSHOT` alone.
+
+[`MultiplayerSynchronizer`](https://docs.godotengine.org/en/4.7/classes/class_multiplayersynchronizer.html) can synchronize properties, but shooter-quality prediction, reconciliation, lag compensation, and entity lifecycles need **explicit game code** around it—not blind whole-scene replication.
+
+## Action-game requirements (`HOST_ACTION`)
+
+**Architectural direction** for minigames that declare `HOST_ACTION`. Exact API names are **proposals** until milestone 12 validates them through the milestone 10 combat spike and shared action-netcode kit.
+
+### Required behaviors
+
+| Area | Requirement |
+| --- | --- |
+| Simulation | Fixed-tick authoritative simulation on the host |
+| Input | Tick-numbered frames with short redundant history (unreliable ordered) |
+| Local player | Movement prediction + server reconciliation |
+| Remote players | Snapshot interpolation |
+| Combat state | Authoritative health, damage, deaths, pickups, score on host |
+| Identity | Stable `network_entity_id` values—not Godot node paths |
+| Lifecycle | Explicit spawn/despawn messages (reliable, idempotent) |
+| Hitscan | Bounded server history for lag compensation |
+| Testing | Network-condition playtesting documented in PR (latency, loss, jitter) |
+
+### Shared action-netcode kit (**proposal**)
+
+Contributors must not each reinvent prediction buffers, entity spawning, hit validation, lag compensation, damage replication, and debug overlays. A small shared **action-netcode kit** in `scripts/shared/` (validated by the milestone 10 combat spike) should provide:
+
+- tick input send/receive helpers;
+- snapshot buffers and remote interpolation;
+- predicted local character controller hooks;
+- entity spawn/despawn registration;
+- hitscan lag-compensation helpers with a capped rewind window;
+- damage/death event delivery with idempotency keys;
+- optional latency/debug overlay.
+
+Minigames supply movement rules, weapons, arena layout, and scoring through that kit. Minigames must not construct independent transport or duplicate kit internals.
+
+### Hitscan weapons (**architectural direction**)
+
+1. Client immediately plays local audiovisual feedback (muzzle flash, recoil)—**do not wait** for a reliable round trip.
+2. Client submits a tick-numbered fire input and aim data to the host.
+3. Host validates fire rate, ammunition, player state, and aim constraints.
+4. Host rewinds a **bounded** history of target collision states (lag compensation).
+5. Host performs the authoritative raycast.
+6. Host applies damage and broadcasts the result (reliable, idempotent).
+
+Client timestamps cannot be trusted without limits. Rewind depth must be capped so high-latency players cannot shoot arbitrarily far into the past (**open question:** exact cap; validate in combat spike).
+
+### Projectile weapons (**architectural direction**)
+
+1. Host owns the canonical projectile.
+2. Client may spawn an immediate **cosmetic** predicted projectile.
+3. Host sends an authoritative spawn (reliable): `network_entity_id`, spawn tick, initial state.
+4. Client merges or corrects the cosmetic projectile to match authority.
+5. Host owns collision, explosions, impulses, and damage.
+
+### Replicated-entity contract (**proposal**)
+
+Every networked entity in a `HOST_ACTION` minigame should conceptually expose:
+
+```text
+network_entity_id:     stable ID for the minigame instance (not a node path)
+minigame_instance_id:  ties entity to one briefing→results run
+entity_type:           enum or string slug
+owning_player_id:      optional PlayerSlot reference
+spawn_tick:            authoritative spawn tick
+position, orientation: authoritative transform
+linear_velocity, angular_velocity: when relevant
+gameplay_state:        health, animation phase, weapon state, etc.
+despawn_reason, despawn_tick: when removed
+```
+
+| Message class | Delivery | Examples |
+| --- | --- | --- |
+| Lifecycle / combat outcomes | Reliable, idempotent | spawn, despawn, death, pickup, confirmed hit, damage applied |
+| Frequent kinematic state | Unreliable ordered | transforms, velocities |
+| Cosmetic | Unreliable, drop OK | non-scoring VFX, tracers |
+
+Avoid using Godot node paths as durable network identity; scene layout will change per minigame.
+
+### 3D physics authority (**architectural direction**)
+
+For crates, vehicles, ragdolls, explosive props, and bean-to-bean impacts in `HOST_ACTION` minigames:
+
+- The **host** runs canonical physics simulation.
+- Clients **interpolate** replicated rigid-body state; they do not reproduce identical physics locally.
+- **Predict** the locally controlled character where practical.
+- Do **not** initially predict arbitrary rigid-body chains, prop piles, or ragdolls.
+
+Godot [physics interpolation](https://docs.godotengine.org/en/4.7/tutorials/physics/interpolation/using_physics_interpolation.html) smooths rendering between local physics ticks; it does **not** replace network snapshot interpolation, input prediction, or reconciliation. Network movement should align with a fixed simulation tick where practical.
+
+This reinforces the decision against universal rollback: rewinding an arena full of 3D rigid bodies would be fragile and expensive for every contributor.
+
+### Minigame style examples (non-normative)
+
+| Style | Profile |
+| --- | --- |
+| Timing / button press | `TURN_OR_EVENT` |
+| Movement / bump arena | `HOST_SNAPSHOT` |
+| 3D shooter / brawl | `HOST_ACTION` |
+| Latency-critical custom | `CUSTOM_APPROVED` |
 
 ## Transport boundary
 
@@ -265,14 +375,28 @@ Short timing minigames may emphasize event timestamps and host adjudication rath
 - Minigames receive a read-only or capability-limited handle for sending inputs and receiving phase events—they do not own the peer.
 - On teardown, minigames must unregister RPCs, disconnect signals, and clear buffered state ([minigame contract](minigame-contract.md)).
 
+### Transport message lanes
+
+Shooters and action minigames produce constant inputs and snapshots alongside critical lifecycle messages. These must not block one another.
+
+**Architectural direction:** conceptually separate traffic on distinct channels or logical lanes (exact channel map is a **spike assumption**):
+
+| Lane | Delivery | Examples |
+| --- | --- | --- |
+| Session / phase control | Reliable ordered | lobby, phase change, match end |
+| Entity lifecycle and results | Reliable ordered, idempotent | spawn, despawn, death, pickup, damage confirm, minigame results |
+| Player inputs | Unreliable ordered + redundant history | movement, fire, ability presses |
+| World snapshots | Unreliable ordered | transforms, velocities, periodic sim state |
+| Cosmetic | Unreliable, drop OK | VFX, SFX triggers, tracers |
+
 ### First spike vs later Steam integration
 
 | Transport | When | Label |
 | --- | --- | --- |
-| `ENetMultiplayerPeer` | Milestones 3–9 | **Spike assumption** |
-| Steam Networking Sockets / SDR | Milestone 10 investigation | **Deferred** implementation |
+| `ENetMultiplayerPeer` | Milestones 3–10 (through combat spike) | **Spike assumption** |
+| Steam Networking Sockets / SDR | Milestone 11 investigation | **Deferred** implementation |
 
-**Open question:** whether candidate Godot Steam peer extensions support the same RPC channel layout as ENet. Milestone 10 must answer this before Steam is documented as a drop-in adapter.
+**Open question:** whether candidate Godot Steam peer extensions support equivalent channel behavior to ENet. Milestone 11 must treat **channel parity as a release blocker** for Steam—not a minor compatibility note. If the chosen Steam peer lacks needed channels, the project needs application-level multiplexing or a different extension (**open question**).
 
 ### What not to do
 
@@ -313,7 +437,7 @@ Without a surviving authority peer, no client can authoritatively restore snapsh
 
 - automated testing and debug restore in offline/single-peer harnesses;
 - **non-host reconnect** at safe phases;
-- future recovery work in milestone 12.
+- future recovery work in milestone 13.
 
 ### Disconnect rules
 
@@ -323,13 +447,13 @@ Without a surviving authority peer, no client can authoritatively restore snapsh
 | Non-host disconnect | `PlayerSlot` → `inactive` (or `disconnected`); minigame may declare bot replacement | **Spike assumption** |
 | Non-host reconnect | At phase boundaries only; restore from snapshot + `match_epoch` | **Architectural direction** |
 | **Host disconnect (any phase)** | End session cleanly for all peers | **Architectural direction** (v1) |
-| Host migration | Remaining peers continue without re-hosting | **Deferred** (milestone 12) |
-| Host loss mid-minigame → abort + replay | Restore last boundary and replay round | **Deferred** (milestone 12, requires migration) |
+| Host migration | Remaining peers continue without re-hosting | **Deferred** (milestone 13) |
+| Host loss mid-minigame → abort + replay | Restore last boundary and replay round | **Deferred** (milestone 13, requires migration) |
 | Malformed client requests | Host rejects; no authority grant | **Architectural direction** |
 
-### Host migration sub-problems (**deferred** — milestone 12)
+### Host migration sub-problems (**deferred** — milestone 13)
 
-Host migration is documented for future work and is **not** required to accept Decision 0003 or ship milestones 1–11. Once migration exists, host loss during a minigame **may** restore the last phase-boundary snapshot and replay the round.
+Host migration is documented for future work and is **not** required to accept Decision 0003 or ship milestones 1–12. Once migration exists, host loss during a minigame **may** restore the last phase-boundary snapshot and replay the round.
 
 1. **Detection and match pause** — disconnect vs heartbeat timeout; grace period for brief drops.
 2. **Host election** — deterministic rule across remaining peers; cannot use `PlayerSlot` index alone when multiple slots share a peer.
@@ -366,4 +490,8 @@ See [networking implementation plan](networking-implementation-plan.md) for the 
 
 ## Player-count scale note
 
-**Secondary open question:** whether peer-hosted `HOST_SNAPSHOT` sync remains acceptable at 4 players without interest management or per-tick aggregation. Measure in milestones 7 and 10.
+**Secondary open question:** whether peer-hosted `HOST_SNAPSHOT` and `HOST_ACTION` sync remain acceptable at 4 players without interest management or per-tick aggregation. Measure in milestones 7, 10, and 11.
+
+## Architecture verdict (documentation scope)
+
+**Architectural direction:** the host-authoritative snapshot model is the correct foundation for board play and moderate action minigames. It is **directionally correct but underspecified** for Bean Battles-like 3D shooters until `HOST_ACTION`, the replicated-entity contract, shooter hit rules, and the combat spike (milestone 10) validate the shared action-netcode kit. Do **not** replace this foundation with universal rollback or lockstep.

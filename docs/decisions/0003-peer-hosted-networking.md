@@ -33,10 +33,11 @@ Adopt the following baseline (**architectural direction** unless labeled otherwi
 | Game-facing API | Godot **high-level Multiplayer API** |
 | Initial transport | **`ENetMultiplayerPeer`** for LAN/direct-IP spike ([ENetMultiplayerPeer](https://docs.godotengine.org/en/4.7/classes/class_enetmultiplayerpeer.html)) |
 | Future transport | **Transport abstraction** so [Steam Networking Sockets](https://partner.steamgames.com/doc/features/networking) / [Steam Datagram Relay](https://partner.steamgames.com/doc/features/multiplayer/steamdatagramrelay) can replace ENet without changing board or minigame rules |
-| Sync model | **Reliable authoritative** sync for lobby, board, phase transitions, match economy, RNG, and results; **input submission + host simulation** for real-time minigames; **snapshot interpolation** for remote entities; **optional** prediction/reconciliation for the locally controlled character |
-| Lockstep / rollback | **No project-wide** deterministic lockstep or rollback requirement; a latency-sensitive minigame may adopt rollback later via an approved `CUSTOM_APPROVED` sync profile |
+| Sync model | **Reliable authoritative** sync for lobby, board, phase transitions, match economy, RNG, and results; **input submission + host simulation** for real-time minigames; **snapshot interpolation** for remote entities; sync profiles `HOST_SNAPSHOT` (optional prediction) and `HOST_ACTION` (required prediction for player movement) |
+| Authority vs players | **Authority process**, **network peer**, and **`PlayerSlot`** are separate; gameplay must not assume the authority always controls a bean (**deferred:** dedicated headless authority) |
+| Lockstep / rollback | **No project-wide** deterministic lockstep or rollback requirement; `CUSTOM_APPROVED` for per-minigame exceptions |
 | Players vs peers | **Logical `PlayerSlot`s separate from network peers** so one machine can own multiple local-controller players |
-| Reconnect / migration | **Non-host reconnect** at phase boundaries (**architectural direction**). **Any host disconnect ends the session cleanly in v1**, regardless of phase. Phase-boundary snapshots support testing, non-host reconnect, and future recovery. **Host migration** and minigame abort/replay after host loss are **deferred** to milestone 12 |
+| Reconnect / migration | **Non-host reconnect** at phase boundaries (**architectural direction**). **Any host disconnect ends the session cleanly in v1**, regardless of phase. Phase-boundary snapshots support testing, non-host reconnect, and future recovery. **Host migration** and minigame abort/replay after host loss are **deferred** to milestone 13 |
 
 See [networking architecture](../networking-architecture.md) for topology, authority tables, phase machine, and message categories. See [networking implementation plan](../networking-implementation-plan.md) for milestones and validation.
 
@@ -61,7 +62,7 @@ Dedicated servers excel when sessions are long-lived, competitive integrity is p
 
 **Spike assumption:** `ENetMultiplayerPeer` behind a proposed session/transport boundary (`MatchSession`, `TransportAdapter`—names are proposals). Board and minigames must not construct ENet or Steam peers directly.
 
-**Open question:** RPC channel parity in candidate Godot Steam peer extensions must be investigated in milestone 10 before treating Steam as a drop-in replacement.
+**Open question:** equivalent RPC channel behavior in candidate Godot Steam peer extensions must be investigated in milestone 11; channel parity is a **release blocker** for Steam, not a minor note.
 
 ## Consequences
 
@@ -75,7 +76,8 @@ Dedicated servers excel when sessions are long-lived, competitive integrity is p
 ### What becomes harder or required
 
 - The host peer runs authoritative simulation; host advantage is possible in real-time minigames—mitigate with server-side scoring and validation, not client-reported wins.
-- **Host migration** and abort/replay after host loss are **deferred** to milestone 12. In v1, **any host disconnect ends the session cleanly** for all peers—there is no surviving authority to restore snapshots without migration or dedicated servers.
+- **Host migration** and abort/replay after host loss are **deferred** to milestone 13. In v1, **any host disconnect ends the session cleanly** for all peers—there is no surviving authority to restore snapshots without migration or dedicated servers.
+- **`HOST_ACTION`** minigames (3D shooters, brawls) need a shared action-netcode kit and combat spike before the networking API is frozen; a movement-only demo is insufficient.
 - Bandwidth scales with player count; 4-player `HOST_SNAPSHOT` minigames need measurement (**open question**: snapshot aggregation vs interest management).
 - Every network-capable minigame must declare a sync profile and clean up network state on teardown.
 - Automated tests must cover phase agreement, result agreement, and disconnect recovery—not only “feels fine” playtests.
@@ -88,8 +90,8 @@ Dedicated servers excel when sessions are long-lived, competitive integrity is p
 | **Any host disconnect** (any phase, including `Countdown` / `ActiveMinigame`) | End session cleanly; return all peers to lobby/menu with a clear message | **Architectural direction** (v1) |
 | Non-host disconnect | `PlayerSlot` → `inactive`; match may continue | **Spike assumption** |
 | Non-host reconnect at phase boundary | Restore from snapshot + `match_epoch` | **Architectural direction** |
-| Host migration (continue match after host loss) | Remaining peers elect host and resume | **Deferred** (milestone 12) |
-| Host loss during minigame → abort round and replay | Requires surviving authority (migration or reconnect) | **Deferred** (milestone 12, after migration) |
+| Host migration (continue match after host loss) | Remaining peers elect host and resume | **Deferred** (milestone 13) |
+| Host loss during minigame → abort round and replay | Requires surviving authority (migration or reconnect) | **Deferred** (milestone 13, after migration) |
 
 Host migration sub-problems (detection, election, snapshot source on crash, RPC continuity, player-facing resync) are documented in [networking architecture](../networking-architecture.md#host-migration-and-disconnect-policy).
 
@@ -115,6 +117,6 @@ This decision moves to **Accepted** only when spike milestones in [networking im
 5. **Bandwidth sampling** — message rates and payload sizes recorded for at least one `HOST_SNAPSHOT` minigame at 2 and 4 `PlayerSlot`s.
 6. **4-player session** — e.g. 2 peers × 2 local players, or 4 single-player peers.
 
-Host migration (Case B) is **not** required to move this decision to **Accepted**. Validate it in milestone 12 before treating continuity across host loss as a shipped capability.
+Host migration (milestone 13) is **not** required to move this decision to **Accepted**. The minigame networking API must **not** be considered frozen until milestone 10 (`HOST_ACTION` combat spike) and milestone 12 (API stabilization) complete.
 
 Human playtesting remains required for perceived input responsiveness; it is not sufficient on its own.
