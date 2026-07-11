@@ -44,11 +44,17 @@ func tick(inputs_by_player_id: Dictionary, delta: float) -> void:
 			return
 
 
-func export_positions() -> Dictionary:
+func export_positions(acked_input_ticks: Dictionary = {}) -> Dictionary:
 	var payload: Dictionary = {}
 	for player_id in positions_by_player_id.keys():
 		var position: Vector2 = positions_by_player_id[player_id]
-		payload[String(player_id)] = {"x": position.x, "y": position.y}
+		var player_key := String(player_id)
+		var entry := {
+			"x": position.x,
+			"y": position.y,
+			"acked_input_tick": int(acked_input_ticks.get(player_key, 0)),
+		}
+		payload[player_key] = entry
 	return payload
 
 

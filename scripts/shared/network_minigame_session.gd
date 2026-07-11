@@ -20,6 +20,10 @@ var _display_positions: Dictionary = {}
 var _target_positions: Dictionary = {}
 var _predicted_positions: Dictionary = {}
 var _correction_offsets: Dictionary = {}
+var _local_input_ticks: Dictionary = {}
+var _local_input_history: Dictionary = {}
+var _latest_input_tick_by_player: Dictionary = {}
+var _acked_input_tick_by_player: Dictionary = {}
 var _prediction_tracker: HostSnapshotPredictionTracker = HostSnapshotPredictionTracker.new()
 var _snapshot_accumulator: float = 0.0
 var _snapshot_serial: int = 0
@@ -40,6 +44,7 @@ func _process(delta: float) -> void:
 		return
 
 	_poll_local_device_input()
+	_sample_local_inputs(delta)
 	_send_local_inputs_to_host()
 
 	if is_authority():
@@ -77,6 +82,10 @@ func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> b
 	_remote_inputs.clear()
 	_predicted_positions.clear()
 	_correction_offsets.clear()
+	_local_input_ticks.clear()
+	_local_input_history.clear()
+	_latest_input_tick_by_player.clear()
+	_acked_input_tick_by_player.clear()
 	_prediction_tracker.reset()
 	_simulator.reset_for_player_ids(player_ids)
 	_snapshot_accumulator = 0.0
@@ -119,6 +128,10 @@ func stop_minigame() -> void:
 	_target_positions.clear()
 	_predicted_positions.clear()
 	_correction_offsets.clear()
+	_local_input_ticks.clear()
+	_local_input_history.clear()
+	_latest_input_tick_by_player.clear()
+	_acked_input_tick_by_player.clear()
 	_owns_local_player_ids.clear()
 	_prediction_tracker.reset()
 	_minigame_instance_id = ""
@@ -233,15 +246,29 @@ func _lobby_session() -> NetworkLobbySession:
 
 
 func _send_local_inputs_to_host() -> void:
-	if not is_networked():
+	if not is_networked() or is_authority():
 		return
 
 	for player_id in _local_player_ids:
+		var player_key := String(player_id)
 		var move := _input_source.get_move_vector(player_id)
+		var input_tick: int = int(_local_input_ticks.get(player_key, 0))
+		_rpc_submit_input.rpc_id(1, player_id, move.x, move.y, input_tick)
+
+
+func _sample_local_inputs(delta: float) -> void:
+	if _input_source == null:
+		return
+
+	for player_id in _local_player_ids:
+		var player_key := String(player_id)
+		var move := _input_source.get_move_vector(player_key)
+		var input_tick := _advance_local_input_tick(player_key)
+		if prediction_enabled and not is_authority():
+			_record_local_input(player_key, input_tick, move, delta)
 		if is_authority():
+			_latest_input_tick_by_player[player_key] = input_tick
 			_remote_inputs[player_id] = move
-		else:
-			_rpc_submit_input.rpc_id(1, player_id, move.x, move.y)
 
 
 func _host_tick(delta: float) -> void:
@@ -253,12 +280,14 @@ func _host_tick(delta: float) -> void:
 	if _snapshot_accumulator < 1.0 / SNAPSHOT_HZ:
 		if not _simulator.winner_player_id.is_empty():
 			_snapshot_serial += 1
+			_update_snapshot_input_acks()
 			_broadcast_snapshot()
 			_submit_host_result()
 		return
 
 	_snapshot_accumulator = 0.0
 	_snapshot_serial += 1
+	_update_snapshot_input_acks()
 	_broadcast_snapshot()
 
 	if not _simulator.winner_player_id.is_empty():
@@ -277,7 +306,7 @@ func _collect_host_inputs() -> Dictionary:
 
 
 func _broadcast_snapshot() -> void:
-	var payload := _simulator.export_positions()
+	var payload := _simulator.export_positions(_acked_input_tick_by_player)
 	_publish_authoritative_snapshot(_snapshot_serial, payload)
 	if is_networked():
 		_rpc_apply_snapshot.rpc(_snapshot_serial, payload)
@@ -342,14 +371,17 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 			)
 			_target_positions[player_key] = target
 			if _predicts_local_player(player_key):
-				var predicted: Vector2 = _predicted_positions.get(player_key, target)
-				_prediction_tracker.record_correction(predicted, target)
-				var correction := predicted - target
+				var predicted_before: Vector2 = _predicted_positions.get(player_key, target)
+				var acked_input_tick := int(entry.get("acked_input_tick", 0))
+				_predicted_positions[player_key] = target
+				_replay_unacked_inputs(player_key, acked_input_tick)
+				var predicted_after: Vector2 = _predicted_positions[player_key]
+				_prediction_tracker.record_correction(predicted_before, target)
+				var correction := predicted_before - predicted_after
 				if correction.length_squared() >= HostSnapshotPredictionTracker.CORRECTION_EPSILON * HostSnapshotPredictionTracker.CORRECTION_EPSILON:
 					var offset: Vector2 = _correction_offsets.get(player_key, Vector2.ZERO)
 					_correction_offsets[player_key] = offset + correction
-				_predicted_positions[player_key] = target
-				_display_positions[player_key] = target + _correction_offsets.get(player_key, Vector2.ZERO)
+				_display_positions[player_key] = predicted_after + _correction_offsets.get(player_key, Vector2.ZERO)
 			elif not _display_positions.has(player_key):
 				_display_positions[player_key] = target
 
@@ -400,16 +432,71 @@ func is_networked() -> bool:
 
 
 @rpc("any_peer", "call_remote", "unreliable")
-func _rpc_submit_input(player_id: String, move_x: float, move_y: float) -> void:
+func _rpc_submit_input(player_id: String, move_x: float, move_y: float, input_tick: int) -> void:
 	if not is_authority():
 		return
-	_host_apply_remote_input(multiplayer.get_remote_sender_id(), player_id, Vector2(move_x, move_y))
+	_host_apply_remote_input(
+		multiplayer.get_remote_sender_id(),
+		player_id,
+		Vector2(move_x, move_y),
+		input_tick,
+	)
 
 
-func _host_apply_remote_input(peer_id: int, player_id: String, move: Vector2) -> void:
+func _host_apply_remote_input(peer_id: int, player_id: String, move: Vector2, input_tick: int) -> void:
 	if not _peer_owns_player(peer_id, player_id):
 		return
 	_remote_inputs[player_id] = move
+	var player_key := String(player_id)
+	var latest_tick: int = int(_latest_input_tick_by_player.get(player_key, 0))
+	_latest_input_tick_by_player[player_key] = maxi(latest_tick, input_tick)
+
+
+func _update_snapshot_input_acks() -> void:
+	for slot in _slots:
+		var player_key := String(slot.player_id)
+		_acked_input_tick_by_player[player_key] = _latest_input_tick_by_player.get(player_key, 0)
+
+
+func _advance_local_input_tick(player_key: String) -> int:
+	var next_tick: int = int(_local_input_ticks.get(player_key, 0)) + 1
+	_local_input_ticks[player_key] = next_tick
+	return next_tick
+
+
+func _record_local_input(player_key: String, input_tick: int, move: Vector2, delta: float) -> void:
+	var history: Array = _local_input_history.get(player_key, [])
+	history.append(
+		{
+			"tick": input_tick,
+			"move": move,
+			"delta": delta,
+		}
+	)
+	_local_input_history[player_key] = history
+
+
+func _replay_unacked_inputs(player_key: String, acked_input_tick: int) -> void:
+	var position: Vector2 = _predicted_positions.get(player_key, Vector2.ZERO)
+	var history: Array = _local_input_history.get(player_key, [])
+	var remaining: Array = []
+	for entry in history:
+		if entry is not Dictionary:
+			continue
+
+		var tick: int = int(entry.get("tick", 0))
+		if tick <= acked_input_tick:
+			continue
+
+		var move: Vector2 = entry.get("move", Vector2.ZERO)
+		if not move is Vector2:
+			move = Vector2.ZERO
+		var step_delta: float = float(entry.get("delta", 0.0))
+		position = HostSnapshotSimulator.apply_move(position, move, step_delta)
+		remaining.append(entry)
+
+	_predicted_positions[player_key] = position
+	_local_input_history[player_key] = remaining
 
 
 func _peer_owns_player(peer_id: int, player_id: String) -> bool:

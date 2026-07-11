@@ -26,7 +26,7 @@ Milestones are marked **Implemented proof** when their intended code/test surfac
 | 1 | Offline session / `PlayerSlot` model | Implemented proof; session-local controller indices exist, but physical input routing and recorded manual 2/4-player evidence are absent | — |
 | 2 | Local phase state machine + snapshots | Implemented proof with unit coverage and debug UI; manual completion evidence is not stored | 1 |
 | 3 | ENet host/join harness | Implemented proof with lifecycle/teardown/echo unit coverage; multi-instance, LAN, and internet evidence is not stored | 1 |
-| 4 | Networked lobby (multi-local per peer) | Implemented proof with ownership/cap/round-trip unit coverage; manual malformed-RPC and multi-peer evidence is not stored | 1, 3 |
+| 4 | Networked lobby | Implemented proof with ownership/cap/round-trip unit coverage; **launch policy: one `PlayerSlot` per peer online** (multi-local per peer deferred); manual malformed-RPC and multi-peer evidence is not stored | 1, 3 |
 | 5 | Authoritative board stub | Implemented proof with authority, frozen-roster, and hash agreement unit coverage; manual peer testing is not stored | 2, 4 |
 | 6 | Networked scene flow (briefing → results) | In progress: placeholder flow, phase agreement, and result/reward idempotency are covered; disconnect behavior and required manual two-peer validation are absent | 2, 4, 5 |
 | 7 | Simple movement minigame (`HOST_SNAPSHOT`) | Implemented proof: Snapshot Arena, `NetworkMinigameSession`, result/hash agreement unit coverage; online lobby enforces one player per peer; durable 4-player and bandwidth evidence not stored | 6 |
@@ -162,41 +162,47 @@ Reliable RPC echo test passes host → client and client → host; disconnect on
 
 ---
 
-## Milestone 4: Networked lobby with multiple local players per peer
+## Milestone 4: Networked lobby
 
-Implementation status: **Implemented proof; required manual multi-peer evidence remains.**
+Implementation status: **Implemented proof; required manual multi-peer evidence remains.** Online launch policy is **one `PlayerSlot` per peer**; multi-local online play (multiple controllers on one connected machine) is **deferred**.
 
 ### Purpose
 
-Sync `PlayerSlot` assignment across peers; one connection may register multiple local players.
+Sync `PlayerSlot` assignment across peers. The repository still models multiple `local_player_index` values per peer for offline/couch proofs, but the networked lobby authority rejects a second slot for the same `peer_id`.
 
 ### Player-facing proof
 
-Peer A joins with 2 local players; Peer B joins with 1; lobby shows 3 `PlayerSlot`s with correct ownership; ready states sync.
+Up to four peers each join with one local player; the lobby shows one `PlayerSlot` per connected peer with correct ownership and ready states.
 
 ### Implementation boundary
 
-- `scripts/shared/` — lobby authority on host, slot claim validation
-- `tests/unit/` — reject slot claim from wrong `peer_id`, reject fifth player
+- `scripts/shared/` — lobby authority on host, slot claim validation, one-slot-per-peer enforcement online
+- `tests/unit/` — reject slot claim from wrong `peer_id`, reject fifth player, reject second slot for same peer
 
 ### Automated tests
 
 - Host rejects `PlayerSlot` claim for another peer's `local_player_index`
 - Host rejects match start when over `MAX_PLAYERS` (fifth player)
+- Host rejects a second slot for the same `peer_id`
 
 ### Manual tests
 
-- 2 peers × 2 local players on one machine (4 windows or simulated peers)
+- 4 peers × 1 local player on one machine (4 windows)
 - Malformed ready RPC ignored (manual or test double)
 
 ### Stop condition
 
 All peers display identical lobby `PlayerSlot` list and ready flags after each change.
 
-### Open questions before milestone 5
+### Spike outcomes and remaining questions
 
+- Multi-local online couch (for example 2 peers × 2 local `PlayerSlot`s) remains a deferred layout. Offline milestone 1 still supports multiple local players on one offline peer.
 - Lobby host migration needed before match start? (**deferred** until 13)
 - Display name profanity/trust (**deferred**)
+
+### Open questions before milestone 5
+
+- When to revisit multi-local online play relative to controller routing and bandwidth goals
 
 ---
 
@@ -325,7 +331,7 @@ Result agreement automated test passes; manual playtest at 4 players with no per
 
 ## Milestone 8: Prediction and reconciliation experiment (`HOST_SNAPSHOT`)
 
-Implementation status: **In progress.** Client prediction, correction telemetry, and blend reconciliation are implemented; the full latency matrix and default recommendation are not finalized.
+Implementation status: **In progress.** Client prediction with input tick ack/replay, correction telemetry, and blend display reconciliation are implemented; the full latency matrix and default recommendation are not finalized.
 
 ### Purpose
 
@@ -337,12 +343,13 @@ Same minigame with optional prediction on local player; debug overlay shows corr
 
 ### Implementation boundary
 
-- Changes isolated to movement minigame + small shared debug helpers
-- Feature flag or sync profile sub-option
+- `NetworkMinigameSession` — client input tick IDs, retained local input history, snapshot `acked_input_tick`, authority reset + replay of unacknowledged inputs, blend correction offsets
+- `HostSnapshotPredictionTracker` — correction telemetry for debug overlay
+- Snapshot Arena status line surfaces correction stats during networked play
 
 ### Automated tests
 
-- Log correction count per session in test harness (threshold TBD in PR)
+- Correction count and replay: delayed snapshot with continuous input keeps predicted state ahead of acknowledged authority (unit test)
 
 ### Manual tests
 
@@ -356,7 +363,7 @@ Documented table: latency vs correction frequency vs player verdict; recommendat
 
 ### Spike outcomes (preliminary)
 
-Manual testing used two Godot instances on one machine (host + client), Clumsy `outbound and loopback` lag on the client, and the Snapshot Arena status overlay (`pred corrections`, `last`, `max` px). Prediction defaults **on** for networked clients.
+Manual testing used two Godot instances on one machine (host + client), Clumsy `outbound and loopback` lag on the client, and the Snapshot Arena status overlay (`pred corrections`, `last`, `max` px). Prediction defaults **on** for networked clients. These results are **loopback-only preliminary evidence**; multi-computer LAN validation remains open.
 
 | Added latency | Reconcile mode | Corrections (order of magnitude) | Max correction (order of magnitude) | Player verdict (informal) |
 | --- | --- | --- | --- | --- |
@@ -364,7 +371,7 @@ Manual testing used two Godot instances on one machine (host + client), Clumsy `
 | ~50 ms | Snap (initial) | Frequent (~20 Hz) | Larger than baseline | Visible jitter and snap-back to prior position |
 | ~50 ms | Blend (error decay) | Similar counts to snap | Similar magnitudes | **Significantly less jitter**; smoother drift-in |
 
-**Working recommendation:** keep client prediction enabled for local movement; reconcile sim state to authority on each snapshot; use **blend (error decay)** for display correction rather than hard snap. Snap reconciliation remains useful as a debug/baseline mode.
+**Working recommendation:** keep client prediction enabled for local movement; on each snapshot apply authoritative position for the acknowledged input tick, replay newer local inputs, and use **blend (error decay)** for display correction rather than hard snap.
 
 Still open: 100 ms and ~150 ms profiles, jitter + 1–2% loss, differing render FPS, prediction-off baseline at each tier, and whether blend parameters should be shared-shell defaults vs minigame-tuned.
 

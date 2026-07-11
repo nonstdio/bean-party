@@ -98,7 +98,7 @@ func test_remote_input_rejects_spoofed_player_id() -> void:
 
 	var victim_id := slots[0].player_id
 	var attacker_peer_id := slots[1].owning_peer_id
-	minigame_session._host_apply_remote_input(attacker_peer_id, victim_id, Vector2.RIGHT)
+	minigame_session._host_apply_remote_input(attacker_peer_id, victim_id, Vector2.RIGHT, 1)
 
 	assert_false(minigame_session._remote_inputs.has(victim_id))
 
@@ -112,7 +112,7 @@ func test_remote_input_accepts_owned_player_id() -> void:
 
 	var player_id := slots[1].player_id
 	var peer_id := slots[1].owning_peer_id
-	minigame_session._host_apply_remote_input(peer_id, player_id, Vector2.UP)
+	minigame_session._host_apply_remote_input(peer_id, player_id, Vector2.UP, 1)
 
 	assert_eq(minigame_session._remote_inputs[player_id], Vector2.UP)
 
@@ -151,7 +151,7 @@ func test_prediction_reconciles_local_player_on_snapshot() -> void:
 	client_session._predicted_positions[slots[1].player_id] = Vector2(200.0, 200.0)
 
 	var payload := {
-		slots[1].player_id: {"x": 120.0, "y": 88.0},
+		slots[1].player_id: {"x": 120.0, "y": 88.0, "acked_input_tick": 0},
 	}
 	client_session._apply_snapshot_payload(1, payload)
 
@@ -179,7 +179,7 @@ func test_prediction_correction_offset_decays_toward_authoritative() -> void:
 	client_session._display_positions[slots[1].player_id] = Vector2(200.0, 200.0)
 
 	var payload := {
-		slots[1].player_id: {"x": 120.0, "y": 88.0},
+		slots[1].player_id: {"x": 120.0, "y": 88.0, "acked_input_tick": 0},
 	}
 	client_session._apply_snapshot_payload(1, payload)
 
@@ -191,6 +191,39 @@ func test_prediction_correction_offset_decays_toward_authoritative() -> void:
 	client_session._client_predict_local(0.05)
 	var offset_after: Vector2 = client_session._correction_offsets.get(player_id, Vector2.ZERO)
 	assert_lt(offset_after.length(), offset_before.length())
+
+
+func test_prediction_replays_unacked_inputs_after_delayed_snapshot() -> void:
+	var client_session := NetworkMinigameSession.new()
+	add_child_autofree(client_session)
+
+	var slots := _make_slots()
+	assert_true(client_session.start_minigame(slots, "minigame_test"))
+	client_session.prediction_enabled = true
+	var player_id := String(slots[1].player_id)
+	client_session._local_player_ids = PackedStringArray([slots[1].player_id])
+	client_session._predicted_positions[player_id] = Vector2(100.0, 100.0)
+	client_session._display_positions[player_id] = Vector2(100.0, 100.0)
+	client_session._input_source.set_action_strength(
+		slots[1].player_id,
+		MinigameInputSource.ACTION_MOVE_RIGHT,
+		1.0,
+	)
+
+	for _i in 5:
+		client_session._sample_local_inputs(0.05)
+		client_session._client_predict_local(0.05)
+
+	var predicted_before: Vector2 = client_session._predicted_positions[player_id]
+	var auth_x := 100.0 + HostSnapshotSimulator.MOVE_SPEED * 0.05 * 2.0
+	var payload := {
+		player_id: {"x": auth_x, "y": 100.0, "acked_input_tick": 2},
+	}
+	client_session._apply_snapshot_payload(1, payload)
+
+	var predicted_after: Vector2 = client_session._predicted_positions[player_id]
+	assert_gt(predicted_after.x, auth_x)
+	assert_true(absf(predicted_after.x - predicted_before.x) < 0.01)
 
 
 func test_client_predict_local_moves_display_position() -> void:
