@@ -35,6 +35,7 @@ var _correction_offsets: Dictionary = {}
 var _local_input_ticks: Dictionary = {}
 var _local_input_history: Dictionary = {}
 var _processed_input_tick_by_player: Dictionary = {}
+var _last_consumed_input_by_player: Dictionary = {}
 var _prediction_tracker: HostSnapshotPredictionTracker = HostSnapshotPredictionTracker.new()
 var _snapshot_accumulator: float = 0.0
 var _snapshot_serial: int = 0
@@ -102,6 +103,7 @@ func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> b
 	_local_input_ticks.clear()
 	_local_input_history.clear()
 	_processed_input_tick_by_player.clear()
+	_last_consumed_input_by_player.clear()
 	_acked_input_tick_by_player.clear()
 	_prediction_tracker.reset()
 	_input_buffer.clear()
@@ -156,6 +158,7 @@ func stop_minigame() -> void:
 	_local_input_ticks.clear()
 	_local_input_history.clear()
 	_processed_input_tick_by_player.clear()
+	_last_consumed_input_by_player.clear()
 	_acked_input_tick_by_player.clear()
 	_owns_local_player_ids.clear()
 	_prediction_tracker.reset()
@@ -262,6 +265,7 @@ func mark_peer_inactive(peer_id: int) -> void:
 			continue
 		_input_buffer.clear_player(slot.player_id)
 		_processed_input_tick_by_player.erase(slot.player_id)
+		_last_consumed_input_by_player.erase(slot.player_id)
 		if _simulator.winner_player_id == slot.player_id:
 			_simulator.winner_player_id = ""
 
@@ -454,15 +458,66 @@ func _consume_simulation_inputs() -> Dictionary:
 		if not PlayerSlotConnectivity.is_participating(slot):
 			inputs[slot.player_id] = NEUTRAL_ACTION_INPUT.duplicate(true)
 			continue
-		var next_tick: int = int(_processed_input_tick_by_player.get(player_key, 0)) + 1
+		var processed_tick: int = int(_processed_input_tick_by_player.get(player_key, 0))
+		var next_tick: int = processed_tick + 1
 		var payload: Dictionary = _input_buffer.get_input_at_tick(player_key, next_tick)
 		if payload.is_empty():
-			payload = NEUTRAL_ACTION_INPUT.duplicate(true)
+			payload = _last_consumed_input_by_player.get(player_key, NEUTRAL_ACTION_INPUT)
+			if payload is Dictionary:
+				payload = payload.duplicate(true)
+			else:
+				payload = NEUTRAL_ACTION_INPUT.duplicate(true)
 		else:
 			payload = payload.duplicate(true)
-		_processed_input_tick_by_player[player_key] = next_tick
+			_processed_input_tick_by_player[player_key] = next_tick
+			_last_consumed_input_by_player[player_key] = payload.duplicate(true)
 		inputs[slot.player_id] = payload
 	return inputs
+
+
+func _client_predict_buffered_step(step: float) -> void:
+	if _input_source == null:
+		return
+
+	for player_id in _local_player_ids:
+		var player_key := String(player_id)
+		var input_tick: int = int(_local_input_ticks.get(player_key, 0))
+		if input_tick <= 0:
+			continue
+		var payload: Dictionary = _input_buffer.get_input_at_tick(player_key, input_tick)
+		if payload.is_empty():
+			continue
+		_apply_predicted_input_step(player_key, payload, step)
+
+
+func _apply_predicted_input_step(player_key: String, payload: Dictionary, step: float) -> void:
+	var move: Vector2 = payload.get("move", Vector2.ZERO)
+	if not move is Vector2:
+		move = Vector2.ZERO
+	var jump := bool(payload.get("jump", false))
+	var position: Vector3 = _predicted_positions.get(
+		player_key,
+		_display_positions.get(player_key, Vector3.ZERO),
+	)
+	var yaw: float = float(
+		_predicted_yaw.get(player_key, _display_state.get(player_key, {}).get("yaw", 0.0))
+	)
+	var vertical_velocity: float = float(_predicted_vertical_velocity.get(player_key, 0.0))
+	var applied: Dictionary = HostActionSimulator.apply_tank_move(
+		position,
+		yaw,
+		move,
+		vertical_velocity,
+		step,
+		jump,
+	)
+	position = applied.get("position", position)
+	yaw = float(applied.get("yaw", yaw))
+	vertical_velocity = float(applied.get("vertical_velocity", vertical_velocity))
+	_predicted_positions[player_key] = position
+	_predicted_yaw[player_key] = yaw
+	_predicted_vertical_velocity[player_key] = vertical_velocity
+	_display_positions[player_key] = get_local_visual_position(player_key)
 
 
 func _sync_entity_registry_from_simulator() -> void:
@@ -489,42 +544,13 @@ func _client_tick(delta: float) -> void:
 		var step := 1.0 / SIM_TICK_HZ
 		for _i in tick_count:
 			_sample_local_inputs_for_sim_step(step)
-			_client_predict_local_step(step)
+			_client_predict_buffered_step(step)
 		_decay_correction_offsets(delta)
 	_client_interpolate_remotes(delta)
 
 
 func _client_predict_local_step(step: float) -> void:
-	if _input_source == null:
-		return
-
-	for player_id in _local_player_ids:
-		var player_key := String(player_id)
-		var move := _input_source.get_move_vector(player_key)
-		var jump := _input_source.get_action_strength(player_key, MinigameInputSource.ACTION_PRIMARY) > 0.5
-		var position: Vector3 = _predicted_positions.get(
-			player_key,
-			_display_positions.get(player_key, Vector3.ZERO),
-		)
-		var yaw: float = float(
-			_predicted_yaw.get(player_key, _display_state.get(player_key, {}).get("yaw", 0.0))
-		)
-		var vertical_velocity: float = float(_predicted_vertical_velocity.get(player_key, 0.0))
-		var applied: Dictionary = HostActionSimulator.apply_tank_move(
-			position,
-			yaw,
-			move,
-			vertical_velocity,
-			step,
-			jump,
-		)
-		position = applied.get("position", position)
-		yaw = float(applied.get("yaw", yaw))
-		vertical_velocity = float(applied.get("vertical_velocity", vertical_velocity))
-		_predicted_positions[player_key] = position
-		_predicted_yaw[player_key] = yaw
-		_predicted_vertical_velocity[player_key] = vertical_velocity
-		_display_positions[player_key] = get_local_visual_position(player_key)
+	_client_predict_buffered_step(step)
 
 
 func _decay_correction_offsets(delta: float) -> void:
@@ -614,8 +640,6 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 			_replay_unacked_inputs(player_key, acked_input_tick)
 			var predicted_after: Vector3 = _predicted_positions.get(player_key, target)
 			var after_vy := float(_predicted_vertical_velocity.get(player_key, auth_vy))
-			predicted_after.x = lerpf(predicted_after.x, target.x, AUTHORITY_BLEND_RATE)
-			predicted_after.z = lerpf(predicted_after.z, target.z, AUTHORITY_BLEND_RATE)
 			if HostActionSimulator.is_airborne(predicted_after, after_vy):
 				predicted_after.y = maxf(predicted_after.y, 1.0)
 			else:

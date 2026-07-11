@@ -55,7 +55,24 @@ func test_snapshot_ack_reports_processed_not_received_tick() -> void:
 	session._consume_simulation_inputs()
 	session._update_snapshot_input_acks()
 
-	assert_eq(int(session._acked_input_tick_by_player[player_id]), 1)
+	assert_eq(int(session._acked_input_tick_by_player[player_id]), 0)
+
+
+func test_missing_remote_tick_holds_last_consumed_input() -> void:
+	var session := NetworkActionMinigameSession.new()
+	add_child_autofree(session)
+
+	var slots := _make_single_player_slots()
+	assert_true(session.start_minigame(slots, "action_test"))
+
+	var player_id := "player_1"
+	session._host_apply_remote_input(1, player_id, Vector2(0.0, -1.0), false, false, 0.0, 1)
+	var first := session._consume_simulation_inputs()
+	var second := session._consume_simulation_inputs()
+
+	assert_eq(int(first[player_id]["move"].y), -1)
+	assert_eq(int(second[player_id]["move"].y), -1)
+	assert_eq(int(session._processed_input_tick_by_player[player_id]), 1)
 
 
 func test_snapshot_reconciliation_resets_yaw_before_replay() -> void:
