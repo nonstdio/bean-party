@@ -171,6 +171,9 @@ function joinLobby(peer, pLobby, mesh) {
   if (!lobby) {
     throw new ProtoError(4000, STR_LOBBY_DOES_NOT_EXISTS);
   }
+  if (peer.lobby !== "") {
+    throw new ProtoError(4000, STR_ALREADY_IN_LOBBY);
+  }
   if (lobby.sealed) {
     throw new ProtoError(4000, STR_LOBBY_IS_SEALED);
   }

@@ -384,7 +384,7 @@ This reinforces the decision against universal rollback: rewinding an arena full
 | `TransportAdapter` / `TransportAdapterRegistry` | Implemented | Transport selection boundary for `MatchSession` |
 | `EnetTransportAdapter` | Implemented | ENet server/client peers behind `TransportAdapter` |
 | `SteamTransportAdapter` | Stub only | Fails closed; see [steam transport investigation](../research/steam-transport-investigation.md) |
-| `TransportMessageLanes` | Implemented | ENet/WebRTC channel map; shell/minigame RPCs use `transfer_channel` |
+| `TransportMessageLanes` | Implemented | Lane map; RPCs use channel `0` + transfer mode (WebRTC-safe) |
 | `MatchSession` | Implemented debug session | Direct address/port or transport id, connection state, peer events, reliable echo, peer teardown |
 | `NetworkLobbySession`, `NetworkBoardSession`, `NetworkMatchPhaseSession` | Implemented debug shell slices | Host-authoritative lobby, board stub, and placeholder phase synchronization |
 | Shell phase coordinator | Partial | Offline and network debug controllers exist, but no unified production coordinator |
@@ -410,6 +410,8 @@ Shooters and action minigames produce constant inputs and snapshots alongside cr
 | Player inputs | Unreliable ordered + redundant history | movement, fire, ability presses |
 | World snapshots | Unreliable ordered | transforms, velocities, periodic sim state |
 | Cosmetic | Unreliable, drop OK | VFX, SFX triggers, tracers |
+
+**WebRTC constraint:** Godot exposes three data channels per peer. Shared `@rpc` decorators use `transfer_channel` **0** and distinguish lanes by transfer mode (`reliable`, `unreliable_ordered`, `unreliable`). See [WebRTC implementation notes](../guides/webrtc-implementation-notes.md#godot-channel-model-critical).
 
 ### First spike vs later Steam integration
 

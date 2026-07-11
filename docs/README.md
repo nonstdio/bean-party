@@ -125,6 +125,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 - [Runtime debug harnesses](guides/runtime-debug-harnesses.md)
 - [WebRTC setup](guides/webrtc-setup.md)
 - [WebRTC operations runbook](guides/webrtc-ops.md)
+- [WebRTC implementation notes](guides/webrtc-implementation-notes.md)
 
 ### Plans
 

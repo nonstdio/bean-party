@@ -92,16 +92,19 @@ Use **time-limited credentials** in production. Do not commit live TURN secrets 
 
 ## RPC message lanes
 
-Shell and minigame RPCs use `TransportMessageLanes` channel constants:
+Shell and minigame RPCs use channel `0` with lane-specific transfer modes:
 
-| Channel | Delivery | Traffic |
-| --- | --- | --- |
-| 0 | Reliable | Session, lobby, board, phase control |
-| 1 | Unreliable ordered | Player inputs |
-| 2 | Unreliable | World snapshots (and cosmetic on WebRTC) |
-| 3 | Unreliable | Cosmetic (ENet only today) |
+| Lane | RPC channel | Delivery | Traffic |
+| --- | --- | --- | --- |
+| Session / board / phase | 0 | Reliable | Lobby, board, phase, echo |
+| Player input | 0 | Unreliable ordered | Minigame input RPCs |
+| World snapshot / cosmetic | 0 | Unreliable | Snapshot RPCs |
 
-WebRTC exposes three data channels per peer; ENet uses four transfer channels.
+Godot multiplexes channel `0` into three internal lanes (reliable, unreliable ordered, unreliable). WebRTC exposes exactly those three data channels per peer. Non-zero RPC channels map to unavailable WebRTC indices and fail at runtime.
+
+ENet still supports additional physical channels `1`–`3` for future tuning (`TransportMessageLanes.CHANNEL_PLAYER_INPUT`, etc.), but shared RPC decorators stay on channel `0` so both transports behave the same.
+
+See [WebRTC implementation notes](webrtc-implementation-notes.md) for why non-zero RPC channels fail on WebRTC and how Godot maps transfer modes to data channels.
 
 ## NAT traversal test matrix
 
@@ -146,11 +149,13 @@ Run one host plus three remote clients. Verify lobby slot assignment, board star
 | Signaling disconnect `4000` | Protocol mismatch | Use bundled `tools/signaling/server.js` |
 | Stuck in `Connecting...` | ICE failed | Add TURN; verify firewall UDP |
 | RPC errors on join | ICE not complete | Ensure Phase 1+ connect timing fix is present |
+| `Unable to send packet on channel 4, max channels: 3` | RPC uses non-zero `transfer_channel` on WebRTC | Use channel `0`; see [implementation notes](webrtc-implementation-notes.md#godot-channel-model-critical) |
 | One client works, another fails | Asymmetric NAT | Enable TURN relay |
 
 ## Related documents
 
 - [WebRTC setup](webrtc-setup.md) — developer install and local spikes
+- [WebRTC implementation notes](webrtc-implementation-notes.md) — Godot channel model, RPC timing, signaling wire format
 - [WebRTC transport investigation](../research/webrtc-transport-investigation.md)
 - [Runtime debug harnesses](runtime-debug-harnesses.md)
 - [Networking architecture](../architecture/networking.md#transport-message-lanes)

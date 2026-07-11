@@ -24,15 +24,15 @@ Steam transport follow-up is **backlogged**. WebRTC is the active internet trans
 - Join-code debug UI and reconnect keys (`signaling_url` + `room_code`)
 - ICE polling before lobby RPCs; manual 2-peer lobby/board/minigame validated
 
-## WebRTC channel map (implemented)
+## WebRTC lane map (implemented)
 
-| Channel | Lanes | RPC delivery |
-| --- | --- | --- |
-| 0 reliable | `SESSION_CONTROL`, `ENTITY_LIFECYCLE` | Lobby, board, phase, echo |
-| 1 unreliable ordered | `PLAYER_INPUT` | Minigame input RPCs |
-| 2 unreliable | `WORLD_SNAPSHOT`, `COSMETIC` | Snapshot RPCs |
+| Lane | RPC channel | Transfer mode | WebRTC data channel |
+| --- | --- | --- | --- |
+| `SESSION_CONTROL`, `ENTITY_LIFECYCLE` | 0 | Reliable | Reliable |
+| `PLAYER_INPUT` | 0 | Unreliable ordered | Ordered |
+| `WORLD_SNAPSHOT`, `COSMETIC` | 0 | Unreliable | Unreliable |
 
-Constants: `TransportMessageLanes.CHANNEL_*` and `WEBRTC_CHANNEL_BY_LANE`.
+Constants: `TransportMessageLanes.CHANNEL_RPC` and `WEBRTC_CHANNEL_BY_LANE`.
 
 ## Phase 2 (current)
 
@@ -44,6 +44,8 @@ Constants: `TransportMessageLanes.CHANNEL_*` and `WEBRTC_CHANNEL_BY_LANE`.
 | Formal 4-peer NAT matrix execution | **Open** (manual; template in runbook) |
 
 Default STUN remains enabled when no TURN is configured.
+
+Developer implementation notes (Godot channel limits, RPC gating, signaling wire format): [WebRTC implementation notes](../guides/webrtc-implementation-notes.md).
 
 ## Go / no-go gates
 
@@ -69,4 +71,5 @@ Default STUN remains enabled when no TURN is configured.
 
 - [WebRTC setup](../guides/webrtc-setup.md)
 - [WebRTC operations runbook](../guides/webrtc-ops.md)
+- [WebRTC implementation notes](../guides/webrtc-implementation-notes.md)
 - [Networking plan](../plans/networking.md)

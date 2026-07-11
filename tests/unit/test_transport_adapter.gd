@@ -39,7 +39,7 @@ func test_webrtc_adapter_normalizes_options() -> void:
 
 func test_match_session_webrtc_join_requires_room_code() -> void:
 	if not WebRtcAvailability.is_extension_loaded():
-		pass("Skipping WebRTC join validation without webrtc-native.")
+		pass_test("Skipping WebRTC join validation without webrtc-native.")
 		return
 
 	var session := MatchSession.new()
@@ -55,7 +55,7 @@ func test_match_session_webrtc_join_requires_room_code() -> void:
 
 func test_match_session_webrtc_fails_without_extension() -> void:
 	if WebRtcAvailability.is_extension_loaded():
-		pass("Skipping fail-closed test because webrtc-native is installed.")
+		pass_test("Skipping fail-closed test because webrtc-native is installed.")
 		return
 
 	var session := MatchSession.new()
@@ -165,14 +165,14 @@ func test_set_transport_adapter_is_used_by_host_with_transport() -> void:
 
 func test_lane_channel_map_matches_architecture_lanes() -> void:
 	assert_eq(
-		TransportMessageLanes.CHANNEL_SESSION_CONTROL,
+		TransportMessageLanes.CHANNEL_RPC,
 		TransportMessageLanes.enet_channel_for_lane(TransportMessageLanes.Lane.SESSION_CONTROL),
 	)
 	assert_eq(
-		TransportMessageLanes.CHANNEL_PLAYER_INPUT,
+		TransportMessageLanes.CHANNEL_RPC,
 		TransportMessageLanes.webrtc_channel_for_lane(TransportMessageLanes.Lane.PLAYER_INPUT),
 	)
 	assert_eq(
-		TransportMessageLanes.CHANNEL_WORLD_SNAPSHOT,
+		TransportMessageLanes.CHANNEL_RPC,
 		TransportMessageLanes.webrtc_channel_for_lane(TransportMessageLanes.Lane.COSMETIC),
 	)

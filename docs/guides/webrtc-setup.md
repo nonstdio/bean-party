@@ -56,9 +56,12 @@ Configure ICE servers via:
 
 Full deployment, NAT matrix, and troubleshooting: [WebRTC operations runbook](webrtc-ops.md).
 
+Implementation details (channels, RPC timing, signaling quirks): [WebRTC implementation notes](webrtc-implementation-notes.md).
+
 ## Related documents
 
 - [WebRTC operations runbook](webrtc-ops.md)
+- [WebRTC implementation notes](webrtc-implementation-notes.md)
 - [WebRTC transport investigation](../research/webrtc-transport-investigation.md)
 - [Networking architecture](../architecture/networking.md)
 - [Runtime debug harnesses](runtime-debug-harnesses.md) — ENet LAN path remains available

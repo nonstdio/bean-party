@@ -31,6 +31,10 @@ func close() -> void:
 	_auto_join_pending = false
 
 
+func parse_message(raw_message: String) -> bool:
+	return _parse_message(raw_message)
+
+
 func poll() -> void:
 	_ws.poll()
 	var state := _ws.get_ready_state()
@@ -85,7 +89,10 @@ func _send_message(type: int, id: int, data: String = "") -> Error:
 
 
 func _parse_message(raw_message: String) -> bool:
-	var parsed: Variant = JSON.parse_string(raw_message)
+	var json := JSON.new()
+	if json.parse(raw_message) != OK:
+		return false
+	var parsed: Variant = json.data
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return false
 
@@ -113,7 +120,10 @@ func _parse_message(raw_message: String) -> bool:
 		WebRtcSignalingMessages.Message.ANSWER:
 			answer_received.emit(source_id, data)
 		WebRtcSignalingMessages.Message.CANDIDATE:
-			var candidate: PackedStringArray = data.split("\n", false)
+			var candidate_data := data
+			if candidate_data.begins_with("\n"):
+				candidate_data = candidate_data.substr(1)
+			var candidate: PackedStringArray = candidate_data.split("\n", false)
 			if candidate.size() != 3 or not candidate[1].is_valid_int():
 				return false
 			candidate_received.emit(source_id, candidate[0], candidate[1].to_int(), candidate[2])

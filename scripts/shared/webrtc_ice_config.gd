@@ -23,7 +23,7 @@ static func parse_json_text(json_text: String) -> Array:
 static func resolve_ice_servers(options: Dictionary = {}) -> Array:
 	var explicit: Variant = options.get("ice_servers")
 	if explicit is Array and not explicit.is_empty():
-		return _normalize_server_list(explicit)
+		return _ensure_default_stun(_normalize_server_list(explicit))
 
 	var servers: Array = []
 	_append_unique_servers(servers, _servers_from_environment())
@@ -33,11 +33,29 @@ static func resolve_ice_servers(options: Dictionary = {}) -> Array:
 	if servers.is_empty():
 		return default_stun_only()
 
-	return servers
+	return _ensure_default_stun(servers)
 
 
 static func default_stun_only() -> Array:
 	return [{"urls": [DEFAULT_STUN_URL]}]
+
+
+static func _ensure_default_stun(servers: Array) -> Array:
+	if _includes_stun(servers):
+		return servers
+	var merged := default_stun_only().duplicate(true)
+	merged.append_array(servers)
+	return merged
+
+
+static func _includes_stun(servers: Array) -> bool:
+	for entry in servers:
+		if entry is not Dictionary:
+			continue
+		for url in entry.get("urls", []):
+			if String(url).begins_with("stun:"):
+				return true
+	return false
 
 
 static func _servers_from_environment() -> Array:

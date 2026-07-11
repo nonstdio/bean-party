@@ -74,6 +74,25 @@ func set_transport_adapter(adapter: TransportAdapter) -> void:
 		_transport_adapter = adapter
 
 
+func is_client_rpc_ready() -> bool:
+	if not is_session_established() or is_server():
+		return false
+	return is_peer_route_ready(1)
+
+
+func is_peer_route_ready(peer_id: int) -> bool:
+	if not is_session_established() or _peer == null:
+		return false
+	if multiplayer.multiplayer_peer == null:
+		return false
+	if (
+		multiplayer.multiplayer_peer.get_connection_status()
+		!= MultiplayerPeer.CONNECTION_CONNECTED
+	):
+		return false
+	return peer_id in multiplayer.get_peers()
+
+
 func host_with_transport(transport_id: String, options: Dictionary = {}) -> Error:
 	disconnect_session()
 
@@ -82,11 +101,11 @@ func host_with_transport(transport_id: String, options: Dictionary = {}) -> Erro
 		return ERR_UNAVAILABLE
 
 	if transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		_transport_adapter = adapter
 		var error := _begin_webrtc_session(options, true)
 		if error != OK:
 			_reset_transport_adapter()
 			return error
-		_transport_adapter = adapter
 		return OK
 
 	var peer := adapter.create_server_peer(options)
@@ -129,11 +148,11 @@ func join_with_transport(transport_id: String, options: Dictionary = {}) -> Erro
 	_last_join_room_code = String(options.get("room_code", ""))
 
 	if transport_id == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		_transport_adapter = adapter
 		var error := _begin_webrtc_session(options, false)
 		if error != OK:
 			_reset_transport_adapter()
 			return error
-		_transport_adapter = adapter
 		return OK
 
 	var peer := adapter.create_client_peer(options)
@@ -152,7 +171,11 @@ func join_with_transport(transport_id: String, options: Dictionary = {}) -> Erro
 
 
 func disconnect_session() -> void:
-	if is_server() and is_session_established():
+	if (
+		is_server()
+		and is_session_established()
+		and not get_remote_peer_ids().is_empty()
+	):
 		_rpc_session_ended.rpc(SessionEndReason.HOST_LEFT, _default_end_message(SessionEndReason.HOST_LEFT))
 	_end_session(SessionEndReason.LOCAL_LEFT, _default_end_message(SessionEndReason.LOCAL_LEFT))
 
@@ -210,9 +233,12 @@ func send_echo(peer_id: int, message: String) -> int:
 
 
 func _exit_tree() -> void:
-	if is_active():
-		_teardown_peer()
-		_state = SessionState.IDLE
+	if not is_active():
+		return
+	_teardown_peer()
+	_state = SessionState.IDLE
+	_reset_transport_adapter()
+	session_state_changed.emit()
 
 
 func _process(delta: float) -> void:
@@ -357,14 +383,7 @@ func _on_webrtc_peer_ready(peer: MultiplayerPeer, is_host: bool) -> void:
 
 
 func _is_webrtc_client_transport_ready() -> bool:
-	if _peer == null or is_server():
-		return false
-	if _peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
-		return false
-	for peer_id in multiplayer.get_peers():
-		if peer_id == 1:
-			return true
-	return false
+	return is_client_rpc_ready()
 
 
 func _on_webrtc_lobby_code_ready(lobby_code: String) -> void:
@@ -434,6 +453,11 @@ func _end_session(reason: SessionEndReason, message: String) -> void:
 
 func _resolve_transport_adapter(transport_id: String) -> TransportAdapter:
 	if _injected_transport_adapter != null:
+		if _injected_transport_adapter.get_transport_id() != transport_id:
+			push_warning(
+				"Injected transport adapter id '%s' does not match requested '%s'."
+				% [_injected_transport_adapter.get_transport_id(), transport_id]
+			)
 		return _injected_transport_adapter
 	return TransportAdapterRegistry.create(transport_id)
 
