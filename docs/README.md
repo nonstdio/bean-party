@@ -13,8 +13,9 @@ This directory contains the durable design, architecture, operating guidance, re
 ### Minigame authors
 
 1. Read the [game design target](design/game.md) and [creative direction](design/creative-direction.md).
-2. Open a [minigame proposal](../.github/ISSUE_TEMPLATE/minigame-proposal.md) before substantial implementation.
-3. Follow the [minigame contribution contract](architecture/minigame-integration.md).
+2. Use the [minigame design guide](design/minigames.md) to prepare and review the idea.
+3. Open a [minigame proposal](../.github/ISSUE_TEMPLATE/minigame-proposal.md) before substantial implementation.
+4. Follow the [minigame integration contract](architecture/minigame-integration.md) during implementation.
 
 GitHub issues are the canonical home for pre-implementation minigame proposals. Once implementation begins, keep the design brief, controls, asset credits, and test notes with the minigame in `minigames/<slug>/README.md`.
 
@@ -93,11 +94,12 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 
 - [Game design target](design/game.md)
 - [Creative direction](design/creative-direction.md)
+- [Minigame design guide](design/minigames.md)
 
 ### Architecture and integration
 
 - [Godot project architecture](architecture/godot-project.md)
-- [Minigame contribution contract](architecture/minigame-integration.md)
+- [Minigame integration contract](architecture/minigame-integration.md)
 - [Networking architecture](architecture/networking.md)
 
 ### Guides

@@ -6,7 +6,7 @@ Related documents:
 
 - [Decision 0003: peer-hosted networking](../decisions/0003-peer-hosted-networking.md) — chosen baseline and validation gates
 - [Networking implementation plan](../plans/networking.md) — milestones and test matrix
-- [Minigame contribution contract](minigame-integration.md) — network-facing minigame inputs, outputs, and sync profiles
+- [Minigame integration contract](minigame-integration.md) — network-facing minigame inputs, outputs, and sync profiles
 
 ## Terminology
 
@@ -373,7 +373,7 @@ This reinforces the decision against universal rollback: rewinding an arena full
 
 - **Proposed:** `MatchSession` is owned by the app-level flow (e.g. match coordinator scene/controller), created when a player hosts or joins, torn down when returning to main menu.
 - Minigames receive a read-only or capability-limited handle for sending inputs and receiving phase events—they do not own the peer.
-- On teardown, minigames must unregister RPCs, disconnect signals, and clear buffered state ([minigame contract](minigame-integration.md)).
+- On teardown, minigames must unregister RPCs, disconnect signals, and clear buffered state ([minigame integration contract](minigame-integration.md)).
 
 ### Transport message lanes
 

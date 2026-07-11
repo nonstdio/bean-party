@@ -4,7 +4,7 @@ Thank you for helping make Bean Party. We want the project to feel like a party 
 
 ## Before you begin
 
-Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame contribution contract](docs/architecture/minigame-integration.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template first. A short proposal saves everyone from building the same idea twice or discovering an integration problem late.
+Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame design guide](docs/design/minigames.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template first. A short proposal saves everyone from building the same idea twice or discovering an integration problem late. Before implementation, review the separate [minigame integration contract](docs/architecture/minigame-integration.md).
 
 ## Godot setup
 
@@ -22,15 +22,9 @@ Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`
 
 ## Designing a minigame
 
-The first supported target is a minigame that is understandable at a glance, fair enough to rematch, and short enough to return players to the board quickly. A useful proposal answers:
+The [minigame design guide](docs/design/minigames.md) is the canonical source for proposal contents and design review criteria. The GitHub issue remains canonical while an idea is being discussed; once implementation begins, keep the current brief in `minigames/<slug>/README.md` and link it back to the proposal.
 
-- What does each player do, and how does someone win or lose?
-- Is it free-for-all, 2v2, 1v3, cooperative, or another clearly named format?
-- What information must the player understand in the first ten seconds?
-- How does the game avoid an early mistake making the rest of the round pointless?
-- What makes it feel at home in Bean Party rather than a generic party-game scene?
-
-Use Godot scenes and GDScript, but do not assume a shared API beyond what the [minigame contribution contract](docs/architecture/minigame-integration.md) documents. The concrete code-level minigame API is still an open design task.
+Use Godot scenes and GDScript, but do not assume a shared API beyond what the [minigame integration contract](docs/architecture/minigame-integration.md) documents. The concrete code-level minigame API is still an open design task.
 
 ## Art, audio, and third-party material
 

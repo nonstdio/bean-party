@@ -10,7 +10,7 @@ Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), the [documentat
 
 - Keep a change focused. Do not bundle a minigame, broad refactor, engine migration, and design rewrite in one pull request.
 - Preserve the distinction between the shared game shell and independently contributed minigames. Do not make a minigame depend directly on another minigame.
-- Propose substantial minigames before implementation and follow the lifecycle in the [minigame contribution contract](docs/architecture/minigame-integration.md).
+- Propose substantial minigames before implementation, follow the [minigame design lifecycle](docs/design/minigames.md), and preserve the boundaries in the [minigame integration contract](docs/architecture/minigame-integration.md).
 - Use original or appropriately licensed material only. Never copy code, art, audio, text, character designs, logos, or other assets from Bean Battles, Mario Party, or another game.
 - Use Godot 4.7 stable and GDScript. Do not upgrade Godot, introduce C#, or change the renderer without an accepted decision record.
 - Never commit `.godot/`, `.import/`, `.mono/`, exported builds, or other generated editor files.
