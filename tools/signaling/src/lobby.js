@@ -5,11 +5,11 @@ const { CMD, protoMessage } = require("./protocol");
 const ALFNUM = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 function randomInt(low, high) {
-  return Math.floor(Math.random() * (high - low + 1) + low);
+  return crypto.randomInt(low, high + 1);
 }
 
 function randomId() {
-  return Math.abs(new Int32Array(crypto.randomBytes(4).buffer)[0]);
+  return crypto.randomInt(1, 0x7fffffff);
 }
 
 function randomRoomCode() {
@@ -226,7 +226,15 @@ class LobbyRegistry {
       if (this.lobbies.size >= this.config.maxRooms) {
         throw new ServiceError(ErrorCategory.ROOM_FULL, "Too many lobbies open");
       }
-      lobbyName = randomRoomCode();
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        lobbyName = randomRoomCode();
+        if (!this.lobbies.has(lobbyName)) {
+          break;
+        }
+        if (attempt === 7) {
+          throw new ServiceError(ErrorCategory.INTERNAL_FAILURE, "Failed to allocate room code");
+        }
+      }
       this.lobbies.set(lobbyName, new Lobby(lobbyName, peer.id, mesh, this.config));
     } else if (!this.rateLimiters.roomJoin.allow(clientKey)) {
       throw new ServiceError(ErrorCategory.RATE_LIMITED, "Room join rate limited");

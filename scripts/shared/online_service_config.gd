@@ -47,6 +47,12 @@ static func unconfigured_message() -> String:
 	return UNCONFIGURED_MESSAGE
 
 
+static func is_release_online_blocked(options: Dictionary = {}) -> bool:
+	if is_development_mode(options):
+		return false
+	return String(resolve(options).get("signaling_url", "")) == ""
+
+
 static func is_online_configured(options: Dictionary = {}) -> bool:
 	var resolved := resolve(options)
 	return String(resolved.get("signaling_url", "")) != ""
@@ -62,41 +68,79 @@ static func _merge_layers(options: Dictionary) -> Dictionary:
 		"allow_stun_only_fallback": false,
 	}
 
-	if options.has("signaling_url"):
-		resolved["signaling_url"] = String(options.get("signaling_url", ""))
-	if options.has("ice_config_url"):
-		resolved["ice_config_url"] = String(options.get("ice_config_url", ""))
-	if options.has("request_timeout_sec"):
-		resolved["request_timeout_sec"] = float(options.get("request_timeout_sec"))
-	if options.has("signaling_protocol_version"):
-		resolved["signaling_protocol_version"] = int(options.get("signaling_protocol_version"))
-	if options.has("development_mode"):
-		resolved["development_mode"] = bool(options.get("development_mode"))
-	if options.has("allow_stun_only_fallback"):
-		resolved["allow_stun_only_fallback"] = bool(options.get("allow_stun_only_fallback"))
+	var project_layer: Dictionary = {}
+	if options.has("_test_project_config"):
+		var probe: Variant = options.get("_test_project_config", {})
+		if probe is Dictionary:
+			project_layer = probe
+	else:
+		project_layer = _read_config_file(_project_config_path())
 
-	_apply_env_overrides(resolved)
-	_apply_file_overrides(resolved, USER_CONFIG_PATH)
-	_apply_file_overrides(resolved, _project_config_path())
+	var user_layer: Dictionary = {}
+	if options.has("_test_user_config"):
+		var user_probe: Variant = options.get("_test_user_config", {})
+		if user_probe is Dictionary:
+			user_layer = user_probe
+	else:
+		user_layer = _read_config_file(USER_CONFIG_PATH)
 
-	if options.has("signaling_url"):
-		resolved["signaling_url"] = String(options.get("signaling_url", ""))
-	if options.has("ice_config_url"):
-		resolved["ice_config_url"] = String(options.get("ice_config_url", ""))
-	if options.has("request_timeout_sec"):
-		resolved["request_timeout_sec"] = float(options.get("request_timeout_sec"))
-	if options.has("signaling_protocol_version"):
-		resolved["signaling_protocol_version"] = int(options.get("signaling_protocol_version"))
-	if options.has("development_mode"):
-		resolved["development_mode"] = bool(options.get("development_mode"))
-	if options.has("allow_stun_only_fallback"):
-		resolved["allow_stun_only_fallback"] = bool(options.get("allow_stun_only_fallback"))
+	_apply_dictionary(resolved, project_layer)
+	_apply_dictionary(resolved, user_layer)
+
+	if options.has("_test_env"):
+		_apply_test_env_overrides(resolved, options.get("_test_env", {}))
+	else:
+		_apply_env_overrides(resolved)
+
+	_apply_explicit_options(resolved, options)
 
 	if resolved["development_mode"] and resolved["signaling_url"] == "":
 		var dev := _read_config_file(DEVELOPMENT_CONFIG_PATH)
 		_apply_dictionary(resolved, dev)
 
 	return resolved
+
+
+static func _apply_explicit_options(resolved: Dictionary, options: Dictionary) -> void:
+	if options.has("signaling_url"):
+		resolved["signaling_url"] = String(options.get("signaling_url", ""))
+	if options.has("ice_config_url"):
+		resolved["ice_config_url"] = String(options.get("ice_config_url", ""))
+	if options.has("request_timeout_sec"):
+		resolved["request_timeout_sec"] = float(options.get("request_timeout_sec"))
+	if options.has("signaling_protocol_version"):
+		resolved["signaling_protocol_version"] = int(options.get("signaling_protocol_version"))
+	if options.has("development_mode"):
+		resolved["development_mode"] = bool(options.get("development_mode"))
+	if options.has("allow_stun_only_fallback"):
+		resolved["allow_stun_only_fallback"] = bool(options.get("allow_stun_only_fallback"))
+
+
+static func _apply_test_env_overrides(resolved: Dictionary, env: Dictionary) -> void:
+	if env.has(ENV_SIGNALING_URL):
+		resolved["signaling_url"] = String(env.get(ENV_SIGNALING_URL, "")).strip_edges()
+	if env.has(ENV_ICE_CONFIG_URL):
+		resolved["ice_config_url"] = String(env.get(ENV_ICE_CONFIG_URL, "")).strip_edges()
+	if env.has(ENV_REQUEST_TIMEOUT_SEC):
+		var timeout := String(env.get(ENV_REQUEST_TIMEOUT_SEC, "")).strip_edges()
+		if timeout != "" and timeout.is_valid_float():
+			resolved["request_timeout_sec"] = float(timeout)
+	if env.has(ENV_PROTOCOL_VERSION):
+		var protocol := String(env.get(ENV_PROTOCOL_VERSION, "")).strip_edges()
+		if protocol != "" and protocol.is_valid_int():
+			resolved["signaling_protocol_version"] = int(protocol)
+	if env.has(ENV_DEVELOPMENT_MODE):
+		var dev_mode := String(env.get(ENV_DEVELOPMENT_MODE, "")).strip_edges().to_lower()
+		if dev_mode in ["1", "true", "yes"]:
+			resolved["development_mode"] = true
+		elif dev_mode in ["0", "false", "no"]:
+			resolved["development_mode"] = false
+	if env.has(ENV_ALLOW_STUN_ONLY_FALLBACK):
+		var fallback := String(env.get(ENV_ALLOW_STUN_ONLY_FALLBACK, "")).strip_edges().to_lower()
+		if fallback in ["1", "true", "yes"]:
+			resolved["allow_stun_only_fallback"] = true
+		elif fallback in ["0", "false", "no"]:
+			resolved["allow_stun_only_fallback"] = false
 
 
 static func _project_config_path() -> String:

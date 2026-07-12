@@ -38,6 +38,26 @@ func test_webrtc_adapter_normalizes_options() -> void:
 	assert_false((normalized.get("ice_servers") as Array).is_empty())
 
 
+func test_match_session_webrtc_release_without_urls_is_unconfigured() -> void:
+	if not WebRtcAvailability.is_extension_loaded():
+		pass_test("Skipping WebRTC unconfigured test without webrtc-native.")
+		return
+
+	var session := MatchSession.new()
+	add_child_autofree(session)
+	assert_eq(
+		session.host_with_transport(
+			TransportAdapterRegistry.TRANSPORT_WEBRTC,
+			{
+				"development_mode": false,
+				"signaling_url": "",
+				"ice_config_url": "",
+			},
+		),
+		ERR_UNCONFIGURED,
+	)
+
+
 func test_match_session_webrtc_join_requires_room_code() -> void:
 	if not WebRtcAvailability.is_extension_loaded():
 		pass_test("Skipping WebRTC join validation without webrtc-native.")

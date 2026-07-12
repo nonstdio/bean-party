@@ -26,7 +26,7 @@ func start(owner: Node, ice_config_url: String, timeout_sec: float) -> void:
 
 	_http = HTTPRequest.new()
 	_http.timeout = timeout_sec
-	_http.download_chunk_size = 4096
+	_http.body_size_limit = MAX_RESPONSE_BYTES
 	_http.request_completed.connect(_on_request_completed)
 	owner.add_child(_http)
 	var error := _http.request(ice_config_url)
@@ -63,6 +63,9 @@ func _on_request_completed(
 
 	if result != HTTPRequest.RESULT_SUCCESS:
 		_cleanup()
+		if result == HTTPRequest.RESULT_BODY_SIZE_LIMIT_EXCEEDED:
+			failed.emit("ICE configuration response is too large.", "response_too_large")
+			return
 		failed.emit("ICE configuration request failed.", diagnostic)
 		return
 	if response_code < 200 or response_code >= 300:
@@ -100,7 +103,7 @@ func _parse_response(body: PackedByteArray) -> Dictionary:
 	if expires_at > 0 and expires_at <= Time.get_unix_time_from_system():
 		return {}
 
-	var servers := WebRtcIceConfig.parse_remote_ice_servers(raw_servers)
+	var servers := WebRtcIceConfig.parse_remote_ice_servers(raw_servers, expires_at)
 	if servers.is_empty():
 		return {}
 

@@ -39,7 +39,10 @@ async function withServer(overrides, run) {
   await app.start();
   const address = app.server.address();
   const baseUrl = `http://${address.address}:${address.port}`;
-  const wsUrl = `ws://${address.address}:${address.port}${app.config.signalingPath}`;
+  const wsUrl = signalingWsUrl(
+    `ws://${address.address}:${address.port}${app.config.signalingPath}`,
+    app.config.protocolVersion,
+  );
   try {
     await run({ app, baseUrl, wsUrl });
   } finally {
@@ -56,6 +59,7 @@ function httpGet(url) {
         response.on("end", () => {
           resolve({
             status: response.statusCode,
+            headers: response.headers,
             body: Buffer.concat(chunks).toString("utf8"),
           });
         });
@@ -103,6 +107,11 @@ function connectRejectedClient(wsUrl, timeoutMs = 5000) {
       reject(error);
     });
   });
+}
+
+function signalingWsUrl(baseWsUrl, protocolVersion = "1") {
+  const separator = baseWsUrl.includes("?") ? "&" : "?";
+  return `${baseWsUrl}${separator}protocol=${protocolVersion}`;
 }
 
 function attachMessageQueue(ws) {
@@ -306,6 +315,16 @@ test("payload limit is enforced in bytes", async () => {
   });
 });
 
+test("payload limit counts utf-8 bytes for multibyte data", async () => {
+  await withServer({ maxSignalingPayloadBytes: 8 }, async ({ wsUrl }) => {
+    const client = await connectClient(wsUrl);
+    const oversized = JSON.stringify({ type: 0, id: 1, data: "😀😀😀" });
+    client.send(oversized);
+    const closed = await waitForClose(client);
+    assert.match(closed.reason, /too large/i);
+  });
+});
+
 test("connection limit rejects additional peers", async () => {
   await withServer({ maxConnections: 1, connectionRateLimitMax: 100 }, async ({ wsUrl }) => {
     const first = await connectClient(wsUrl);
@@ -365,7 +384,10 @@ test("join attempt rate limit applies", async () => {
 test("protocol version mismatch rejects websocket upgrade", async () => {
   await withServer({}, async ({ app }) => {
     const address = app.server.address();
-    const badUrl = `ws://${address.address}:${address.port}${app.config.signalingPath}?protocol=99`;
+    const badUrl = signalingWsUrl(
+      `ws://${address.address}:${address.port}${app.config.signalingPath}`,
+      "99",
+    );
     const ws = new WebSocket(badUrl);
     const status = await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -389,6 +411,33 @@ test("protocol version mismatch rejects websocket upgrade", async () => {
   });
 });
 
+test("missing protocol version rejects websocket upgrade", async () => {
+  await withServer({}, async ({ app }) => {
+    const address = app.server.address();
+    const missingUrl = `ws://${address.address}:${address.port}${app.config.signalingPath}`;
+    const ws = new WebSocket(missingUrl);
+    const status = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        ws.terminate();
+        reject(new Error("Timed out waiting for missing protocol rejection"));
+      }, 5000);
+      ws.once("unexpected-response", (_request, response) => {
+        clearTimeout(timer);
+        resolve(response.statusCode);
+      });
+      ws.once("open", () => {
+        clearTimeout(timer);
+        reject(new Error("expected missing protocol rejection"));
+      });
+      ws.once("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
+    assert.equal(status, 400);
+  });
+});
+
 test("graceful shutdown refuses new rooms", async () => {
   await withServer({}, async ({ wsUrl, app }) => {
     app.config.isShuttingDown = true;
@@ -402,6 +451,7 @@ test("ice endpoint issues coturn-compatible credentials", async () => {
   await withServer({}, async ({ baseUrl }) => {
     const response = await httpGet(`${baseUrl}/v1/ice`);
     assert.equal(response.status, 200);
+    assert.equal(response.headers["cache-control"], "no-store");
     const payload = JSON.parse(response.body);
     assert.ok(Array.isArray(payload.ice_servers));
     assert.ok(payload.ice_servers.length >= 2);
@@ -410,7 +460,22 @@ test("ice endpoint issues coturn-compatible credentials", async () => {
     );
     assert.ok(turnEntry.username);
     assert.ok(turnEntry.credential);
+    assert.match(turnEntry.username, /bean-party:[0-9a-f]{8}$/);
     assert.ok(payload.expires_at > Math.floor(Date.now() / 1000));
+  });
+});
+
+test("ice endpoint issues unique turn usernames per request", async () => {
+  await withServer({}, async ({ baseUrl }) => {
+    const first = JSON.parse((await httpGet(`${baseUrl}/v1/ice`)).body);
+    const second = JSON.parse((await httpGet(`${baseUrl}/v1/ice`)).body);
+    const firstTurn = first.ice_servers.find((entry) =>
+      entry.urls.some((url) => url.startsWith("turn:")),
+    );
+    const secondTurn = second.ice_servers.find((entry) =>
+      entry.urls.some((url) => url.startsWith("turn:")),
+    );
+    assert.notEqual(firstTurn.username, secondTurn.username);
   });
 });
 
@@ -465,4 +530,16 @@ test("logs do not include sdp or credential payloads", async () => {
   assert.equal(sanitized.candidate, "[redacted]");
   assert.equal(sanitized.credential, "[redacted]");
   assert.equal(sanitized.room, "abc");
+});
+
+test("rate limiter prunes expired buckets and enforces max keys", () => {
+  const { RateLimiter } = require("../src/rateLimiter");
+  const limiter = new RateLimiter(50, 1, 2);
+  assert.equal(limiter.allow("a", 0), true);
+  assert.equal(limiter.allow("a", 0), false);
+  assert.equal(limiter.allow("b", 100), true);
+  assert.equal(limiter.allow("c", 100), true);
+  assert.equal(limiter.buckets.size, 2);
+  assert.equal(limiter.allow("d", 100), true);
+  assert.equal(limiter.buckets.has("a"), false);
 });

@@ -33,7 +33,7 @@ function messageToString(message) {
 }
 
 function parseMessage(text, config) {
-  if (text.length > config.maxSignalingPayloadBytes) {
+  if (Buffer.byteLength(text, "utf8") > config.maxSignalingPayloadBytes) {
     throw new ServiceError(ErrorCategory.PAYLOAD_TOO_LARGE, "Signaling payload too large");
   }
 
@@ -47,7 +47,7 @@ function parseMessage(text, config) {
   const type = typeof json.type === "number" ? Math.floor(json.type) : -1;
   const id = typeof json.id === "number" ? Math.floor(json.id) : -1;
   const data = typeof json.data === "string" ? json.data : "";
-  if (data.length > config.maxSignalingPayloadBytes) {
+  if (Buffer.byteLength(data, "utf8") > config.maxSignalingPayloadBytes) {
     throw new ServiceError(ErrorCategory.PAYLOAD_TOO_LARGE, "Signaling payload too large");
   }
   if (type < 0 || id < 0) {

@@ -21,6 +21,7 @@ enum TransportMode {
 @onready var _peers_label: Label = %PeersLabel
 
 var _last_echo_message := ""
+var _online_config_probe: Dictionary = {}
 
 
 func _ready() -> void:
@@ -97,6 +98,9 @@ func _on_host_pressed() -> void:
 
 
 func _host_webrtc() -> void:
+	if OnlineServiceConfig.is_release_online_blocked(_online_config_probe):
+		_status_label.text = OnlineServiceConfig.unconfigured_message()
+		return
 	var signaling_url := _read_signaling_url()
 	if signaling_url == "":
 		return
@@ -137,6 +141,9 @@ func _on_join_pressed() -> void:
 
 
 func _join_webrtc() -> void:
+	if OnlineServiceConfig.is_release_online_blocked(_online_config_probe):
+		_status_label.text = OnlineServiceConfig.unconfigured_message()
+		return
 	var signaling_url := _read_signaling_url()
 	if signaling_url == "":
 		return

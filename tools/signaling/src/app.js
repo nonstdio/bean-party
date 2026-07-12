@@ -125,7 +125,11 @@ function createApp(configOverrides = {}) {
         if (Buffer.byteLength(body, "utf8") > config.maxHttpBodyBytes) {
           throw new ServiceError(ErrorCategory.INTERNAL_FAILURE, "ICE response too large");
         }
-        response.writeHead(200, { "content-type": "application/json" });
+        response.writeHead(200, {
+          "content-type": "application/json",
+          "Cache-Control": "no-store",
+          Pragma: "no-cache",
+        });
         response.end(body);
         return;
       }
@@ -154,7 +158,7 @@ function createApp(configOverrides = {}) {
       return;
     }
 
-    if (protocolVersion && protocolVersion !== config.protocolVersion) {
+    if (!protocolVersion || protocolVersion !== config.protocolVersion) {
       socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
       socket.destroy();
       return;

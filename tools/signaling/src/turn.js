@@ -9,7 +9,8 @@ function generateTurnCredentials(sharedSecret, ttlSeconds, usernameSuffix = "bea
   }
 
   const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
-  const username = `${expiresAt}:${usernameSuffix}`;
+  const nonce = crypto.randomBytes(4).toString("hex");
+  const username = `${expiresAt}:${usernameSuffix}:${nonce}`;
   const credential = crypto.createHmac("sha1", sharedSecret).update(username).digest("base64");
   return {
     username,
