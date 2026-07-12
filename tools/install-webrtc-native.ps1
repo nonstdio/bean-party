@@ -45,11 +45,32 @@ if (-not (Test-Path -LiteralPath $sourceAddon -PathType Container)) {
 }
 
 New-Item -ItemType Directory -Path (Join-Path $RepoRoot "addons") -Force | Out-Null
-Copy-Item -LiteralPath $sourceAddon -Destination $destinationAddon -Recurse -Force
+if (Test-Path -LiteralPath $destinationAddon) {
+	try {
+		Remove-Item -LiteralPath $destinationAddon -Recurse -Force -ErrorAction Stop
+	}
+	catch {
+		throw @(
+			"Could not replace the existing webrtc-native install at $destinationAddon.",
+			"Close Godot and any running Bean Party build, then rerun the installer.",
+			$_.Exception.Message
+		) -join " "
+	}
+}
+Copy-Item -LiteralPath $sourceAddon -Destination (Join-Path $RepoRoot "addons") -Recurse -Force
 
 $manifest = Join-Path $destinationAddon "webrtc_native.gdextension"
+$nestedManifest = Join-Path $destinationAddon "webrtc_native\webrtc_native.gdextension"
 if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
     throw "webrtc-native install did not produce $manifest."
+}
+if (Test-Path -LiteralPath $nestedManifest -PathType Leaf) {
+    throw "Nested webrtc-native install detected at $nestedManifest."
+}
+
+$manifestMatches = @(Get-ChildItem -LiteralPath (Join-Path $RepoRoot "addons") -Recurse -Filter "webrtc_native.gdextension" -File)
+if ($manifestMatches.Count -ne 1) {
+    throw "Expected exactly one webrtc_native.gdextension under addons/, found $($manifestMatches.Count)."
 }
 
 Write-Host "Installed webrtc-native $version."
