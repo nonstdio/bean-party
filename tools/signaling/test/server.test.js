@@ -110,6 +110,15 @@ function waitForMessage(ws) {
   });
 }
 
+async function waitForJoinMessage(ws) {
+  while (true) {
+    const message = await waitForMessage(ws);
+    if (message.type === 0) {
+      return message;
+    }
+  }
+}
+
 function waitForClose(ws) {
   return new Promise((resolve) => {
     ws.once("close", (code, reason) => resolve({ code, reason: reason.toString() }));
@@ -143,8 +152,7 @@ test("room creation and joining works for two peers", async () => {
     const joiner = await connectClient(wsUrl);
 
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-    const hostJoin = await waitForMessage(host);
-    assert.equal(hostJoin.type, 0);
+    const hostJoin = await waitForJoinMessage(host);
     const roomCode = hostJoin.data;
     assert.ok(roomCode.length > 0);
 
@@ -162,7 +170,7 @@ test("room rejects fifth peer", async () => {
   await withServer({ maxPeersPerRoom: 4 }, async ({ wsUrl }) => {
     const host = await connectClient(wsUrl);
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-    const hostJoin = await waitForMessage(host);
+    const hostJoin = await waitForJoinMessage(host);
     const roomCode = hostJoin.data;
 
     const peers = [];
@@ -198,7 +206,7 @@ test("host disconnect cleans up room", async () => {
     const host = await connectClient(wsUrl);
     const joiner = await connectClient(wsUrl);
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-    const hostJoin = await waitForMessage(host);
+    const hostJoin = await waitForJoinMessage(host);
     joiner.send(JSON.stringify({ type: 0, id: 1, data: hostJoin.data }));
     await waitForMessage(joiner);
     await waitForMessage(joiner);
@@ -214,7 +222,7 @@ test("inactive rooms expire", async () => {
   await withServer({ roomInactivityMs: 50 }, async ({ wsUrl, app }) => {
     const host = await connectClient(wsUrl);
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-    await waitForMessage(host);
+    await waitForJoinMessage(host);
     host.close();
     await new Promise((resolve) => setTimeout(resolve, 120));
     assert.equal(app.registry.lobbies.size, 0);
@@ -225,7 +233,7 @@ test("absolute room lifetime expires", async () => {
   await withServer({ roomMaxLifetimeMs: 50, roomInactivityMs: 10000 }, async ({ wsUrl, app }) => {
     const host = await connectClient(wsUrl);
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-    await waitForMessage(host);
+    await waitForJoinMessage(host);
     await new Promise((resolve) => setTimeout(resolve, 120));
     assert.equal(app.registry.lobbies.size, 0);
     host.close();
@@ -292,7 +300,7 @@ test("join attempt rate limit applies", async () => {
     async ({ wsUrl }) => {
       const host = await connectClient(wsUrl);
       host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-      const hostJoin = await waitForMessage(host);
+      const hostJoin = await waitForJoinMessage(host);
 
       const firstJoiner = await connectClient(wsUrl);
       firstJoiner.send(JSON.stringify({ type: 0, id: 1, data: "missing-1" }));
@@ -383,9 +391,8 @@ test("sealed room rejects new joins", async () => {
   await withServer({}, async ({ wsUrl }) => {
     const host = await connectClient(wsUrl);
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-    const hostJoin = await waitForMessage(host);
+    const hostJoin = await waitForJoinMessage(host);
     const roomCode = hostJoin.data;
-    await waitForMessage(host);
 
     host.send(JSON.stringify({ type: 7, id: 0, data: "" }));
     await waitForMessage(host);
