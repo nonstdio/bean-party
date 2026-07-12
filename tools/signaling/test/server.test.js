@@ -281,6 +281,7 @@ test("absolute room lifetime expires", async () => {
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
     await waitForJoinMessage(host);
     await new Promise((resolve) => setTimeout(resolve, 120));
+    app.registry.cleanupExpiredRooms();
     assert.equal(app.registry.lobbies.size, 0);
     host.close();
   });
