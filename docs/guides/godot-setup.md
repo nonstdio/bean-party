@@ -101,4 +101,6 @@ After setup, use the [runtime debug harness guide](runtime-debug-harnesses.md) t
 
 GUT 9.7.1 is the project test framework. Add deterministic GDScript tests beneath `tests/`, using `extends GutTest`; put minigame-local behavior inside that minigame's `tests/` directory. The standard configuration discovers both locations and also validates minigame boundaries and relative Markdown links. Every behavior change should run the full `all` command and include tests or explain why automated coverage is not appropriate.
 
+Each test run writes an ignored `gut-results.xml` JUnit report at the repository root. CI retains a separate report artifact for Windows, macOS, and Linux, adds assertion failures as check annotations, and summarizes the failures on the workflow run. CI test jobs stop after 15 minutes so an unbounded await or engine hang cannot occupy a runner for GitHub's default maximum.
+
 The vendored add-on and its MIT license are recorded in [the third-party notices](../../THIRD_PARTY_NOTICES.md) and [Decision 0002](../decisions/0002-gut-testing.md).

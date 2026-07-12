@@ -13,40 +13,62 @@ jobs:
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: Windows
             os: windows-latest
+            artifact_name: windows
             archive_name: Godot_v4.7-stable_win64.exe.zip
             archive_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_win64.exe.zip
             archive_sha256: 02a5312236f4e0209c78bcb2f52135b1963e6b8888c873c9cee81459e60bcd71
             executable: Godot_v4.7-stable_win64.exe
           - name: macOS
             os: macos-latest
+            artifact_name: macos
             archive_name: Godot_v4.7-stable_macos.universal.zip
             archive_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_macos.universal.zip
             archive_sha256: a6708c336f690e0dd8abd3d587d661707f4f33ed436946a3ec000d2fb497fd6c
             executable: Godot.app/Contents/MacOS/Godot
           - name: Linux
             os: ubuntu-latest
+            artifact_name: linux
             archive_name: Godot_v4.7-stable_linux.x86_64.zip
             archive_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
             archive_sha256: 0b1a6c54c2c619c12e169fe9241edda4b81080b519451cec2984bf0d2c6cb73c
             executable: Godot_v4.7-stable_linux.x86_64
     steps:
       - uses: actions/checkout@v5
-      - name: Download verified Godot
+
+      - name: Restore Godot archive
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/godot-cache
+          key: godot-4.7-${{ runner.os }}-${{ matrix.archive_sha256 }}
+
+      - name: Download Godot archive
+        if: steps.godot-cache.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           ARCHIVE_NAME: ${{ matrix.archive_name }}
           ARCHIVE_URL: ${{ matrix.archive_url }}
+        run: |
+          $cacheDirectory = Join-Path $env:RUNNER_TEMP "godot-cache"
+          New-Item -ItemType Directory -Path $cacheDirectory -Force | Out-Null
+          $archive = Join-Path $cacheDirectory $env:ARCHIVE_NAME
+          Invoke-WebRequest -Uri $env:ARCHIVE_URL -OutFile $archive
+
+      - name: Verify and extract Godot
+        shell: pwsh
+        env:
+          ARCHIVE_NAME: ${{ matrix.archive_name }}
           ARCHIVE_SHA256: ${{ matrix.archive_sha256 }}
           EXECUTABLE: ${{ matrix.executable }}
         run: |
-          $archive = Join-Path $env:RUNNER_TEMP $env:ARCHIVE_NAME
-          Invoke-WebRequest -Uri $env:ARCHIVE_URL -OutFile $archive
+          $archive = Join-Path (Join-Path $env:RUNNER_TEMP "godot-cache") $env:ARCHIVE_NAME
           $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actualHash -ne $env:ARCHIVE_SHA256) {
             throw "Godot archive checksum mismatch. Expected $env:ARCHIVE_SHA256, got $actualHash."
@@ -69,11 +91,28 @@ jobs:
           else {
             bash "$env:GITHUB_WORKSPACE/tools/godot.sh" all
           }
+
+      - name: Report GUT results
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: pwsh
+        run: ./tools/report-gut-results.ps1 -Path ./gut-results.xml
+
+      - name: Upload GUT results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gut-results-${{ matrix.artifact_name }}-${{ github.sha }}
+          path: gut-results.xml
+          if-no-files-found: warn
+          retention-days: 14
+
   required:
     name: Godot tests
     if: ${{ always() }}
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Require every platform to pass
         run: test "${{ needs.test.result }}" = success

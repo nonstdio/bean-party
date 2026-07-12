@@ -21,5 +21,7 @@ Vendor GUT 9.7.1 from commit `aeb5d4f` under `addons/gut/`, retain its included 
 ## Consequences
 
 - Contributors use `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS and Linux before opening a pull request.
+- Test runs export an ignored JUnit report. CI publishes each platform's report, annotates assertion failures, and bounds each matrix job to 15 minutes.
+- CI caches each platform's pinned Godot archive by operating system and expected SHA-256 checksum, then verifies the checksum again before every extraction.
 - GUT upgrades are deliberate dependency updates: use a released Godot-4.7-compatible version, preserve its license and source record, update this decision record and the runners if necessary, and verify all platforms in CI.
 - This establishes headless import and GDScript coverage for shared session logic, the local minigame contract/controller path, repository boundaries, and the main-scene smoke test. Export validation, real multi-process networking automation, physical controller routing tests, and full gameplay automation remain later work.

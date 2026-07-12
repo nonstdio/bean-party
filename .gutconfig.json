@@ -4,6 +4,7 @@
     "res://minigames"
   ],
   "include_subdirs": true,
+  "junit_xml_file": "res://gut-results.xml",
   "log_level": 1,
   "should_exit": true
 }
