@@ -17,6 +17,7 @@ __pycache__/
 *.tmp
 *.bak
 *.blend[0-9]*
+gut-results.xml
 
 # Optional local WebRTC GDExtension (install via tools/setup-webrtc-native.ps1)
 addons/webrtc_native/
