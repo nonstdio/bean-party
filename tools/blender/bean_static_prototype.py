@@ -17,6 +17,7 @@ import bpy
 
 ASSET_COLLECTION = "BP_BeanStaticPrototype"
 EXPORT_ORIENTATION_NAME = "GodotForward"
+IDENTITY_BODY_MATERIAL_NAME = "identity_primary"
 BODY_RADIUS = 0.32
 BODY_BOTTOM = 0.36
 BODY_CYLINDER_BOTTOM = 0.68
@@ -268,7 +269,7 @@ def build_scene(source_path: Path) -> None:
     scene_collection.children.link(asset_collection)
 
     primary = make_material(
-        "identity_primary",
+        IDENTITY_BODY_MATERIAL_NAME,
         (0.337255, 0.705882, 0.913725, 1.0),
         0.48,
     )

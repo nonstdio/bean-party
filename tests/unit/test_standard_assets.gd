@@ -14,6 +14,8 @@ func test_identity_registry_is_complete_and_unique() -> void:
 	assert_eq(StandardVisuals.IDENTITY_ICONS.size(), MatchConstants.MAX_PLAYERS)
 	assert_eq(StandardVisuals.IDENTITY_MATERIALS.size(), MatchConstants.MAX_PLAYERS)
 	assert_eq(MatchConstants.SLOT_COLORS, StandardVisuals.IDENTITY_COLORS)
+	assert_eq(PlayerIdentityConstants.IDS, StandardVisuals.IDENTITY_IDS)
+	assert_eq(PlayerIdentityConstants.COLORS, MatchConstants.SLOT_COLORS)
 
 	var ids: Dictionary = {}
 	var colors: Dictionary = {}
@@ -34,6 +36,21 @@ func test_identity_registry_is_complete_and_unique() -> void:
 		)
 		ids[identity_id] = true
 		colors[identity_color] = true
+
+
+func test_identity_colors_survive_player_slot_json_round_trip() -> void:
+	for identity_index in MatchConstants.MAX_PLAYERS:
+		var slot := PlayerSlot.create(
+			"player_%d" % identity_index,
+			MatchConstants.OFFLINE_PEER_ID,
+			identity_index,
+			"Player %d" % (identity_index + 1),
+			PlayerIdentityConstants.COLORS[identity_index],
+		)
+		var decoded: Variant = JSON.parse_string(JSON.stringify(slot.to_dict()))
+		var restored := PlayerSlot.from_dict(decoded as Dictionary)
+		assert_eq(restored.slot_color, PlayerIdentityConstants.COLORS[identity_index])
+		assert_eq(StandardVisuals.identity_index_for_color(restored.slot_color), identity_index)
 
 
 func test_identity_materials_match_registry() -> void:

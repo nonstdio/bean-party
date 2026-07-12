@@ -10,6 +10,8 @@ const CAMERA_FOCUS_SMOOTH := 14.0
 const CAMERA_PIVOT_HEIGHT := 1.25
 const CAMERA_PIVOT_Y_SMOOTH := 12.0
 const CHARACTER_FOOT_OFFSET := 0.055
+const ELIMINATED_GEOMETRY_TRANSPARENCY := 0.55
+const ELIMINATED_MARKER_ALPHA := 0.45
 const _BEAN_SCENE: PackedScene = preload(
 	"res://assets/standard/characters/bean-static-prototype.glb"
 )
@@ -124,8 +126,9 @@ func _sync_player_meshes() -> void:
 		var material := _player_body_materials.get(player_id) as StandardMaterial3D
 		if material != null:
 			material.albedo_color = player.slot_color if health > 0 else player.slot_color.darkened(0.55)
-			material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED if health > 0 else BaseMaterial3D.TRANSPARENCY_ALPHA
-			material.albedo_color.a = 1.0 if health > 0 else 0.45
+			material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+			material.albedo_color.a = 1.0
+		_set_player_alive_visual(mesh_root, health > 0)
 
 
 func _update_camera(delta: float) -> void:
@@ -300,7 +303,7 @@ func _create_player_mesh(player_id: String, color: Color) -> Node3D:
 	root.add_child(bean)
 
 	var material := StandardVisuals.identity_material_for_color(color).duplicate() as StandardMaterial3D
-	_apply_identity_material(bean, material)
+	StandardVisuals.apply_identity_material(bean, material)
 	_player_body_materials[player_id] = material
 
 	var marker := Sprite3D.new()
@@ -314,15 +317,16 @@ func _create_player_mesh(player_id: String, color: Color) -> Node3D:
 	return root
 
 
-func _apply_identity_material(bean: Node, identity_material: StandardMaterial3D) -> void:
-	for node in bean.find_children("*", "MeshInstance3D", true, false):
+func _set_player_alive_visual(mesh_root: Node3D, is_alive: bool) -> void:
+	var geometry_transparency := 0.0 if is_alive else ELIMINATED_GEOMETRY_TRANSPARENCY
+	for node in mesh_root.find_children("*", "MeshInstance3D", true, false):
 		var mesh_instance := node as MeshInstance3D
-		if mesh_instance.mesh == null:
-			continue
-		for surface_index in mesh_instance.mesh.get_surface_count():
-			var source_material := mesh_instance.mesh.surface_get_material(surface_index)
-			if source_material != null and source_material.resource_name == "identity_primary":
-				mesh_instance.set_surface_override_material(surface_index, identity_material)
+		mesh_instance.transparency = geometry_transparency
+	var marker := mesh_root.find_child("IdentityMarker", true, false) as Sprite3D
+	if marker != null:
+		var marker_color := marker.modulate
+		marker_color.a = 1.0 if is_alive else ELIMINATED_MARKER_ALPHA
+		marker.modulate = marker_color
 
 
 func _clear_player_meshes() -> void:

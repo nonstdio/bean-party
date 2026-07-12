@@ -25,4 +25,4 @@ The editable source, GLB export, repeatable Blender generator, comparison galler
 | 3 | Square | `#009E73` |
 | 4 | Diamond | `#CC79A7` |
 
-`StandardVisuals` is the runtime source of truth for these mappings. `PlayerSlot.slot_color` remains the serialized/networked value; the badge shape is derived locally without changing the wire format.
+`PlayerIdentityConstants` is the resource-free runtime source of truth for identity IDs and serialized colors. `StandardVisuals` maps those values to icons and materials without making the match/network layer load presentation resources. `PlayerSlot.slot_color` remains the serialized/networked value; the badge shape is derived locally without changing the wire format.

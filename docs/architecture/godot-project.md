@@ -44,7 +44,7 @@ The shared ENet debug **session layer** is implemented in `scripts/shared/` as `
 | Network shell proof | `NetworkLobbySession`, `NetworkBoardSession`, and `NetworkMatchPhaseSession` plus their authority objects | Reliable host-authoritative debug state through a placeholder scene; not production netcode |
 | Standard asset gallery | `scenes/dev/standard_asset_gallery.tscn` and `assets/standard/` | Canonical prototype character, identity, material, and shell-token comparisons; contributor tooling rather than production art or shipped app flow |
 
-Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for operating steps and current limitations.
+Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for the runtime proofs and [Use and contribute standard assets](../guides/standard-assets.md#inspect-the-kit) for gallery controls and visual checks.
 
 ## Conventions
 

@@ -38,6 +38,15 @@ func test_player_visual_uses_standard_bean_material_and_marker() -> void:
 	assert_almost_eq(visual_forward.x, expected_forward.x, 0.0001)
 	assert_almost_eq(visual_forward.z, expected_forward.z, 0.0001)
 
+	var first_player_id := String(context.get_player_ids()[0])
+	controller._offline_simulator.health_by_player_id[first_player_id] = 0
+	controller._sync_player_meshes()
+	for node in first_visual.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		assert_almost_eq(mesh_instance.transparency, 0.55, 0.0001)
+	var marker := first_visual.find_child("IdentityMarker", true, false) as Sprite3D
+	assert_almost_eq(marker.modulate.a, 0.45, 0.0001)
+
 	assert_true(runner.unload_minigame())
 	await get_tree().process_frame
 

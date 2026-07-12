@@ -22,6 +22,8 @@ Use lowercase kebab-case filenames and stable descriptive IDs. Do not put a prot
 
 Every catalog entry records its purpose, runtime path, editable source when applicable, status, authoring tool/version, and provenance. Third-party material additionally requires creator, source URL, and license. The initial kit is entirely original project work. The repository still has no content license, so do not assume these assets are reusable outside Bean Party.
 
+`PlayerIdentityConstants` owns only the stable identity IDs and serialized colors needed by shared match state. `StandardVisuals` owns presentation-resource mappings such as icons and materials. Keep this dependency one-way so match and network code do not load presentation assets, including in a future headless process.
+
 ## Approved bean prototype target
 
 The current `bean-static-prototype` was reviewed on 2026-07-12. Its `.blend`, `.glb`, repeatable Blender generator, gallery presentation, and geometry tests implement the approved static target below. Earlier egg-shaped studies with arms, oval feet, and a mouth are deprecated and must not be restored or used as character references.
@@ -79,3 +81,5 @@ The gallery demonstrates the approved static bean geometry alongside the identit
 3. Run the asset export check and `tools/godot.ps1 all` or `bash tools/godot.sh all`.
 4. Inspect normal and grayscale gallery captures at all three camera distances.
 5. Include player-facing effect, visual evidence, source/provenance, and known prototype limitations in the pull request.
+
+Current CI installs Godot but not Blender, so it does not run the GLB freshness check. A contributor changing Blender-authored source must run the pinned Blender 5.1.2 check locally and report it in the pull request.

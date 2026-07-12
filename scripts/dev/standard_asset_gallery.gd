@@ -83,7 +83,10 @@ func _create_identity_examples() -> void:
 		bean.name = "Bean%s" % String(StandardVisuals.IDENTITY_IDS[identity_index]).capitalize()
 		bean.position = Vector3(positions[identity_index], 0.0, 0.0)
 		add_child(bean)
-		_apply_identity_material(bean, StandardVisuals.IDENTITY_MATERIALS[identity_index])
+		StandardVisuals.apply_identity_material(
+			bean,
+			StandardVisuals.IDENTITY_MATERIALS[identity_index],
+		)
 		_bean_instances.append(bean)
 
 		var marker := Sprite3D.new()
@@ -106,17 +109,6 @@ func _create_identity_examples() -> void:
 		label.theme_type_variation = &"ShellPrimary"
 		group.add_child(label)
 		_identity_row.add_child(group)
-
-
-func _apply_identity_material(bean: Node, identity_material: StandardMaterial3D) -> void:
-	for node in bean.find_children("*", "MeshInstance3D", true, false):
-		var mesh_instance := node as MeshInstance3D
-		if mesh_instance.mesh == null:
-			continue
-		for surface_index in mesh_instance.mesh.get_surface_count():
-			var source_material := mesh_instance.mesh.surface_get_material(surface_index)
-			if source_material != null and source_material.resource_name == "identity_primary":
-				mesh_instance.set_surface_override_material(surface_index, identity_material)
 
 
 func _update_state_label() -> void:

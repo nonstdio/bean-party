@@ -1,18 +1,10 @@
 class_name StandardVisuals
 
-const IDENTITY_IDS: Array[StringName] = [
-	&"circle",
-	&"triangle",
-	&"square",
-	&"diamond",
-]
+const _PLAYER_IDENTITIES = preload("res://scripts/shared/player_identity_constants.gd")
 
-const IDENTITY_COLORS: Array[Color] = [
-	Color(0.337255, 0.705882, 0.913725), #56B4E9
-	Color(0.901961, 0.623529, 0.0), #E69F00
-	Color(0.0, 0.619608, 0.45098), #009E73
-	Color(0.8, 0.47451, 0.654902), #CC79A7
-]
+const IDENTITY_BODY_MATERIAL_NAME := "identity_primary"
+const IDENTITY_IDS: Array[StringName] = _PLAYER_IDENTITIES.IDS
+const IDENTITY_COLORS: Array[Color] = _PLAYER_IDENTITIES.COLORS
 
 const IDENTITY_ICONS: Array[Texture2D] = [
 	preload("res://assets/standard/identities/player-circle.svg"),
@@ -56,3 +48,23 @@ static func identity_icon_for_color(slot_color: Color) -> Texture2D:
 static func identity_material_for_color(slot_color: Color) -> StandardMaterial3D:
 	var identity_index := fallback_identity_index(identity_index_for_color(slot_color))
 	return IDENTITY_MATERIALS[identity_index]
+
+
+static func apply_identity_material(
+		character: Node,
+		identity_material: StandardMaterial3D,
+) -> int:
+	var applied_surface_count := 0
+	for node in character.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for surface_index in mesh_instance.mesh.get_surface_count():
+			var source_material := mesh_instance.mesh.surface_get_material(surface_index)
+			if (
+				source_material != null
+				and source_material.resource_name == IDENTITY_BODY_MATERIAL_NAME
+			):
+				mesh_instance.set_surface_override_material(surface_index, identity_material)
+				applied_surface_count += 1
+	return applied_surface_count
