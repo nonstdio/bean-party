@@ -64,11 +64,43 @@ function httpGet(url) {
   });
 }
 
-function connectClient(wsUrl) {
+function connectClient(wsUrl, timeoutMs = 5000) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl);
-    ws.once("open", () => resolve(ws));
-    ws.once("error", reject);
+    const timer = setTimeout(() => {
+      ws.terminate();
+      reject(new Error(`Timed out connecting to ${wsUrl}`));
+    }, timeoutMs);
+    const cleanup = () => clearTimeout(timer);
+    ws.once("open", () => {
+      cleanup();
+      resolve(ws);
+    });
+    ws.once("error", (error) => {
+      cleanup();
+      reject(error);
+    });
+  });
+}
+
+function connectRejectedClient(wsUrl, timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(wsUrl);
+    const timer = setTimeout(() => {
+      ws.terminate();
+      reject(new Error(`Timed out waiting for rejection from ${wsUrl}`));
+    }, timeoutMs);
+    const finish = (value) => {
+      clearTimeout(timer);
+      resolve(value);
+    };
+    ws.once("close", (code, reason) => {
+      finish({ code, reason: reason.toString() });
+    });
+    ws.once("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
   });
 }
 
@@ -220,14 +252,10 @@ test("payload limit is enforced in bytes", async () => {
 });
 
 test("connection limit rejects additional peers", async () => {
-  await withServer({ maxConnections: 1 }, async ({ wsUrl }) => {
+  await withServer({ maxConnections: 1, connectionRateLimitMax: 100 }, async ({ wsUrl }) => {
     const first = await connectClient(wsUrl);
-    const secondPromise = connectClient(wsUrl);
-    const second = await secondPromise.catch(() => null);
-    if (second) {
-      const closed = await waitForClose(second);
-      assert.match(closed.reason, /Too many peers/i);
-    }
+    const closed = await connectRejectedClient(wsUrl);
+    assert.match(closed.reason, /Too many peers/i);
     first.close();
   });
 });
@@ -284,14 +312,25 @@ test("protocol version mismatch rejects websocket upgrade", async () => {
     const address = app.server.address();
     const badUrl = `ws://${address.address}:${address.port}${app.config.signalingPath}?protocol=99`;
     const ws = new WebSocket(badUrl);
-    const closed = await new Promise((resolve, reject) => {
+    const status = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        ws.terminate();
+        reject(new Error("Timed out waiting for protocol mismatch rejection"));
+      }, 5000);
       ws.once("unexpected-response", (_request, response) => {
+        clearTimeout(timer);
         resolve(response.statusCode);
       });
-      ws.once("open", () => reject(new Error("expected protocol mismatch rejection")));
-      ws.once("error", reject);
+      ws.once("open", () => {
+        clearTimeout(timer);
+        reject(new Error("expected protocol mismatch rejection"));
+      });
+      ws.once("error", (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
     });
-    assert.equal(closed, 400);
+    assert.equal(status, 400);
   });
 });
 
