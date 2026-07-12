@@ -1,5 +1,7 @@
 # WebRTC signaling server
 
+This signaling server is Bean Party software licensed under MIT; see the repository [license overview](../../LICENSE.md).
+
 Local development signaling for Bean Party WebRTC transport. This server relays lobby join messages and WebRTC SDP/ICE payloads between peers. It does not run game logic.
 
 Protocol matches Godot's [webrtc_signaling demo](https://github.com/godotengine/godot-demo-projects/tree/master/networking/webrtc_signaling).

@@ -151,6 +151,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 - [Decision 0003: peer-hosted networking](decisions/0003-peer-hosted-networking.md) — Proposed
 - [Decision 0004: local minigame contract](decisions/0004-local-minigame-contract.md)
 - [Decision 0005: standard asset pipeline](decisions/0005-standard-asset-pipeline.md) — Accepted
+- [Decision 0006: project licensing](decisions/0006-project-licensing.md) — Accepted
 
 ### Project
 

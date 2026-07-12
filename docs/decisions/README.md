@@ -37,3 +37,4 @@ Examples include the engine and version, first target platform, online-play mile
 | [0003](0003-peer-hosted-networking.md) | Proposed | Peer-hosted, host-authoritative networking and its validation gates |
 | [0004](0004-local-minigame-contract.md) | Accepted | Local minigame contract version 1 |
 | [0005](0005-standard-asset-pipeline.md) | Accepted | Mixed-source standard asset pipeline and catalog |
+| [0006](0006-project-licensing.md) | Accepted | MIT software and CC BY 4.0 documentation and creative content |

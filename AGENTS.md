@@ -4,7 +4,7 @@ This repository is pre-production work for Bean Party, a collaborative party gam
 
 ## Start here
 
-Begin with [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [documentation index](docs/README.md). Before changing code, documentation, behavior, or project direction, follow their links and read as many task-relevant design, architecture, guide, plan, research, decision, and project documents as reasonably necessary. Read the [Godot setup guide](docs/guides/godot-setup.md) and [Godot project architecture](docs/architecture/godot-project.md) before changing the project foundation or shared runtime structure. Treat target platforms, networking model, licensing, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise.
+Begin with [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), and the [documentation index](docs/README.md). Before changing code, documentation, behavior, or project direction, follow their links and read as many task-relevant design, architecture, guide, plan, research, decision, and project documents as reasonably necessary. Read the [Godot setup guide](docs/guides/godot-setup.md) and [Godot project architecture](docs/architecture/godot-project.md) before changing the project foundation or shared runtime structure. Treat target platforms, networking model, asset pipeline, and the shared minigame API as open decisions unless a maintainer has recorded otherwise. Follow [Decision 0006](docs/decisions/0006-project-licensing.md) and the repository [license overview](LICENSE.md) for licensing boundaries.
 
 ## Working rules
 

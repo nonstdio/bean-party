@@ -39,6 +39,12 @@ What does this change add or improve for players or contributors?
 
 Asset notes:
 
+## Contribution licensing
+
+- [ ] I have the right to submit every part of this contribution.
+- [ ] I agree to license original software and project-file contributions under MIT and original documentation and creative-content contributions under CC BY 4.0, as described in [LICENSE.md](../LICENSE.md).
+- [ ] I identified every third-party component and asset under its existing license instead of treating it as original Bean Party material.
+
 ## Review notes
 
 Known limitations, follow-up work, screenshots, or clips:

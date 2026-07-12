@@ -20,7 +20,7 @@ The project is in pre-production. We have selected **Godot 4.7 stable** with **G
 - an ENet debug slice covering host/join, a host-authoritative multi-local-player lobby, a board stub, and synchronized placeholder minigame phases through results and return to board; and
 - a canonical-prototype presentation kit with an approved static bean, four redundant player identities, shared shell tokens, and a developer asset gallery.
 
-These are contributor and architecture proofs, not a playable game or validated production netcode. The local minigame harness is not yet connected to the app's local or network match flows, and the network flow still uses an internal placeholder scene. [Decision 0003](docs/decisions/0003-peer-hosted-networking.md) therefore remains **Proposed**. See the [networking plan status](docs/plans/networking.md#milestone-overview) for implemented evidence and validation still outstanding. Target platforms, final production art and audio standards, licensing, and board economy remain open decisions.
+These are contributor and architecture proofs, not a playable game or validated production netcode. The local minigame harness is not yet connected to the app's local or network match flows, and the network flow still uses an internal placeholder scene. [Decision 0003](docs/decisions/0003-peer-hosted-networking.md) therefore remains **Proposed**. See the [networking plan status](docs/plans/networking.md#milestone-overview) for implemented evidence and validation still outstanding. Target platforms, final production art and audio standards, and board economy remain open decisions. Project licensing is established by [Decision 0006](docs/decisions/0006-project-licensing.md).
 
 ## Run the current project
 
@@ -30,7 +30,7 @@ Agents should first follow [Godot setup for agents](docs/guides/godot-setup.md),
 
 Windows playtesters can download [BeanParty-Windows.zip](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty-Windows.zip), extract it, and run `BeanParty.exe` from the current `main` branch without installing Godot, Node.js, or webrtc-native. The ZIP includes the pinned webrtc-native GDExtension libraries required for WebRTC transport on every peer.
 
-`BeanParty.exe` alone is not a supported WebRTC-capable download: the native extension ships as separate files beside the executable. Verify the download with `BeanParty-Windows.zip.sha256` from the same [latest Windows prerelease](https://github.com/nonstdio/bean-party/releases/tag/latest-windows).
+`BeanParty.exe` alone is not a supported WebRTC-capable download: the native extension ships as separate files beside the executable. The ZIP also includes the project license texts and third-party notices. Verify the download with `BeanParty-Windows.zip.sha256` from the same [latest Windows prerelease](https://github.com/nonstdio/bean-party/releases/tag/latest-windows).
 
 This is an automated, unsigned development build, so Windows SmartScreen may ask the player to confirm that they want to run it. The download is replaced only after a new `main` build exports successfully. Production signaling and TURN relay infrastructure are not included.
 
@@ -89,6 +89,10 @@ To test on one PC, run two Godot instances against `ws://127.0.0.1:9080`. STUN h
 
 Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), then open a minigame proposal before beginning a substantial implementation.
 
+## License
+
+Bean Party uses the [MIT License](LICENSES/MIT.txt) for software and project files and the [Creative Commons Attribution 4.0 International License](LICENSES/CC-BY-4.0.txt) for original documentation and creative content. See the [license overview](LICENSE.md) for the exact scope, attribution guidance, and third-party exceptions.
+
 ## Project guides
 
 - [Documentation index](docs/README.md) — where project documentation belongs and how it evolves.
@@ -112,5 +116,4 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 ## Open decisions
 
 - Is the first playable version local-only, online-only, or local-first with online play later? (Networking direction is [proposed](docs/decisions/0003-peer-hosted-networking.md); local-first remains the implementation order.)
-- Which software and content licenses should govern contributions and releases?
 - What is the final board economy: beans, victory tokens, or both?
