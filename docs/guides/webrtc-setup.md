@@ -44,6 +44,8 @@ Exported builds support a headless smoke probe:
 
 The Windows workflow runs `tools/smoke-webrtc-export.ps1` against the exported directory before publishing the ZIP.
 
+Hosted signaling uses `/v1/signal` and `/v1/ice`; see [WebRTC operations runbook](webrtc-ops.md).
+
 ## Run signaling for local spikes
 
 ```bash
@@ -52,7 +54,9 @@ npm install
 npm start
 ```
 
-Default signaling URL: `ws://127.0.0.1:9080` (`MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL`).
+Default signaling URL: `ws://127.0.0.1:9080/v1/signal?protocol=1`.
+
+Contributor Godot checkouts resolve hosted endpoints through `OnlineServiceConfig`, backed by `config/online_services.development.json`. Release exports use `config/online_services.release.json` and do not silently fall back to localhost.
 
 This Node.js server is for contributor architecture spikes only. Production signaling and TURN relay deployment are tracked separately in [WebRTC operations runbook](webrtc-ops.md).
 

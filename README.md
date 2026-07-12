@@ -56,33 +56,11 @@ ENet requires every peer to reach the host directly on the LAN. It does not trav
 
 ### Internet host (WebRTC)
 
-WebRTC requires the webrtc-native GDExtension on **every desktop peer** that selects WebRTC transport. Windows playtesters receive it automatically in [BeanParty-Windows.zip](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty-Windows.zip); contributors install it manually for local development (see below).
+WebRTC requires the webrtc-native GDExtension on **every desktop peer** that selects WebRTC transport. Windows playtesters receive it automatically in [BeanParty-Windows.zip](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty-Windows.zip).
 
-**Contributor setup for local WebRTC spikes:**
+**Contributor local spikes** still use the Node.js signaling server under `tools/signaling/` and the debug shell's signaling URL field. See [WebRTC setup](docs/guides/webrtc-setup.md).
 
-1. Install the pinned [webrtc-native GDExtension](docs/guides/webrtc-setup.md#install-webrtc-native-for-contributors). On Windows, from the repository root:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\tools\setup-webrtc-native.ps1
-   ```
-   Restart Godot after installing the extension.
-2. Install [Node.js](https://nodejs.org/) 18+ and start the **development-only** signaling server:
-   ```bash
-   cd tools/signaling
-   npm install
-   npm start
-   ```
-   Default signaling URL: `ws://127.0.0.1:9080`. This local server is for architecture spikes, not production matchmaking.
-
-**Each session:**
-
-1. Keep the signaling server running (contributor/local testing only).
-2. Run the game (`F5` in the editor, or extract and run the Windows test build ZIP).
-3. Select transport **WebRTC (internet)**.
-4. Enter the signaling URL (`ws://127.0.0.1:9080` for local testing; use a reachable `wss://` URL when friends join from other networks).
-5. Leave **room code** empty and select **Host**. Copy the room code shown in the status line.
-6. Share the signaling URL and room code with joiners. They enter both fields and select **Join**.
-
-To test on one PC, run two Godot instances against `ws://127.0.0.1:9080`. STUN hole-punch works on many home networks; restrictive NAT needs TURN relay — see [WebRTC operations runbook](docs/guides/webrtc-ops.md). See [WebRTC setup](docs/guides/webrtc-setup.md) and [runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) for troubleshooting and the lobby → board → minigame flow.
+**Hosted online play** will use `OnlineServiceConfig` release endpoints once a verified Railway deployment is recorded in `config/online_services.release.json`. The final room-code-only player menu is a later PR.
 
 ## Contributing
 

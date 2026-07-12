@@ -28,7 +28,11 @@ func _ready() -> void:
 	_transport_field.add_item("WebRTC (internet)", TransportMode.WEBRTC)
 	_port_field.text = str(MatchConstants.DEFAULT_ENET_PORT)
 	_address_field.text = "127.0.0.1"
-	_signaling_url_field.text = MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL
+	var online_defaults := OnlineServiceConfig.resolve({})
+	if String(online_defaults.get("signaling_url", "")) != "":
+		_signaling_url_field.text = String(online_defaults.get("signaling_url"))
+	elif OnlineServiceConfig.is_development_mode():
+		_signaling_url_field.text = MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL
 	_transport_field.item_selected.connect(_on_transport_selected)
 	_host_button.pressed.connect(_on_host_pressed)
 	_join_button.pressed.connect(_on_join_pressed)
@@ -102,6 +106,8 @@ func _host_webrtc() -> void:
 	)
 	if error == OK:
 		_status_label.text = "Connecting to signaling and creating room..."
+	elif error == ERR_UNCONFIGURED:
+		_status_label.text = OnlineServiceConfig.unconfigured_message()
 	elif error == ERR_CANT_CREATE:
 		_status_label.text = "WebRTC host failed. Install webrtc-native (see docs/guides/webrtc-setup.md)."
 	else:
@@ -147,6 +153,8 @@ func _join_webrtc() -> void:
 	)
 	if error == OK:
 		_status_label.text = "Joining room %s..." % room_code
+	elif error == ERR_UNCONFIGURED:
+		_status_label.text = OnlineServiceConfig.unconfigured_message()
 	elif error == ERR_CANT_CREATE:
 		_status_label.text = "WebRTC join failed. Install webrtc-native (see docs/guides/webrtc-setup.md)."
 	else:
@@ -230,6 +238,12 @@ func _refresh() -> void:
 
 func _connected_status_text() -> String:
 	if _match_session.get_transport_id() == TransportAdapterRegistry.TRANSPORT_WEBRTC:
+		var diagnostic := _match_session.get_webrtc_connectivity_diagnostic()
+		if diagnostic.begins_with("relay_unavailable"):
+			return (
+				"Connected (WebRTC room %s). Relay service unavailable; STUN-only attempt."
+				% _match_session.get_last_join_room_code()
+			)
 		return "Connected (WebRTC room %s)." % _match_session.get_last_join_room_code()
 	return "Connected as client."
 

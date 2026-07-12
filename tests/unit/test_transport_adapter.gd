@@ -29,10 +29,11 @@ func test_registry_creates_webrtc_adapter() -> void:
 
 func test_webrtc_adapter_normalizes_options() -> void:
 	var normalized := WebRtcTransportAdapter.normalize_options({
-		"signaling_url": "ws://example.test:9080",
+		"development_mode": true,
+		"signaling_url": "ws://127.0.0.1:9080/v1/signal",
 		"room_code": "abc123",
 	})
-	assert_eq(normalized.get("signaling_url"), "ws://example.test:9080")
+	assert_eq(normalized.get("signaling_url"), "ws://127.0.0.1:9080/v1/signal")
 	assert_eq(normalized.get("room_code"), "abc123")
 	assert_false((normalized.get("ice_servers") as Array).is_empty())
 
@@ -47,7 +48,7 @@ func test_match_session_webrtc_join_requires_room_code() -> void:
 	assert_eq(
 		session.join_with_transport(
 			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			{"signaling_url": "ws://127.0.0.1:9080"},
+			{"signaling_url": "ws://127.0.0.1:9080/v1/signal"},
 		),
 		ERR_INVALID_PARAMETER,
 	)
@@ -63,7 +64,7 @@ func test_match_session_webrtc_fails_without_extension() -> void:
 	assert_eq(
 		session.host_with_transport(
 			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			{"signaling_url": "ws://127.0.0.1:9080"},
+			{"signaling_url": "ws://127.0.0.1:9080/v1/signal"},
 		),
 		ERR_CANT_CREATE,
 	)

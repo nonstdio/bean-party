@@ -1,0 +1,8 @@
+{
+  "signaling_url": "wss://YOUR-RAILWAY-DOMAIN/v1/signal",
+  "ice_config_url": "https://YOUR-RAILWAY-DOMAIN/v1/ice",
+  "signaling_protocol_version": 1,
+  "request_timeout_sec": 10,
+  "development_mode": false,
+  "allow_stun_only_fallback": false
+}

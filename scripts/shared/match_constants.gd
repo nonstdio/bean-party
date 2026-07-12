@@ -7,7 +7,8 @@ const MAX_PEERS := 4
 const MAX_REMOTE_NETWORK_CLIENTS := MAX_PEERS - 1
 const OFFLINE_PEER_ID := 1
 const DEFAULT_ENET_PORT := 7777
-const DEFAULT_WEBRTC_SIGNALING_URL := "ws://127.0.0.1:9080"
+## Local contributor signaling default. Prefer OnlineServiceConfig for runtime resolution.
+const DEFAULT_WEBRTC_SIGNALING_URL := "ws://127.0.0.1:9080/v1/signal"
 
 const SLOT_COLORS: Array[Color] = [
 	Color(0.917647, 0.423529, 0.176471),

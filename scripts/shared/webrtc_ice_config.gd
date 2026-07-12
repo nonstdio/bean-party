@@ -20,6 +20,10 @@ static func parse_json_text(json_text: String) -> Array:
 	return _parse_json_server_list(json_text)
 
 
+static func parse_remote_ice_servers(raw_servers: Array) -> Array:
+	return _normalize_server_list(raw_servers)
+
+
 static func resolve_ice_servers(options: Dictionary = {}) -> Array:
 	var explicit: Variant = options.get("ice_servers")
 	if explicit is Array and not explicit.is_empty():

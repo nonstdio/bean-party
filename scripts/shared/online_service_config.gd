@@ -1,0 +1,219 @@
+class_name OnlineServiceConfig
+extends RefCounted
+
+## Resolves hosted online-service endpoints for WebRTC transport.
+## See docs/guides/webrtc-ops.md for deployment and precedence rules.
+
+const UNCONFIGURED_MESSAGE := "Online play is not configured in this build."
+
+const ENV_SIGNALING_URL := "BEAN_PARTY_SIGNALING_URL"
+const ENV_ICE_CONFIG_URL := "BEAN_PARTY_ICE_CONFIG_URL"
+const ENV_REQUEST_TIMEOUT_SEC := "BEAN_PARTY_ONLINE_REQUEST_TIMEOUT_SEC"
+const ENV_PROTOCOL_VERSION := "BEAN_PARTY_SIGNALING_PROTOCOL_VERSION"
+const ENV_DEVELOPMENT_MODE := "BEAN_PARTY_ONLINE_DEV_MODE"
+const ENV_ALLOW_STUN_ONLY_FALLBACK := "BEAN_PARTY_ALLOW_STUN_ONLY_FALLBACK"
+
+const RELEASE_CONFIG_PATH := "res://config/online_services.release.json"
+const DEVELOPMENT_CONFIG_PATH := "res://config/online_services.development.json"
+const USER_CONFIG_PATH := "user://online_services.json"
+const EXAMPLE_CONFIG_PATH := "res://config/online_services.example.json"
+
+const LOCAL_HOSTS := ["127.0.0.1", "localhost", "::1"]
+
+const DEFAULT_REQUEST_TIMEOUT_SEC := 10.0
+const DEFAULT_PROTOCOL_VERSION := 1
+const MAX_URL_LENGTH := 2048
+const MAX_RESPONSE_BYTES := 16384
+
+
+static func resolve(options: Dictionary = {}) -> Dictionary:
+	var merged := _merge_layers(options)
+	return _validate_resolved(merged)
+
+
+static func is_development_mode(options: Dictionary = {}) -> bool:
+	if options.has("development_mode"):
+		return bool(options.get("development_mode"))
+	var env := OS.get_environment(ENV_DEVELOPMENT_MODE).strip_edges().to_lower()
+	if env in ["1", "true", "yes"]:
+		return true
+	if OS.is_debug_build():
+		return true
+	var file_config := _read_config_file(_project_config_path())
+	return bool(file_config.get("development_mode", false))
+
+
+static func unconfigured_message() -> String:
+	return UNCONFIGURED_MESSAGE
+
+
+static func is_online_configured(options: Dictionary = {}) -> bool:
+	var resolved := resolve(options)
+	return String(resolved.get("signaling_url", "")) != ""
+
+
+static func _merge_layers(options: Dictionary) -> Dictionary:
+	var resolved := {
+		"signaling_url": "",
+		"ice_config_url": "",
+		"request_timeout_sec": DEFAULT_REQUEST_TIMEOUT_SEC,
+		"signaling_protocol_version": DEFAULT_PROTOCOL_VERSION,
+		"development_mode": is_development_mode(options),
+		"allow_stun_only_fallback": false,
+	}
+
+	if options.has("signaling_url"):
+		resolved["signaling_url"] = String(options.get("signaling_url", ""))
+	if options.has("ice_config_url"):
+		resolved["ice_config_url"] = String(options.get("ice_config_url", ""))
+	if options.has("request_timeout_sec"):
+		resolved["request_timeout_sec"] = float(options.get("request_timeout_sec"))
+	if options.has("signaling_protocol_version"):
+		resolved["signaling_protocol_version"] = int(options.get("signaling_protocol_version"))
+	if options.has("development_mode"):
+		resolved["development_mode"] = bool(options.get("development_mode"))
+	if options.has("allow_stun_only_fallback"):
+		resolved["allow_stun_only_fallback"] = bool(options.get("allow_stun_only_fallback"))
+
+	_apply_env_overrides(resolved)
+	_apply_file_overrides(resolved, USER_CONFIG_PATH)
+	_apply_file_overrides(resolved, _project_config_path())
+
+	if options.has("signaling_url"):
+		resolved["signaling_url"] = String(options.get("signaling_url", ""))
+	if options.has("ice_config_url"):
+		resolved["ice_config_url"] = String(options.get("ice_config_url", ""))
+	if options.has("request_timeout_sec"):
+		resolved["request_timeout_sec"] = float(options.get("request_timeout_sec"))
+	if options.has("signaling_protocol_version"):
+		resolved["signaling_protocol_version"] = int(options.get("signaling_protocol_version"))
+	if options.has("development_mode"):
+		resolved["development_mode"] = bool(options.get("development_mode"))
+	if options.has("allow_stun_only_fallback"):
+		resolved["allow_stun_only_fallback"] = bool(options.get("allow_stun_only_fallback"))
+
+	if resolved["development_mode"] and resolved["signaling_url"] == "":
+		var dev := _read_config_file(DEVELOPMENT_CONFIG_PATH)
+		_apply_dictionary(resolved, dev)
+
+	return resolved
+
+
+static func _project_config_path() -> String:
+	if OS.is_debug_build():
+		return DEVELOPMENT_CONFIG_PATH
+	return RELEASE_CONFIG_PATH
+
+
+static func _apply_env_overrides(resolved: Dictionary) -> void:
+	var signaling := OS.get_environment(ENV_SIGNALING_URL).strip_edges()
+	if signaling != "":
+		resolved["signaling_url"] = signaling
+	var ice := OS.get_environment(ENV_ICE_CONFIG_URL).strip_edges()
+	if ice != "":
+		resolved["ice_config_url"] = ice
+	var timeout := OS.get_environment(ENV_REQUEST_TIMEOUT_SEC).strip_edges()
+	if timeout != "" and timeout.is_valid_float():
+		resolved["request_timeout_sec"] = float(timeout)
+	var protocol := OS.get_environment(ENV_PROTOCOL_VERSION).strip_edges()
+	if protocol != "" and protocol.is_valid_int():
+		resolved["signaling_protocol_version"] = int(protocol)
+	var dev_mode := OS.get_environment(ENV_DEVELOPMENT_MODE).strip_edges().to_lower()
+	if dev_mode in ["1", "true", "yes"]:
+		resolved["development_mode"] = true
+	var fallback := OS.get_environment(ENV_ALLOW_STUN_ONLY_FALLBACK).strip_edges().to_lower()
+	if fallback in ["1", "true", "yes"]:
+		resolved["allow_stun_only_fallback"] = true
+
+
+static func _apply_file_overrides(resolved: Dictionary, path: String) -> void:
+	_apply_dictionary(resolved, _read_config_file(path))
+
+
+static func _apply_dictionary(target: Dictionary, source: Dictionary) -> void:
+	if source.is_empty():
+		return
+	for key in [
+		"signaling_url",
+		"ice_config_url",
+		"request_timeout_sec",
+		"signaling_protocol_version",
+		"development_mode",
+		"allow_stun_only_fallback",
+	]:
+		if source.has(key):
+			target[key] = source[key]
+
+
+static func _read_config_file(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {}
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK:
+		return {}
+	var parsed: Variant = json.data
+	if parsed is Dictionary:
+		return parsed
+	return {}
+
+
+static func _validate_resolved(resolved: Dictionary) -> Dictionary:
+	var development_mode := bool(resolved.get("development_mode", false))
+	var signaling_url := _normalize_service_url(
+		String(resolved.get("signaling_url", "")),
+		["ws", "wss"],
+		development_mode,
+	)
+	var ice_config_url := _normalize_service_url(
+		String(resolved.get("ice_config_url", "")),
+		["http", "https"],
+		development_mode,
+	)
+	var timeout := clampf(float(resolved.get("request_timeout_sec", DEFAULT_REQUEST_TIMEOUT_SEC)), 1.0, 60.0)
+	return {
+		"signaling_url": signaling_url,
+		"ice_config_url": ice_config_url,
+		"request_timeout_sec": timeout,
+		"signaling_protocol_version": maxi(1, int(resolved.get("signaling_protocol_version", DEFAULT_PROTOCOL_VERSION))),
+		"development_mode": development_mode,
+		"allow_stun_only_fallback": bool(resolved.get("allow_stun_only_fallback", false)),
+	}
+
+
+static func _normalize_service_url(raw_url: String, allowed_schemes: Array, development_mode: bool) -> String:
+	var url := raw_url.strip_edges()
+	if url == "":
+		return ""
+	if url.length() > MAX_URL_LENGTH:
+		return ""
+
+	var scheme_end := url.find("://")
+	if scheme_end < 0:
+		return ""
+	var scheme := url.substr(0, scheme_end).to_lower()
+	if scheme not in allowed_schemes:
+		return ""
+
+	var secure_required := not development_mode
+	if secure_required and scheme not in ["wss", "https"]:
+		return ""
+	if not development_mode and _is_loopback_url(url):
+		return ""
+
+	if development_mode and scheme in ["ws", "http"] and not _is_loopback_url(url):
+		return ""
+
+	return url
+
+
+static func _is_loopback_url(url: String) -> bool:
+	var without_scheme := url.split("://", false, 1)
+	if without_scheme.size() != 2:
+		return false
+	var remainder := without_scheme[1]
+	var host := remainder.split("/", false, 1)[0]
+	host = host.split(":", false, 1)[0]
+	return host in LOCAL_HOSTS

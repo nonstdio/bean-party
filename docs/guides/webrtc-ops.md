@@ -13,7 +13,7 @@ Bean Party's internet transport uses a **signaling server** (WebSocket) plus **I
 
 Star topology: clients connect to peer `1` (host). The host relays gameplay RPCs.
 
-## Signaling server (development)
+## Signaling server (contributor local)
 
 ```bash
 cd tools/signaling
@@ -21,22 +21,82 @@ npm install
 npm start
 ```
 
-Default URL: `ws://127.0.0.1:9080` (`MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL`).
+Default endpoints:
 
-Godot sends WebSocket frames as binary `Buffer` payloads; the bundled server normalizes them to text before JSON parsing.
+- Signaling: `ws://127.0.0.1:9080/v1/signal?protocol=1`
+- ICE config: `http://127.0.0.1:9080/v1/ice`
 
-## Signaling server (production sketch)
+Contributor Godot checkouts load these from `config/online_services.development.json` through `OnlineServiceConfig`.
 
-1. Run `server.js` behind a reverse proxy that terminates **TLS** (`wss://`).
-2. Restrict origins or add authentication before exposing signaling publicly.
-3. Set the in-game **signaling URL** to the public `wss://` endpoint.
-4. Monitor process health, open connections, and room count (extend `server.js` or wrap with your process manager).
+## Hosted signaling service (Railway reference)
 
-The signaling server does **not** carry gameplay traffic. It only negotiates WebRTC sessions.
+The production-style service in `tools/signaling/` exposes:
 
-## ICE / TURN configuration
+| Path | Purpose |
+| --- | --- |
+| `GET /healthz` | Liveness |
+| `GET /readyz` | Readiness (fails if TURN URLs are set without `TURN_SHARED_SECRET`) |
+| `GET /v1/ice` | Short-lived ICE server list with coturn REST credentials |
+| `WS /v1/signal` | Room negotiation and SDP/ICE relay |
 
-`WebRtcIceConfig` resolves ICE servers in this order:
+Deployment artifacts: `Dockerfile`, `railway.toml`, `.env.example`, and `tools/signaling/README.md`.
+
+**Single-instance requirement:** room state is in-memory. Run exactly one Railway replica until a shared registry such as Redis exists.
+
+**Domain policy:** use Railway's generated public domain only. Record the real `wss://` and `https://` URLs after deployment; do not commit invented hostnames.
+
+**TURN warning:** Railway hosts HTTP/WebSocket signaling only. coturn or another managed TURN provider must run on infrastructure with the required UDP/TCP/TLS relay ports. The signaling deployment proves room negotiation, not restrictive-NAT reliability.
+
+### Operator checklist
+
+- [ ] TLS terminates at Railway/public edge (`wss://`, `https://`)
+- [ ] `TURN_SHARED_SECRET` injected from a secret store when TURN URLs are configured
+- [ ] Secret rotation procedure documented and rehearsed
+- [ ] Rate limits reviewed for expected playtest volume
+- [ ] Room inactivity and absolute lifetime configured
+- [ ] Exactly one service instance / replica
+- [ ] Logs reviewed: no SDP, ICE candidates, invitation secrets, or TURN credentials
+- [ ] Railway usage alerts enabled
+- [ ] Rollback path tested (redeploy previous image / revert env)
+- [ ] TURN reachability verified separately from signaling health
+- [ ] TURN egress monitoring enabled when relay is live
+- [ ] Protocol version compatibility recorded (`SIGNALING_PROTOCOL_VERSION`)
+- [ ] Four-network NAT matrix executed once TURN is available
+
+### Threat and abuse model (phase 1)
+
+- Anonymous room creation and ICE credential issuance are rate-limited
+- Credential TTL is bounded; shared secrets never leave the server
+- WebSocket Origin is not treated as native-client authentication
+- `TRUST_PROXY=false` by default; do not trust arbitrary `X-Forwarded-For` values unless explicitly enabled behind a known proxy
+- TURN credential endpoint abuse can incur egress cost; monitor and tune `ICE_RATE_LIMIT_*`
+
+## Online service configuration (Godot client)
+
+`OnlineServiceConfig` resolves hosted endpoints in this order:
+
+1. explicit runtime or test options
+2. environment variables (`BEAN_PARTY_SIGNALING_URL`, `BEAN_PARTY_ICE_CONFIG_URL`, ...)
+3. `user://online_services.json`
+4. `res://config/online_services.release.json` (release) or `online_services.development.json` (debug builds)
+5. explicit localhost fallback for contributor development only
+
+Release exports do **not** silently use `ws://127.0.0.1:9080`. Unconfigured release builds report: `Online play is not configured in this build.`
+
+Production URLs must use `wss://` and `https://`. `ws://` and `http://` are permitted only for loopback development.
+
+### ICE fetch failure policy
+
+When an ICE endpoint is configured, Godot fetches short-lived credentials before WebRTC negotiation.
+
+- **Release / production:** connection fails clearly if ICE credentials cannot be fetched
+- **Contributor development:** if `allow_stun_only_fallback` is enabled, the client may continue with STUN-only and surface `relay_unavailable` in the debug shell status line
+
+Credentials are not written to disk and are not logged.
+
+## ICE / TURN configuration (legacy file/env path)
+
+`WebRtcIceConfig` still resolves local file/env ICE overrides for contributor spikes:
 
 1. Explicit `ice_servers` passed to `MatchSession.host_with_transport` / `join_with_transport`
 2. Environment variable `BEAN_PARTY_ICE_SERVERS_JSON` (JSON array or object)

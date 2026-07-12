@@ -209,7 +209,7 @@ func test_failed_webrtc_host_does_not_leave_coordinator_child() -> void:
 	assert_eq(
 		session.host_with_transport(
 			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			{"signaling_url": "ws://127.0.0.1:9080"},
+			{"signaling_url": "ws://127.0.0.1:9080/v1/signal"},
 		),
 		ERR_CANT_CREATE,
 	)
