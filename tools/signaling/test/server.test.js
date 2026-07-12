@@ -74,6 +74,7 @@ function connectClient(wsUrl, timeoutMs = 5000) {
     const cleanup = () => clearTimeout(timer);
     ws.once("open", () => {
       cleanup();
+      ws.inbox = attachMessageQueue(ws);
       resolve(ws);
     });
     ws.once("error", (error) => {
@@ -104,19 +105,64 @@ function connectRejectedClient(wsUrl, timeoutMs = 5000) {
   });
 }
 
-function waitForMessage(ws) {
-  return new Promise((resolve) => {
-    ws.once("message", (data) => resolve(JSON.parse(data.toString())));
+function attachMessageQueue(ws) {
+  const queue = [];
+  const waiters = [];
+  ws.on("message", (data) => {
+    const message = JSON.parse(data.toString());
+    if (waiters.length > 0) {
+      waiters.shift()(message);
+    } else {
+      queue.push(message);
+    }
   });
+  return {
+    next(timeoutMs = 5000) {
+      return new Promise((resolve, reject) => {
+        if (queue.length > 0) {
+          resolve(queue.shift());
+          return;
+        }
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          const waiterIndex = waiters.indexOf(onMessage);
+          if (waiterIndex >= 0) {
+            waiters.splice(waiterIndex, 1);
+          }
+          reject(new Error("Timed out waiting for message"));
+        }, timeoutMs);
+        const onMessage = (message) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timer);
+          resolve(message);
+        };
+        waiters.push(onMessage);
+      });
+    },
+    async waitForType(type, timeoutMs = 5000) {
+      while (true) {
+        const message = await this.next(timeoutMs);
+        if (message.type === type) {
+          return message;
+        }
+      }
+    },
+  };
+}
+
+function waitForMessage(ws) {
+  return ws.inbox.next();
 }
 
 async function waitForJoinMessage(ws) {
-  while (true) {
-    const message = await waitForMessage(ws);
-    if (message.type === 0) {
-      return message;
-    }
-  }
+  return ws.inbox.waitForType(0);
 }
 
 function waitForClose(ws) {
@@ -279,7 +325,7 @@ test("room creation rate limit applies", async () => {
     async ({ wsUrl }) => {
       const first = await connectClient(wsUrl);
       first.send(JSON.stringify({ type: 0, id: 1, data: "" }));
-      await waitForMessage(first);
+      await waitForJoinMessage(first);
 
       const second = await connectClient(wsUrl);
       second.send(JSON.stringify({ type: 0, id: 1, data: "" }));
