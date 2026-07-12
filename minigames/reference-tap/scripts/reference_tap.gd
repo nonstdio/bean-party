@@ -1,8 +1,10 @@
 extends MinigameController
 
 const ROUND_DURATION_SECONDS := 10.0
+const _BADGE_SCENE := preload("res://scenes/shared/player_identity_badge.tscn")
 
 @onready var _status: Label = %Status
+@onready var _player_legend: HBoxContainer = %PlayerLegend
 
 var _elapsed_seconds: float = 0.0
 
@@ -27,6 +29,7 @@ func _on_minigame_setup() -> void:
 	_elapsed_seconds = 0.0
 	if is_node_ready():
 		_status.text = "Press primary first."
+		_rebuild_player_legend()
 
 
 func _on_minigame_start() -> void:
@@ -63,3 +66,25 @@ func _finish_tied() -> void:
 	if is_node_ready():
 		_status.text = "Everyone tied."
 	submit_minigame_result(MinigameResult.completed([player_ids], scores))
+
+
+func _rebuild_player_legend() -> void:
+	for child in _player_legend.get_children():
+		_player_legend.remove_child(child)
+		child.queue_free()
+
+	var context := get_minigame_context()
+	if context == null:
+		return
+	for player in context.get_players():
+		var group := VBoxContainer.new()
+		group.alignment = BoxContainer.ALIGNMENT_CENTER
+		var badge := _BADGE_SCENE.instantiate() as PlayerIdentityBadge
+		badge.set_slot_color(player.slot_color)
+		group.add_child(badge)
+		var label := Label.new()
+		label.text = player.display_name
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.theme_type_variation = &"ShellSecondary"
+		group.add_child(label)
+		_player_legend.add_child(group)

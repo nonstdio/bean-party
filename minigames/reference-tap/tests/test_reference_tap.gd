@@ -12,6 +12,10 @@ func test_reference_tap_runs_through_contract_and_unloads() -> void:
 	runner.minigame_finished.connect(func(result: MinigameResult) -> void: results.append(result))
 
 	assert_true(runner.load_minigame(manifest, context))
+	var controller := runner.get_active_controller()
+	var legend := controller.get_node("PlayerLegend") as HBoxContainer
+	assert_eq(legend.get_child_count(), 2)
+	assert_true(legend.get_child(0).get_child(0) is PlayerIdentityBadge)
 	assert_true(runner.start_active_minigame())
 	context.get_input_source().set_action_strength(
 		"player_2",
@@ -27,6 +31,7 @@ func test_reference_tap_runs_through_contract_and_unloads() -> void:
 	assert_true(runner.unload_minigame())
 	assert_eq(runner.state, MinigameRunner.State.EMPTY)
 	assert_eq(runner.get_child_count(), 0)
+	await get_tree().process_frame
 
 
 func test_reference_tap_ties_everyone_on_timeout_at_all_supported_counts() -> void:
@@ -46,6 +51,7 @@ func test_reference_tap_ties_everyone_on_timeout_at_all_supported_counts() -> vo
 		assert_eq(results[0].placements.size(), 1)
 		assert_eq(results[0].placements[0].size(), player_count)
 		assert_true(runner.unload_minigame())
+		await get_tree().process_frame
 
 
 func _create_context(player_count: int, instance_id: String) -> MinigameContext:

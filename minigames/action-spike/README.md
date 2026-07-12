@@ -29,3 +29,7 @@ Eliminate rivals with hitscan fire (50 damage, 0.4s cooldown). Last bean standin
 **In this spike:** tank movement, jump, hitscan combat, health HUD, third-person chase camera, inactive-player exclusion from last-standing logic.
 
 **Deferred:** lag compensation, projectiles, physics props, knockback, respawn, `CharacterBody3D` collision, render interpolation, `SpringArm3D` camera, and full movement-standard manual matrix. See spike deviations in the networking plan.
+
+## Assets and provenance
+
+Player presentation reuses Bean Party's original [canonical prototype bean, four identity materials and markers, and prototype UI theme](../../assets/standard/catalog.md). Arena geometry remains minigame-owned graybox work. No external assets are used.

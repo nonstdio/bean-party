@@ -26,6 +26,10 @@ GitHub issues are the canonical home for pre-implementation minigame proposals. 
 
 Read [Decision 0003](decisions/0003-peer-hosted-networking.md), the [networking architecture](architecture/networking.md), and the [networking implementation plan](plans/networking.md) in that order. The decision remains proposed until its documented validation gates pass review.
 
+### Art and presentation contributors
+
+Read the [creative direction](design/creative-direction.md), [standard asset guide](guides/standard-assets.md), and [standard asset catalog](../assets/standard/catalog.md) before creating a shared character, identity marker, material, UI token, or similar reusable asset. Canonical prototypes are reuse defaults, not final production art.
+
 ### Maintainers
 
 Use the [project governance guide](project/governance.md) for branch and review policy. Record consequential, hard-to-reverse choices using the [decision record process](decisions/README.md).
@@ -126,6 +130,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 - [WebRTC setup](guides/webrtc-setup.md)
 - [WebRTC operations runbook](guides/webrtc-ops.md)
 - [WebRTC implementation notes](guides/webrtc-implementation-notes.md)
+- [Use and contribute standard assets](guides/standard-assets.md)
 
 ### Plans
 
@@ -145,6 +150,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 - [Decision 0002: GUT testing](decisions/0002-gut-testing.md) — Accepted
 - [Decision 0003: peer-hosted networking](decisions/0003-peer-hosted-networking.md) — Proposed
 - [Decision 0004: local minigame contract](decisions/0004-local-minigame-contract.md)
+- [Decision 0005: standard asset pipeline](decisions/0005-standard-asset-pipeline.md) — Accepted
 
 ### Project
 

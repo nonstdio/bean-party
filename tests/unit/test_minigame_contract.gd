@@ -102,6 +102,7 @@ func test_runner_aborts_once_and_unloads_cleanly() -> void:
 	assert_eq(results[0].status, MinigameResult.Status.ABORTED)
 	assert_true(runner.unload_minigame())
 	assert_eq(runner.get_child_count(), 0)
+	await get_tree().process_frame
 
 
 func test_runner_retries_with_a_fresh_context() -> void:
@@ -121,6 +122,7 @@ func test_runner_retries_with_a_fresh_context() -> void:
 	)
 	assert_true(runner.abort_active_minigame("finish second run"))
 	assert_true(runner.unload_minigame())
+	await get_tree().process_frame
 
 
 func test_controller_rejects_duplicate_result_submission() -> void:
@@ -137,6 +139,7 @@ func test_controller_rejects_duplicate_result_submission() -> void:
 	assert_true(runner.get_active_controller().submit_minigame_result(result))
 	assert_false(runner.get_active_controller().submit_minigame_result(result))
 	assert_true(runner.unload_minigame())
+	await get_tree().process_frame
 
 
 func _create_session(player_count: int) -> OfflineMatchSession:

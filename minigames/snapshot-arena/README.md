@@ -9,7 +9,7 @@ Graybox movement minigame for Milestone 7 (`HOST_SNAPSHOT`). First player to rea
 - **Placement:** first to the goal wins; remaining players ordered by final distance to goal center.
 - **Timing:** shell-owned briefing and countdown; open-ended active play until a winner.
 - **Controls:** shell maps device slots to keyboard — Controller 1 = arrow keys, Controller 2 = WASD, Controller 3 = IJKL, Controller 4 = numpad/arrows (see `MinigameLocalDeviceInput`).
-- **Accessibility:** goal is a filled circle; players have white outlines in addition to slot color.
+- **Accessibility:** the goal is a filled circle; each player uses a distinct circle, triangle, square, or diamond marker in addition to slot color.
 - **Capability:** `network_capable`, sync profile `HOST_SNAPSHOT`.
 
 ## Integration notes
@@ -18,7 +18,7 @@ The scene root extends `MinigameController`. Online play is driven by `NetworkMi
 
 ## Assets and provenance
 
-No external assets are used.
+The minigame reuses Bean Party's original [prototype theme and player identity markers](../../assets/standard/catalog.md). It uses no external assets.
 
 ## Validation
 

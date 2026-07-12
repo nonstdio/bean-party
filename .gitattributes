@@ -11,6 +11,8 @@
 *.mp3 binary
 *.ttf binary
 *.otf binary
+*.blend binary
+*.glb binary
 
 # Keep the vendored GUT release byte-for-byte compatible with its upstream formatting.
 addons/gut/** -whitespace

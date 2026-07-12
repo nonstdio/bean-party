@@ -11,7 +11,7 @@ Godot stores the main scene in `project.godot`; `res://` refers to this reposito
 ## Repository layout
 
 ```text
-assets/                 # Original source art, audio, fonts, and third-party license notes
+assets/                 # Standard runtime assets, ignored-from-Godot sources, and provenance
 addons/                 # Reviewed, vendored Godot editor/runtime add-ons
 docs/                   # Design, architecture, and decision records
 minigames/              # One self-contained folder per contributed minigame
@@ -42,8 +42,9 @@ The shared ENet debug **session layer** is implemented in `scripts/shared/` as `
 | Local minigame contract | `scripts/shared/minigames/`, `scenes/dev/minigame_harness.tscn`, and `reference-tap` | Accepted contract v1; harness-only integration today |
 | ENet connection proof | `MatchSession` and `EnetTransportAdapter` | Direct address and port, one listen-server host, reliable echo, explicit teardown |
 | Network shell proof | `NetworkLobbySession`, `NetworkBoardSession`, and `NetworkMatchPhaseSession` plus their authority objects | Reliable host-authoritative debug state through a placeholder scene; not production netcode |
+| Standard asset gallery | `scenes/dev/standard_asset_gallery.tscn` and `assets/standard/` | Canonical prototype character, identity, material, and shell-token comparisons; contributor tooling rather than production art or shipped app flow |
 
-Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for operating steps and current limitations.
+Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for the runtime proofs and [Use and contribute standard assets](../guides/standard-assets.md#inspect-the-kit) for gallery controls and visual checks.
 
 ## Conventions
 
@@ -53,6 +54,7 @@ Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for opera
 - Minigame-local scenes, scripts, and assets stay within `minigames/<slug>/`; only promote something to `scenes/shared/` or `scripts/shared/` when two or more minigames genuinely need it.
 - Player-controlled 3D movement follows the [Godot 3D movement standards](godot-3d-movement.md), including simulation/render separation, physics ownership, interpolation, camera, networking, and validation requirements.
 - Commit original assets and their source files when practical. Do not commit generated Godot folders, exports, or builds.
+- Follow the [standard asset guide](../guides/standard-assets.md) for the canonical catalog, mixed Blender/GLB handoff, lifecycle states, and contributor gallery.
 - Keep `.uid` sidecar files untracked under the current ignore policy; Godot may regenerate them locally.
 - Use tabs for GDScript indentation and LF line endings. The repository’s `.editorconfig` and `.gitattributes` state this explicitly.
 

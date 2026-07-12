@@ -38,6 +38,7 @@ func test_every_discovered_minigame_sets_up_aborts_and_unloads_at_declared_bound
 			assert_true(runner.abort_active_minigame("contract smoke abort"))
 			assert_true(runner.unload_minigame())
 			assert_eq(runner.get_child_count(), 0)
+			await get_tree().process_frame
 
 
 func test_minigames_do_not_reference_other_minigames_or_forbidden_shell_apis() -> void:
