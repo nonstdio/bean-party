@@ -7,12 +7,9 @@ $ErrorActionPreference = "Stop"
 
 $exportDirectory = (Resolve-Path -LiteralPath $ExportDirectory).Path
 $executable = Join-Path $exportDirectory "BeanParty.exe"
-$manifest = Join-Path $exportDirectory "addons\webrtc_native\webrtc_native.gdextension"
-$releaseDll = Join-Path $exportDirectory (
-    "addons\webrtc_native\lib\libwebrtc_native.windows.template_release.x86_64.dll"
-)
+$releaseDll = Join-Path $exportDirectory "libwebrtc_native.windows.template_release.x86_64.dll"
 
-$requiredPaths = @($executable, $manifest, $releaseDll)
+$requiredPaths = @($executable, $releaseDll)
 foreach ($requiredPath in $requiredPaths) {
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
         throw "WebRTC export smoke prerequisite missing: $requiredPath"

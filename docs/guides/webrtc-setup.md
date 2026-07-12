@@ -29,13 +29,12 @@ The extension is MIT-licensed. Do not commit generated `.godot/` import output.
 
 ## Windows export packaging
 
-Godot embeds the game PCK inside `BeanParty.exe`, but webrtc-native remains a GDExtension with native libraries that must ship beside the executable. The Windows CI workflow exports:
+Godot embeds the game PCK inside `BeanParty.exe`, including the gdextension manifest at `res://addons/webrtc_native/webrtc_native.gdextension`. The Windows release native library is exported beside the executable:
 
 - `BeanParty.exe`
-- `addons/webrtc_native/webrtc_native.gdextension`
-- `addons/webrtc_native/lib/libwebrtc_native.windows.template_release.x86_64.dll`
+- `libwebrtc_native.windows.template_release.x86_64.dll`
 
-and packages them into `BeanParty-Windows.zip`. The standalone `BeanParty.exe` asset is not WebRTC-capable without those companion files.
+and packages them into `BeanParty-Windows.zip`. The standalone `BeanParty.exe` asset is not WebRTC-capable without the companion DLL.
 
 Exported builds support a headless smoke probe:
 
