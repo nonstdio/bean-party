@@ -9,7 +9,7 @@ Bean Party's internet transport uses a **signaling server** (WebSocket) plus **I
 | Signaling server | Exchanges SDP offers/answers and ICE candidates; assigns room codes | `tools/signaling/` |
 | STUN | Discovers public addresses for hole-punching | Default: `stun:stun.l.google.com:19302` |
 | TURN | Relays media when direct peer paths fail | Operator-provided |
-| webrtc-native | Godot GDExtension for desktop WebRTC | `tools/setup-webrtc-native.ps1` |
+| webrtc-native | Godot GDExtension for desktop WebRTC on every peer | Contributors: `tools/setup-webrtc-native.ps1`; Windows playtesters: bundled in `BeanParty-Windows.zip` |
 
 Star topology: clients connect to peer `1` (host). The host relays gameplay RPCs.
 

@@ -5,10 +5,14 @@ Bean Party's internet transport uses Godot's `WebRTCMultiplayerPeer` with a smal
 ## Prerequisites
 
 - Godot 4.7 stable ([godot-setup.md](godot-setup.md))
-- Node.js 18+ for the local signaling server (`tools/signaling/`)
-- [webrtc-native](https://github.com/godotengine/webrtc-native) GDExtension on desktop exports
+- Node.js 18+ for the local signaling server (`tools/signaling/`) — contributors only
+- webrtc-native GDExtension on every desktop peer that uses WebRTC transport
 
-## Install webrtc-native (desktop)
+Windows playtesters receive webrtc-native automatically in the [BeanParty-Windows.zip](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty-Windows.zip) rolling build. Ordinary players do not install Godot, Node.js, or the extension manually.
+
+## Install webrtc-native for contributors
+
+The pinned release is recorded in [config/webrtc_native.version.json](../../config/webrtc_native.version.json). CI downloads that exact archive, verifies its SHA-256 checksum, and installs it before export.
 
 From the repository root on Windows:
 
@@ -19,9 +23,26 @@ powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 validate
 
 The script extracts `addons/webrtc_native/` into the **repository root** (`bean-party/`, not the parent `beansinc/` folder). If WebRTC errors mention `No default WebRTC extension configured`, re-run the script from the repo root and restart the editor.
 
-On macOS or Linux, download [`godot-extension-webrtc_native.zip`](https://github.com/godotengine/webrtc-native/releases/download/1.2.1-stable/godot-extension-webrtc_native.zip) and extract it to the repository root.
+On macOS or Linux, run `tools/install-webrtc-native.ps1` with PowerShell 7+ or download the pinned archive named in `config/webrtc_native.version.json` and extract it to the repository root.
 
 The extension is MIT-licensed. Do not commit generated `.godot/` import output.
+
+## Windows export packaging
+
+Godot embeds the game PCK inside `BeanParty.exe`, including the gdextension manifest at `res://addons/webrtc_native/webrtc_native.gdextension`. The Windows release native library is exported beside the executable:
+
+- `BeanParty.exe`
+- `libwebrtc_native.windows.template_release.x86_64.dll`
+
+and packages them into `BeanParty-Windows.zip`. The standalone `BeanParty.exe` asset is not WebRTC-capable without the companion DLL.
+
+Exported builds support a headless smoke probe:
+
+```powershell
+.\BeanParty.exe --headless --webrtc-export-smoke
+```
+
+The Windows workflow runs `tools/smoke-webrtc-export.ps1` against the exported directory before publishing the ZIP.
 
 ## Run signaling for local spikes
 
@@ -33,10 +54,12 @@ npm start
 
 Default signaling URL: `ws://127.0.0.1:9080` (`MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL`).
 
+This Node.js server is for contributor architecture spikes only. Production signaling and TURN relay deployment are tracked separately in [WebRTC operations runbook](webrtc-ops.md).
+
 ## Host or join (debug shell)
 
 1. Start the signaling server.
-2. Launch Godot with webrtc-native installed and run the main scene (`F5`).
+2. Launch Godot with webrtc-native installed, or run the extracted Windows test build ZIP.
 3. Select transport **WebRTC (internet)**.
 4. **Host:** leave room code empty, select **Host**, copy the displayed room code.
 5. **Join:** enter the signaling URL and room code, select **Join**.
