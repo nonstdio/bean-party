@@ -19,7 +19,7 @@ Use a mixed-source pipeline for standard assets:
 
 - Keep editable Blender sources under `assets/source/standard/`, behind `.gdignore` so Godot does not import them.
 - Commit binary glTF (`.glb`) exports and Godot-native resources under `assets/standard/`.
-- Use Blender 5.1.x for the initial standard 3D sources. Record the exact tested version per asset; the first asset is tested with Blender 5.1.2.
+- Pin the initial standard 3D source and byte-for-byte export check to Blender 5.1.2. Record the exact tested version per asset and review any version upgrade before changing the pin.
 - Provide repeatable build, export, and stale-export checks through `tools/assets.ps1` and `tools/assets.sh`.
 - Treat the standard asset catalog as the source for status, canonical path, editable source, purpose, and provenance.
 
@@ -28,7 +28,7 @@ Godot 4.7 recommends glTF 2.0 for 3D interchange and notes that direct `.blend` 
 ## Consequences
 
 - Contributors can run and test the project without Blender.
-- A contributor changing Blender-authored geometry must use a tested Blender 5.1.x build, update the editable source, regenerate the GLB, and run the asset check.
+- A contributor changing Blender-authored geometry must use Blender 5.1.2, update the editable source, regenerate the GLB, and run the asset check.
 - Binary source and export changes are not meaningfully reviewable as text, so the pull request must include visual evidence and provenance notes.
 - Canonical prototype assets are the reuse default but may be replaced through review; this decision does not make their current appearance production-final.
 - Rigging, animation, attachment conventions, textures, audio, fonts, licensing, and final platform budgets remain undecided.

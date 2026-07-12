@@ -117,7 +117,8 @@ func _sync_player_meshes() -> void:
 		var position := _resolve_player_position(player_id, context)
 		mesh_root.position = position
 		var yaw := _resolve_player_yaw(player_id)
-		mesh_root.rotation.y = yaw
+		# Simulation yaw is clockwise from Godot forward; Node3D rotation is the inverse.
+		mesh_root.rotation.y = -yaw
 
 		var health := _resolve_player_health(player_id)
 		var material := _player_body_materials.get(player_id) as StandardMaterial3D

@@ -10,6 +10,7 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 $Source = Join-Path $RepoRoot "assets\source\standard\characters\bean-static-prototype.blend"
 $Output = Join-Path $RepoRoot "assets\standard\characters\bean-static-prototype.glb"
 $Script = Join-Path $RepoRoot "tools\blender\bean_static_prototype.py"
+$RequiredBlenderVersion = "5.1.2"
 
 function Resolve-BlenderBinary {
 	if (-not [string]::IsNullOrWhiteSpace($env:BLENDER_BIN)) {
@@ -22,8 +23,8 @@ function Resolve-BlenderBinary {
 	}
 
 	$candidates = @(
-		"G:\SteamLibrary\steamapps\common\Blender\blender.exe",
 		"${env:ProgramFiles(x86)}\Steam\steamapps\common\Blender\blender.exe",
+		"$env:ProgramFiles\Steam\steamapps\common\Blender\blender.exe",
 		"$env:ProgramFiles\Blender Foundation\Blender 5.1\blender.exe"
 	)
 	foreach ($candidate in $candidates) {
@@ -32,7 +33,37 @@ function Resolve-BlenderBinary {
 		}
 	}
 
-	throw "Blender 5.1.x was not found. Set BLENDER_BIN to blender.exe."
+	throw "Blender $RequiredBlenderVersion was not found. Set BLENDER_BIN to blender.exe."
+}
+
+function Get-BlenderVersion {
+	$startInfo = New-Object System.Diagnostics.ProcessStartInfo
+	$startInfo.FileName = $script:BlenderBinary
+	$startInfo.Arguments = "--version"
+	$startInfo.UseShellExecute = $false
+	$startInfo.CreateNoWindow = $true
+	$startInfo.RedirectStandardOutput = $true
+	$startInfo.RedirectStandardError = $true
+
+	$process = New-Object System.Diagnostics.Process
+	$process.StartInfo = $startInfo
+	if (-not $process.Start()) {
+		throw "Could not start Blender to inspect its version."
+	}
+	$standardOutput = $process.StandardOutput.ReadToEnd()
+	$standardError = $process.StandardError.ReadToEnd()
+	$process.WaitForExit()
+	$combinedOutput = "$standardOutput`n$standardError".Trim()
+	if ($process.ExitCode -ne 0) {
+		throw "Blender version probe exited with code $($process.ExitCode): $combinedOutput"
+	}
+	$versionLine = $combinedOutput -split "`r?`n" |
+		Where-Object { $_ -match "^Blender\s" } |
+		Select-Object -First 1
+	if ([string]::IsNullOrWhiteSpace($versionLine)) {
+		throw "Blender version probe did not report a version: $combinedOutput"
+	}
+	return $versionLine.Trim()
 }
 
 function Invoke-BlenderExport {
@@ -63,11 +94,10 @@ function Invoke-BlenderExport {
 }
 
 $script:BlenderBinary = Resolve-BlenderBinary
-$versionOutput = (& $script:BlenderBinary --version 2>&1 | Out-String).Trim()
-$versionExitCode = $LASTEXITCODE
-$version = ($versionOutput -split "`r?`n")[0]
-if ($versionExitCode -ne 0 -or $version -notmatch "^Blender 5\.1\.") {
-	throw "Standard assets currently require Blender 5.1.x. Found: $version"
+$version = Get-BlenderVersion
+$requiredVersionPattern = "^Blender $([Regex]::Escape($RequiredBlenderVersion))(\s|$)"
+if ($version -notmatch $requiredVersionPattern) {
+	throw "Standard assets require Blender $RequiredBlenderVersion. Found: $version"
 }
 
 switch ($Task) {
@@ -80,7 +110,9 @@ switch ($Task) {
 		if (-not (Test-Path -LiteralPath $Output -PathType Leaf)) {
 			throw "Missing committed GLB export: $Output"
 		}
-		$tempOutput = Join-Path ([System.IO.Path]::GetTempPath()) "bean-party-bean-static-prototype.glb"
+		$tempOutput = Join-Path (
+			[System.IO.Path]::GetTempPath()
+		) "bean-party-bean-$([Guid]::NewGuid().ToString('N')).glb"
 		try {
 			Invoke-BlenderExport -Mode "export" -Target $tempOutput
 			$expected = (Get-FileHash -Algorithm SHA256 -LiteralPath $Output).Hash

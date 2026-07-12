@@ -102,6 +102,10 @@ func test_static_bean_has_expected_components_and_triangle_budget() -> void:
 	assert_not_null(body)
 	assert_almost_eq(body.get_aabb().size.x, 0.64, 0.01)
 	assert_almost_eq(body.get_aabb().size.y, 1.39, 0.01)
+	var eye := bean.find_child("Eye_Left_White", true, false) as Node3D
+	var pupil := bean.find_child("Pupil_Left", true, false) as Node3D
+	assert_lt(eye.global_position.z, 0.0, "bean eyes must face Godot -Z")
+	assert_lt(pupil.global_position.z, eye.global_position.z, "pupil must sit ahead of eye")
 
 	var triangle_count := 0
 	for node in bean.find_children("*", "MeshInstance3D", true, false):

@@ -16,6 +16,7 @@ import bpy
 
 
 ASSET_COLLECTION = "BP_BeanStaticPrototype"
+EXPORT_ORIENTATION_NAME = "GodotForward"
 BODY_RADIUS = 0.32
 BODY_BOTTOM = 0.36
 BODY_CYLINDER_BOTTOM = 0.68
@@ -327,6 +328,13 @@ def build_scene(source_path: Path) -> None:
         rings=8,
     )
 
+    export_orientation = bpy.data.objects.new(EXPORT_ORIENTATION_NAME, None)
+    export_orientation.rotation_euler.z = math.pi
+    asset_collection.objects.link(export_orientation)
+    for obj in list(asset_collection.objects):
+        if obj != export_orientation:
+            obj.parent = export_orientation
+
     bpy.context.scene["asset_id"] = "bean-static-prototype"
     bpy.context.scene["asset_status"] = "canonical-prototype"
     bpy.context.scene["authoring_version"] = "Blender 5.1.2"
@@ -344,7 +352,7 @@ def export_glb(output_path: Path) -> None:
 
     bpy.ops.object.select_all(action="DESELECT")
     for obj in collection.all_objects:
-        if obj.type == "MESH":
+        if obj.type in {"EMPTY", "MESH"}:
             obj.select_set(True)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

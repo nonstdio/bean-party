@@ -31,7 +31,7 @@ Use these measurements for the replacement prototype:
 | Element | Approved prototype construction |
 | --- | --- |
 | Body | `0.32 m` radius, `0.75 m` constant-width cylinder, hemispherical caps, and approximately `1.39 m` total body height |
-| Rest curve | Facing `-Y`, both ends forward of the middle; centerline offset `y = 0.07875 × 16t²(1-t)²`, where `t` runs from bottom `0` to top `1` |
+| Rest curve | Source-local facing `-Y`, both ends forward of the middle; centerline offset `y = 0.07875 × 16t²(1-t)²`, where `t` runs from bottom `0` to top `1`; the export orientation maps this to Godot `-Z` forward |
 | Eyes | White oblate hemispheres approximately `0.090 × 0.044 × 0.078 m`, centered near `x = ±0.070 m`, with black circular pupils approximately `0.028 m` across |
 | Face | No mouth and no other default facial geometry |
 | Upper limbs | No arms or hands; equipment uses reviewed body-side, equipment, or costume anchors |
@@ -42,7 +42,7 @@ These values capture the approved static silhouette, not final rig constraints. 
 
 ## Blender handoff
 
-The initial 3D source is tested with Blender 5.1.2. The runners accept Blender 5.1.x and discover `BLENDER_BIN`, a `blender` command on PATH, and common installations; the Windows runner also discovers Minerva's Steam installation.
+The initial 3D source and byte-for-byte freshness check require Blender 5.1.2. The runners discover `BLENDER_BIN`, a `blender` command on PATH, and common Windows installation locations. Pinning the exact version avoids noise-only GLB differences caused by exporter changes.
 
 Build the approved source and runtime export:
 
@@ -57,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\assets.ps1 export
 powershell -ExecutionPolicy Bypass -File .\tools\assets.ps1 check
 ```
 
-On macOS or Linux, use `bash tools/assets.sh build`, `export`, or `check`. Set `BLENDER_BIN` when Blender is outside the runner's normal discovery paths. A future Blender major/minor upgrade must be tested by rebuilding, importing in Godot 4.7, comparing the visual result, and updating the decision and recorded authoring version.
+On macOS or Linux, use `bash tools/assets.sh build`, `export`, or `check`. Set `BLENDER_BIN` when Blender is outside the runner's normal discovery paths. Any future Blender version upgrade must be tested by rebuilding, importing in Godot 4.7, comparing the visual result, and updating the decision and recorded authoring version before relaxing the pin.
 
 ## Inspect the kit
 

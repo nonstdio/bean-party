@@ -82,7 +82,6 @@ func _create_identity_examples() -> void:
 		var bean := _BEAN_SCENE.instantiate() as Node3D
 		bean.name = "Bean%s" % String(StandardVisuals.IDENTITY_IDS[identity_index]).capitalize()
 		bean.position = Vector3(positions[identity_index], 0.0, 0.0)
-		bean.rotation.y = PI
 		add_child(bean)
 		_apply_identity_material(bean, StandardVisuals.IDENTITY_MATERIALS[identity_index])
 		_bean_instances.append(bean)

@@ -32,6 +32,11 @@ func test_player_visual_uses_standard_bean_material_and_marker() -> void:
 	var material := body.get_surface_override_material(0) as StandardMaterial3D
 	assert_not_null(material)
 	assert_eq(material.albedo_color, context.get_players()[0].slot_color)
+	var second_visual := players_root.get_child(1) as Node3D
+	var visual_forward := Vector3.FORWARD.rotated(Vector3.UP, second_visual.rotation.y)
+	var expected_forward := ActionNetcodeHitscan.yaw_to_forward(PI * 0.25)
+	assert_almost_eq(visual_forward.x, expected_forward.x, 0.0001)
+	assert_almost_eq(visual_forward.z, expected_forward.z, 0.0001)
 
 	assert_true(runner.unload_minigame())
 	await get_tree().process_frame
