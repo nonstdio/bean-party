@@ -15,9 +15,23 @@ const EXAMPLE_CONFIG_PATH := "res://config/webrtc_ice_servers.example.json"
 
 const DEFAULT_STUN_URL := "stun:stun.l.google.com:19302"
 
+const REMOTE_MAX_SERVERS := 8
+const REMOTE_MAX_URLS_PER_SERVER := 4
+const REMOTE_MAX_URL_LENGTH := 512
+const REMOTE_MIN_CREDENTIAL_REMAINING_SEC := 30
+const REMOTE_ALLOWED_SCHEMES := ["stun:", "stuns:", "turn:", "turns:"]
+
 
 static func parse_json_text(json_text: String) -> Array:
 	return _parse_json_server_list(json_text)
+
+
+static func parse_remote_ice_servers(raw_servers: Array, expires_at: int = 0) -> Array:
+	if expires_at > 0:
+		var remaining: int = expires_at - int(Time.get_unix_time_from_system())
+		if remaining < REMOTE_MIN_CREDENTIAL_REMAINING_SEC:
+			return []
+	return _normalize_remote_server_list(raw_servers)
 
 
 static func resolve_ice_servers(options: Dictionary = {}) -> Array:
@@ -119,6 +133,78 @@ static func _normalize_server_list(raw_servers: Array) -> Array:
 			if not server.is_empty():
 				normalized.append(server)
 	return normalized
+
+
+static func _normalize_remote_server_list(raw_servers: Array) -> Array:
+	if raw_servers.size() > REMOTE_MAX_SERVERS:
+		return []
+
+	var normalized: Array = []
+	for entry in raw_servers:
+		if entry is not Dictionary:
+			return []
+		var server := _normalize_remote_server_entry(entry)
+		if server.is_empty():
+			return []
+		normalized.append(server)
+	return normalized
+
+
+static func _normalize_remote_server_entry(entry: Dictionary) -> Dictionary:
+	var urls := _normalize_remote_urls(entry.get("urls", []))
+	if urls.is_empty():
+		return {}
+
+	var requires_credentials := false
+	for url in urls:
+		if String(url).begins_with("turn:") or String(url).begins_with("turns:"):
+			requires_credentials = true
+			break
+
+	var server := {"urls": urls}
+	if entry.has("username"):
+		server["username"] = String(entry.get("username", ""))
+	if entry.has("credential"):
+		server["credential"] = String(entry.get("credential", ""))
+
+	if requires_credentials:
+		if String(server.get("username", "")).strip_edges() == "":
+			return {}
+		if String(server.get("credential", "")).strip_edges() == "":
+			return {}
+
+	return server
+
+
+static func _normalize_remote_urls(raw_urls: Variant) -> Array:
+	var urls: Array = []
+	if raw_urls is String:
+		urls = _split_urls(String(raw_urls))
+	elif raw_urls is Array:
+		for url in raw_urls:
+			var trimmed := String(url).strip_edges()
+			if trimmed != "":
+				urls.append(trimmed)
+
+	if urls.is_empty() or urls.size() > REMOTE_MAX_URLS_PER_SERVER:
+		return []
+
+	var normalized: Array = []
+	for url in urls:
+		var validated := _validate_remote_url(url)
+		if validated == "":
+			return []
+		normalized.append(validated)
+	return normalized
+
+
+static func _validate_remote_url(url: String) -> String:
+	if url.length() > REMOTE_MAX_URL_LENGTH:
+		return ""
+	for scheme in REMOTE_ALLOWED_SCHEMES:
+		if url.begins_with(scheme):
+			return url
+	return ""
 
 
 static func _normalize_server_entry(entry: Dictionary) -> Dictionary:

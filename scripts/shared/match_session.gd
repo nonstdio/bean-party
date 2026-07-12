@@ -38,6 +38,10 @@ var _last_join_address: String = ""
 var _last_join_port: int = MatchConstants.DEFAULT_ENET_PORT
 var _last_join_room_code: String = ""
 var _webrtc_coordinator: WebRtcMultiplayerCoordinator = null
+var _ice_fetcher: WebRtcIceFetcher = null
+var _pending_webrtc_options: Dictionary = {}
+var _pending_webrtc_is_host: bool = false
+var _webrtc_connectivity_diagnostic: String = ""
 
 const CONNECT_TIMEOUT_MSEC := 5000
 const WEBRTC_CONNECT_TIMEOUT_MSEC := 20000
@@ -302,6 +306,7 @@ func _teardown_peer() -> void:
 	_unbind_multiplayer_signals()
 	_pending_echoes.clear()
 	_ping_ms_by_peer_id.clear()
+	_teardown_ice_fetcher()
 	_teardown_webrtc_coordinator()
 
 	if _peer != null:
@@ -309,6 +314,20 @@ func _teardown_peer() -> void:
 		_peer = null
 
 	multiplayer.multiplayer_peer = null
+
+
+func _teardown_ice_fetcher() -> void:
+	if _ice_fetcher == null:
+		return
+	if _ice_fetcher.completed.is_connected(_on_ice_fetch_completed):
+		_ice_fetcher.completed.disconnect(_on_ice_fetch_completed)
+	if _ice_fetcher.failed.is_connected(_on_ice_fetch_failed):
+		_ice_fetcher.failed.disconnect(_on_ice_fetch_failed)
+	_ice_fetcher.cancel()
+	_ice_fetcher = null
+	_pending_webrtc_options = {}
+	_pending_webrtc_is_host = false
+	_webrtc_connectivity_diagnostic = ""
 
 
 func _teardown_webrtc_coordinator() -> void:
@@ -333,22 +352,62 @@ func _connect_timeout_msec() -> int:
 	return CONNECT_TIMEOUT_MSEC
 
 
+func get_webrtc_connectivity_diagnostic() -> String:
+	return _webrtc_connectivity_diagnostic
+
+
 func _begin_webrtc_session(options: Dictionary, is_host: bool) -> Error:
 	if not WebRtcAvailability.is_extension_loaded():
 		return ERR_CANT_CREATE
 
 	var normalized := WebRtcTransportAdapter.normalize_options(options)
+	var online: Dictionary = normalized.get("online_config", {})
 	var signaling_url := String(normalized.get("signaling_url", ""))
 	var room_code := String(normalized.get("room_code", ""))
-	var ice_servers: Array = normalized.get("ice_servers", [])
+	var ice_config_url := String(normalized.get("ice_config_url", ""))
+	var explicit_ice: Variant = options.get("ice_servers")
 
 	if signaling_url == "":
-		return ERR_INVALID_PARAMETER
+		return ERR_UNCONFIGURED if not bool(online.get("development_mode", false)) else ERR_INVALID_PARAMETER
 	if not is_host and room_code.strip_edges() == "":
 		return ERR_INVALID_PARAMETER
 
 	_last_join_address = signaling_url
 	_last_join_room_code = room_code
+	_webrtc_connectivity_diagnostic = ""
+
+	_state = SessionState.CONNECTING
+	_connect_started_msec = Time.get_ticks_msec()
+	session_state_changed.emit()
+
+	if explicit_ice is Array and not explicit_ice.is_empty():
+		return _start_webrtc_coordinator(signaling_url, room_code, explicit_ice, is_host, online)
+
+	if ice_config_url != "":
+		_pending_webrtc_options = normalized
+		_pending_webrtc_is_host = is_host
+		_ice_fetcher = WebRtcIceFetcher.new()
+		_ice_fetcher.completed.connect(_on_ice_fetch_completed)
+		_ice_fetcher.failed.connect(_on_ice_fetch_failed)
+		_ice_fetcher.start(self, ice_config_url, float(online.get("request_timeout_sec", 10.0)))
+		return OK
+
+	var fallback_servers := WebRtcTransportAdapter.default_ice_servers(options)
+	return _start_webrtc_coordinator(signaling_url, room_code, fallback_servers, is_host, online)
+
+
+func _start_webrtc_coordinator(
+		signaling_url: String,
+		room_code: String,
+		ice_servers: Array,
+		is_host: bool,
+		online: Dictionary,
+) -> Error:
+	var protocol_version := int(online.get("signaling_protocol_version", 1))
+	var resolved_signaling_url := WebRtcTransportAdapter.signaling_url_with_protocol(
+		signaling_url,
+		protocol_version,
+	)
 
 	_webrtc_coordinator = WebRtcMultiplayerCoordinator.new()
 	add_child(_webrtc_coordinator)
@@ -356,16 +415,54 @@ func _begin_webrtc_session(options: Dictionary, is_host: bool) -> Error:
 	_webrtc_coordinator.connection_failed.connect(_on_webrtc_connection_failed)
 	_webrtc_coordinator.lobby_code_ready.connect(_on_webrtc_lobby_code_ready)
 
-	_state = SessionState.CONNECTING
-	_connect_started_msec = Time.get_ticks_msec()
-	session_state_changed.emit()
-
 	if is_host:
-		_webrtc_coordinator.start_host(signaling_url, room_code, ice_servers)
+		_webrtc_coordinator.start_host(resolved_signaling_url, room_code, ice_servers)
 	else:
-		_webrtc_coordinator.start_client(signaling_url, room_code, ice_servers)
+		_webrtc_coordinator.start_client(resolved_signaling_url, room_code, ice_servers)
 
 	return OK
+
+
+func _on_ice_fetch_completed(ice_servers: Array, diagnostic: String) -> void:
+	if _state != SessionState.CONNECTING:
+		return
+	var normalized := _pending_webrtc_options
+	var is_host := _pending_webrtc_is_host
+	_teardown_ice_fetcher()
+	_webrtc_connectivity_diagnostic = diagnostic
+	_start_webrtc_coordinator(
+		String(normalized.get("signaling_url", "")),
+		String(normalized.get("room_code", "")),
+		ice_servers,
+		is_host,
+		normalized.get("online_config", {}),
+	)
+
+
+func _on_ice_fetch_failed(message: String, diagnostic: String) -> void:
+	if _state != SessionState.CONNECTING:
+		return
+	var normalized := _pending_webrtc_options
+	var online: Dictionary = normalized.get("online_config", {})
+	var allow_fallback := bool(online.get("allow_stun_only_fallback", false)) and bool(
+		online.get("development_mode", false)
+	)
+	var is_host := _pending_webrtc_is_host
+	_teardown_ice_fetcher()
+
+	if allow_fallback:
+		_webrtc_connectivity_diagnostic = "relay_unavailable:%s" % diagnostic
+		_start_webrtc_coordinator(
+			String(normalized.get("signaling_url", "")),
+			String(normalized.get("room_code", "")),
+			WebRtcIceConfig.default_stun_only(),
+			is_host,
+			online,
+		)
+		return
+
+	_end_session(SessionEndReason.CONNECTION_FAILED, message)
+	connection_failed.emit()
 
 
 func _on_webrtc_peer_ready(peer: MultiplayerPeer, is_host: bool) -> void:

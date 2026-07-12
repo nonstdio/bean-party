@@ -1,13 +1,17 @@
 {
   "name": "bean-party-webrtc-signaling",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "WebSocket signaling server for Bean Party WebRTC sessions.",
+  "description": "Hosted WebRTC signaling and ICE configuration service for Bean Party.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test --test-timeout=30000 test/*.test.js"
   },
   "dependencies": {
     "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

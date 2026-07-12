@@ -33,18 +33,29 @@ func describe_capabilities() -> Dictionary:
 		"supports_room_code_join": true,
 		"supports_transfer_channels": WebRtcAvailability.is_extension_loaded(),
 		"max_transfer_channels": 3,
-		"notes": "Internet transport via WebRTC ICE. Requires webrtc-native and a signaling server.",
+		"notes": "Internet transport via WebRTC ICE. Requires webrtc-native and hosted or local signaling.",
 	}
 
 
 static func normalize_options(options: Dictionary) -> Dictionary:
+	var online := OnlineServiceConfig.resolve(options)
+	var signaling_url := String(options.get("signaling_url", online.get("signaling_url", "")))
+	var ice_config_url := String(options.get("ice_config_url", online.get("ice_config_url", "")))
 	return {
-		"signaling_url": String(
-			options.get("signaling_url", MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL)
-		),
+		"signaling_url": signaling_url,
+		"ice_config_url": ice_config_url,
 		"room_code": String(options.get("room_code", "")),
 		"ice_servers": default_ice_servers(options),
+		"online_config": online,
 	}
+
+
+static func signaling_url_with_protocol(signaling_url: String, protocol_version: int) -> String:
+	if signaling_url == "":
+		return ""
+	if signaling_url.contains("?"):
+		return "%s&protocol=%d" % [signaling_url, protocol_version]
+	return "%s?protocol=%d" % [signaling_url, protocol_version]
 
 
 static func default_ice_servers(options: Dictionary = {}) -> Array:
