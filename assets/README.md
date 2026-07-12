@@ -10,4 +10,6 @@ Editable standard sources live under `source/standard/`, behind `.gdignore`; com
 
 For every imported third-party asset, include clear provenance and license information. Do not add extracted, copied, or lightly edited assets from Bean Battles, Mario Party, Steam, or another game.
 
+Every committed source or runtime asset must be at most 5 MiB unless a maintainer approves a narrow path exception before merge. The repository-wide guard and exception file live under `tools/`; minigame authors should follow the [asset-size and audio-format guidance](../docs/guides/create-a-minigame.md#asset-size-and-audio-formats).
+
 Generated imports belong in `.godot/` and are intentionally ignored by Git.

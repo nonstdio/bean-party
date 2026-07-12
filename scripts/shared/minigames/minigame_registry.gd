@@ -59,7 +59,10 @@ func _discover_folder(base_path: String, folder: String) -> void:
 
 	if String(manifest.minigame_id) != folder:
 		errors.append("Manifest id must match folder '%s': %s" % [folder, manifest_path])
-	if manifest.root_scene != null and not manifest.root_scene.resource_path.begins_with(folder_path + "/"):
+	if (
+		manifest.root_scene != null
+		and not manifest.root_scene.resource_path.begins_with(folder_path + "/")
+	):
 		errors.append("Root scene must be owned by its minigame folder: %s" % manifest_path)
 	if not FileAccess.file_exists("%s/README.md" % folder_path):
 		errors.append("Minigame folder is missing README.md: %s" % folder_path)

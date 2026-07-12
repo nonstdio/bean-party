@@ -20,8 +20,12 @@ func test_snapshot_arena_submits_completed_result() -> void:
 	simulator.positions_by_player_id[winner_id] = HostSnapshotSimulator.GOAL_CENTER
 	simulator.winner_player_id = winner_id
 	assert_true(
-		runner.get_active_controller().submit_minigame_result(
-			simulator.build_result(context.get_player_ids()),
+		(
+			runner
+			. get_active_controller()
+			. submit_minigame_result(
+				simulator.build_result(context.get_player_ids()),
+			)
 		)
 	)
 
@@ -39,10 +43,13 @@ func _create_context(player_count: int, instance_id: String) -> MinigameContext:
 	var player_ids := PackedStringArray()
 	for slot in session.slots:
 		player_ids.append(slot.player_id)
-	return MinigameContext.create(
-		instance_id,
-		session.slots,
-		{},
-		12345,
-		MinigameInputSource.new(player_ids),
+	return (
+		MinigameContext
+		. create(
+			instance_id,
+			session.slots,
+			{},
+			12345,
+			MinigameInputSource.new(player_ids),
+		)
 	)

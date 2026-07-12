@@ -40,12 +40,15 @@ func test_identity_registry_is_complete_and_unique() -> void:
 
 func test_identity_colors_survive_player_slot_json_round_trip() -> void:
 	for identity_index in MatchConstants.MAX_PLAYERS:
-		var slot := PlayerSlot.create(
-			"player_%d" % identity_index,
-			MatchConstants.OFFLINE_PEER_ID,
-			identity_index,
-			"Player %d" % (identity_index + 1),
-			PlayerIdentityConstants.COLORS[identity_index],
+		var slot := (
+			PlayerSlot
+			. create(
+				"player_%d" % identity_index,
+				MatchConstants.OFFLINE_PEER_ID,
+				identity_index,
+				"Player %d" % (identity_index + 1),
+				PlayerIdentityConstants.COLORS[identity_index],
+			)
 		)
 		var decoded: Variant = JSON.parse_string(JSON.stringify(slot.to_dict()))
 		var restored := PlayerSlot.from_dict(decoded as Dictionary)
@@ -93,9 +96,7 @@ func test_badge_maps_known_and_unknown_colors() -> void:
 
 
 func test_static_bean_has_expected_components_and_triangle_budget() -> void:
-	var scene := load(
-		"res://assets/standard/characters/bean-static-prototype.glb"
-	) as PackedScene
+	var scene := load("res://assets/standard/characters/bean-static-prototype.glb") as PackedScene
 	assert_not_null(scene)
 	var bean := scene.instantiate()
 	add_child_autofree(bean)

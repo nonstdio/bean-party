@@ -4,11 +4,11 @@ Thank you for helping make Bean Party. We want the project to feel like a party 
 
 ## Before you begin
 
-Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame design guide](docs/design/minigames.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template and receive `Approved for implementation` before substantial integration-focused work. Small experiments may proceed in personal branches or draft pull requests, but they do not establish shared conventions. Follow [Create a minigame](docs/guides/create-a-minigame.md) and review the separate [minigame integration contract](docs/architecture/minigame-integration.md) before implementation.
+Friends contributing their first minigame can begin with [Friend minigame contributor onboarding](docs/guides/friend-minigame-onboarding.md), including fork/clone instructions and copyable agent prompts. Read the [game design target](docs/design/game.md), [creative direction](docs/design/creative-direction.md), and [minigame design guide](docs/design/minigames.md). For a substantial minigame or a shared-system change, open an issue using the **Minigame proposal** template and receive `Approved for implementation` before substantial integration-focused work. Small experiments may proceed in personal branches or draft pull requests, but they do not establish shared conventions. Follow [Create a minigame](docs/guides/create-a-minigame.md) and review the separate [minigame integration contract](docs/architecture/minigame-integration.md) before implementation.
 
 ## Godot setup
 
-The project standard is **Godot 4.7 stable** with **GDScript**. Follow [Godot setup for agents](docs/guides/godot-setup.md) for the exact Windows, macOS, or Linux installation and non-interactive validation commands. Run `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS or Linux before opening a pull request. See the [Godot project architecture](docs/architecture/godot-project.md) for the repository layout and `res://` paths.
+The project standard is **Godot 4.7 stable** with **GDScript**. Follow [Godot setup for agents](docs/guides/godot-setup.md) for the exact Windows, macOS, or Linux installation and non-interactive validation commands. Before opening a pull request, run `tools/quality.ps1 check` and `tools/godot.ps1 all` on Windows or `bash tools/quality.sh check` and `bash tools/godot.sh all` on macOS or Linux. See the [Godot project architecture](docs/architecture/godot-project.md) for the repository layout and `res://` paths.
 
 Do not commit Godot-generated folders such as `.godot/`, `.import/`, or `.mono/`, and do not add exported builds to the repository. Use a decision record before upgrading the engine, adding C#, changing renderer defaults, or adding a project-wide Godot plugin.
 
@@ -45,6 +45,8 @@ Bean Party uses MIT for software and project files and CC BY 4.0 for original do
 By submitting a contribution, you represent that you have the right to submit it and agree to license it under the applicable project license. You retain copyright in your contribution. Bean Party does not require copyright assignment or a contributor license agreement.
 
 Do not submit work under terms that conflict with the applicable project license. If a contribution includes third-party material, identify its creator, source, and license explicitly instead of relying on the repository-wide license statement.
+
+Every committed file must be at most 5 MiB unless a maintainer approves and records a narrow exception before merge. Use WAV for short, frequently repeated sound effects and Ogg Vorbis for music, speech, and long effects; see [Create a minigame](docs/guides/create-a-minigame.md#asset-size-and-audio-formats) for repository and audio guidance.
 
 ## Review and branch rules
 

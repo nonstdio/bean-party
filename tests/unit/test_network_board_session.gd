@@ -45,23 +45,32 @@ func test_local_board_mutation_is_overwritten_by_authority_sync() -> void:
 
 	var client_board := NetworkBoardSession.new()
 	add_child_autofree(client_board)
-	client_board._apply_remote_board_state(
-		authority.export_board_state(),
-		_export_match_slots(authority),
-		true,
+	(
+		client_board
+		. _apply_remote_board_state(
+			authority.export_board_state(),
+			_export_match_slots(authority),
+			true,
+		)
 	)
 
 	client_board.board_stub.turn_index = 99
 	assert_eq(client_board.board_stub.turn_index, 99)
 
-	authority.try_advance_turn(
-		lobby_authority.slots[0].owning_peer_id,
-		lobby_authority.slots[0].player_id,
+	(
+		authority
+		. try_advance_turn(
+			lobby_authority.slots[0].owning_peer_id,
+			lobby_authority.slots[0].player_id,
+		)
 	)
-	client_board._apply_remote_board_state(
-		authority.export_board_state(),
-		_export_match_slots(authority),
-		true,
+	(
+		client_board
+		. _apply_remote_board_state(
+			authority.export_board_state(),
+			_export_match_slots(authority),
+			true,
+		)
 	)
 
 	assert_eq(client_board.board_stub.turn_index, 1)
@@ -106,9 +115,12 @@ func test_board_hash_matches_after_sync_payload() -> void:
 	lobby_authority.try_add_slot(2, "Client")
 
 	authority.reset_for_slots(lobby_authority.slots)
-	authority.try_advance_turn(
-		lobby_authority.slots[0].owning_peer_id,
-		lobby_authority.slots[0].player_id,
+	(
+		authority
+		. try_advance_turn(
+			lobby_authority.slots[0].owning_peer_id,
+			lobby_authority.slots[0].player_id,
+		)
 	)
 
 	var host_board := NetworkBoardSession.new()
@@ -119,23 +131,32 @@ func test_board_hash_matches_after_sync_payload() -> void:
 
 	var client_board := NetworkBoardSession.new()
 	add_child_autofree(client_board)
-	client_board._apply_remote_board_state(
-		authority.export_board_state(),
-		_export_match_slots(authority),
-		true,
+	(
+		client_board
+		. _apply_remote_board_state(
+			authority.export_board_state(),
+			_export_match_slots(authority),
+			true,
+		)
 	)
 
 	assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
 
-	authority.try_advance_turn(
-		lobby_authority.slots[1].owning_peer_id,
-		lobby_authority.slots[1].player_id,
+	(
+		authority
+		. try_advance_turn(
+			lobby_authority.slots[1].owning_peer_id,
+			lobby_authority.slots[1].player_id,
+		)
 	)
 	host_board._sync_board_from_authority()
-	client_board._apply_remote_board_state(
-		authority.export_board_state(),
-		_export_match_slots(authority),
-		true,
+	(
+		client_board
+		. _apply_remote_board_state(
+			authority.export_board_state(),
+			_export_match_slots(authority),
+			true,
+		)
 	)
 
 	assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
@@ -167,17 +188,23 @@ func test_multiple_turns_keep_host_and_client_hashes_aligned() -> void:
 				break
 
 		assert_true(
-			authority.try_advance_turn(
-				active_slot.owning_peer_id,
-				active_id,
+			(
+				authority
+				. try_advance_turn(
+					active_slot.owning_peer_id,
+					active_id,
+				)
 			)
 		)
 		host_board._sync_board_from_authority()
-		client_board._apply_remote_board_state(
-		authority.export_board_state(),
-		_export_match_slots(authority),
-		true,
-	)
+		(
+			client_board
+			. _apply_remote_board_state(
+				authority.export_board_state(),
+				_export_match_slots(authority),
+				true,
+			)
+		)
 		assert_eq(host_board.get_board_state_hash(), client_board.get_board_state_hash())
 
 
@@ -248,13 +275,15 @@ func test_board_uses_frozen_roster_after_lobby_changes() -> void:
 	var active_id := board.get_active_player_id()
 	var frozen_count := board.get_board_slots().size()
 	var removed_id := (
-		client_slot.player_id
-		if active_id != client_slot.player_id
-		else host_slot.player_id
+		client_slot.player_id if active_id != client_slot.player_id else host_slot.player_id
 	)
-	lobby._authority.try_remove_slot(
-		2 if removed_id == client_slot.player_id else 1,
-		removed_id,
+	(
+		lobby
+		. _authority
+		. try_remove_slot(
+			2 if removed_id == client_slot.player_id else 1,
+			removed_id,
+		)
 	)
 	lobby._publish_authority_state()
 	await get_tree().process_frame
@@ -293,10 +322,13 @@ func test_synced_client_restores_frozen_roster_from_board_sync() -> void:
 
 	var client_board := NetworkBoardSession.new()
 	add_child_autofree(client_board)
-	client_board._apply_remote_board_state(
-		authority.export_board_state(),
-		_export_match_slots(authority),
-		true,
+	(
+		client_board
+		. _apply_remote_board_state(
+			authority.export_board_state(),
+			_export_match_slots(authority),
+			true,
+		)
 	)
 
 	assert_eq(client_board.get_board_slots().size(), 2)

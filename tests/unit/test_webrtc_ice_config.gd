@@ -24,9 +24,7 @@ func test_resolve_prefers_explicit_ice_servers() -> void:
 
 
 func test_parse_json_text_accepts_array_or_object() -> void:
-	var from_array := WebRtcIceConfig.parse_json_text(
-		'[{"urls":["stun:stun.example.test:19302"]}]'
-	)
+	var from_array := WebRtcIceConfig.parse_json_text('[{"urls":["stun:stun.example.test:19302"]}]')
 	assert_eq(from_array.size(), 1)
 
 	var from_object := WebRtcIceConfig.parse_json_text(
@@ -50,15 +48,21 @@ func test_transport_adapter_uses_ice_config_resolver() -> void:
 
 
 func test_turn_only_config_still_includes_default_stun() -> void:
-	var servers := WebRtcIceConfig.resolve_ice_servers({
-		"ice_servers": [
+	var servers := (
+		WebRtcIceConfig
+		. resolve_ice_servers(
 			{
-				"urls": ["turn:turn.example.test:3478"],
-				"username": "alice",
-				"credential": "secret",
-			},
-		],
-	})
+				"ice_servers":
+				[
+					{
+						"urls": ["turn:turn.example.test:3478"],
+						"username": "alice",
+						"credential": "secret",
+					},
+				],
+			}
+		)
+	)
 	assert_eq(servers.size(), 2)
 	assert_eq((servers[0].get("urls") as Array)[0], WebRtcIceConfig.DEFAULT_STUN_URL)
 	assert_eq((servers[1].get("urls") as Array)[0], "turn:turn.example.test:3478")

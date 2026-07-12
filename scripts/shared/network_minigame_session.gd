@@ -99,12 +99,15 @@ func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> b
 	_init_predicted_positions()
 	_publish_authoritative_snapshot(0, _simulator.export_positions())
 
-	var context := MinigameContext.create(
-		minigame_instance_id,
-		_slots,
-		{},
-		hash(minigame_instance_id),
-		_input_source,
+	var context := (
+		MinigameContext
+		. create(
+			minigame_instance_id,
+			_slots,
+			{},
+			hash(minigame_instance_id),
+			_input_source,
+		)
 	)
 	if not _runner.load_minigame(manifest, context):
 		stop_minigame()
@@ -217,25 +220,37 @@ func _poll_local_device_input() -> void:
 	for player_id in _local_player_ids:
 		var device_slot := _local_device_slot_for_player(player_id)
 		var move := MinigameLocalDeviceInput.read_move_vector(device_slot)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_LEFT,
-			1.0 if move.x < -0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_LEFT,
+				1.0 if move.x < -0.5 else 0.0,
+			)
 		)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_RIGHT,
-			1.0 if move.x > 0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_RIGHT,
+				1.0 if move.x > 0.5 else 0.0,
+			)
 		)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_UP,
-			1.0 if move.y < -0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_UP,
+				1.0 if move.y < -0.5 else 0.0,
+			)
 		)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_DOWN,
-			1.0 if move.y > 0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_DOWN,
+				1.0 if move.y > 0.5 else 0.0,
+			)
 		)
 
 
@@ -349,9 +364,12 @@ func _client_predict_local(delta: float) -> void:
 	for player_id in _local_player_ids:
 		var player_key := String(player_id)
 		var move := _input_source.get_move_vector(player_key)
-		var position: Vector2 = _predicted_positions.get(
-			player_key,
-			_display_positions.get(player_key, Vector2.ZERO),
+		var position: Vector2 = (
+			_predicted_positions
+			. get(
+				player_key,
+				_display_positions.get(player_key, Vector2.ZERO),
+			)
 		)
 		position = HostSnapshotSimulator.apply_move(position, move, delta)
 		_predicted_positions[player_key] = position
@@ -402,10 +420,18 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 				var predicted_after: Vector2 = _predicted_positions[player_key]
 				_prediction_tracker.record_correction(predicted_before, predicted_after)
 				var correction := predicted_before - predicted_after
-				if correction.length_squared() >= HostSnapshotPredictionTracker.CORRECTION_EPSILON * HostSnapshotPredictionTracker.CORRECTION_EPSILON:
+				if (
+					correction.length_squared()
+					>= (
+						HostSnapshotPredictionTracker.CORRECTION_EPSILON
+						* HostSnapshotPredictionTracker.CORRECTION_EPSILON
+					)
+				):
 					var offset: Vector2 = _correction_offsets.get(player_key, Vector2.ZERO)
 					_correction_offsets[player_key] = offset + correction
-				_display_positions[player_key] = predicted_after + _correction_offsets.get(player_key, Vector2.ZERO)
+				_display_positions[player_key] = (
+					predicted_after + _correction_offsets.get(player_key, Vector2.ZERO)
+				)
 			elif not _display_positions.has(player_key):
 				_display_positions[player_key] = target
 
@@ -468,7 +494,9 @@ func _rpc_submit_input(player_id: String, move_x: float, move_y: float, input_ti
 	)
 
 
-func _host_apply_remote_input(peer_id: int, player_id: String, move: Vector2, input_tick: int) -> void:
+func _host_apply_remote_input(
+	peer_id: int, player_id: String, move: Vector2, input_tick: int
+) -> void:
 	if not _peer_owns_player(peer_id, player_id):
 		return
 	if not _player_id_is_participating(player_id):
@@ -495,12 +523,15 @@ func _advance_local_input_tick(player_key: String) -> int:
 
 func _record_local_input(player_key: String, input_tick: int, move: Vector2, delta: float) -> void:
 	var history: Array = _local_input_history.get(player_key, [])
-	history.append(
-		{
-			"tick": input_tick,
-			"move": move,
-			"delta": delta,
-		}
+	(
+		history
+		. append(
+			{
+				"tick": input_tick,
+				"move": move,
+				"delta": delta,
+			}
+		)
 	)
 	_local_input_history[player_key] = history
 

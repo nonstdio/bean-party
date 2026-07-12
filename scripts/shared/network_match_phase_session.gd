@@ -286,9 +286,12 @@ func _host_begin_from_board() -> void:
 		return
 
 	_authority = NetworkMatchPhaseAuthority.new()
-	if not _authority.begin_from_board(
-		board_session.get_board_slots(),
-		board_session.board_stub,
+	if not (
+		_authority
+		. begin_from_board(
+			board_session.get_board_slots(),
+			board_session.board_stub,
+		)
 	):
 		_authority = null
 		return
@@ -330,9 +333,12 @@ func _host_return_to_board() -> void:
 
 	var board_session := _board_session()
 	if board_session != null:
-		board_session.host_replace_board_state(
-			_authority.board_stub,
-			_authority.match_slots,
+		(
+			board_session
+			. host_replace_board_state(
+				_authority.board_stub,
+				_authority.match_slots,
+			)
 		)
 
 	_sync_from_authority()

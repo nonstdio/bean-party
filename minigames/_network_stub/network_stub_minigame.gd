@@ -1,5 +1,6 @@
 extends Control
 
+
 func _ready() -> void:
 	var label := Label.new()
 	label.text = "Network stub minigame (placeholder)"

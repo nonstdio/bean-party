@@ -15,7 +15,7 @@ The current protection baseline for `main` is:
 
 Restore one required independent approval when at least two active contributors are available. This preserves a lightweight pull-request record now without treating an unavailable reviewer as a permanent merge blocker.
 
-The required `Godot tests` status check runs the headless import and GUT suite on Windows, macOS, and Linux. Keep it required for pull requests to `main`; add formatter, export, and additional test checks as those workflows become repeatable.
+The required `Godot tests` status check runs the headless import and GUT suite on Windows, macOS, and Linux. The `Repository quality` check enforces project-owned GDScript formatting and lint, tests the repository guard, and rejects non-exempt files over 5 MiB. Add `Repository quality` to the protected `main` branch's required checks after its first successful workflow run, then keep both checks required for pull requests; add export and additional checks as those workflows become repeatable.
 
 ## Review expectations
 

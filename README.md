@@ -87,7 +87,7 @@ To test on one PC, run two Godot instances against `ws://127.0.0.1:9080`. STUN h
 
 ## Contributing
 
-Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), then open a minigame proposal before beginning a substantial implementation.
+Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Friends contributing their first minigame can follow the [friend minigame contributor onboarding](docs/guides/friend-minigame-onboarding.md), then open a minigame proposal before beginning a substantial implementation.
 
 ## License
 
@@ -100,6 +100,7 @@ Bean Party uses the [MIT License](LICENSES/MIT.txt) for software and project fil
 - [Creative direction](docs/design/creative-direction.md) — how to evoke Bean Battles without copying it.
 - [Standard asset guide](docs/guides/standard-assets.md) — reuse, inspect, author, export, and document the canonical prototype kit.
 - [Minigame design guide](docs/design/minigames.md) — how proposals become clear, testable minigame briefs.
+- [Friend minigame contributor onboarding](docs/guides/friend-minigame-onboarding.md) — fork, propose, prompt an agent, use the harness, and prepare review.
 - [Create a minigame](docs/guides/create-a-minigame.md) — scaffold, implement, run, test, and prepare a local minigame for review.
 - [Runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) — exercise the implemented local and ENet architecture proofs and understand their limits.
 - [WebRTC setup](docs/guides/webrtc-setup.md) — webrtc-native install, signaling server, and internet transport spikes.

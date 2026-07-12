@@ -6,6 +6,11 @@ Desktop.ini
 # Editor settings
 .idea/
 .vscode/
+.venv/
+
+# Python development tools
+__pycache__/
+*.py[cod]
 
 # Logs and temporary files
 *.log

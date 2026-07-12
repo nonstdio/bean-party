@@ -9,12 +9,12 @@ func get_transport_id() -> String:
 	return ""
 
 
-func create_server_peer(options: Dictionary) -> MultiplayerPeer:
+func create_server_peer(_options: Dictionary) -> MultiplayerPeer:
 	push_error("TransportAdapter.create_server_peer() must be overridden.")
 	return null
 
 
-func create_client_peer(options: Dictionary) -> MultiplayerPeer:
+func create_client_peer(_options: Dictionary) -> MultiplayerPeer:
 	push_error("TransportAdapter.create_client_peer() must be overridden.")
 	return null
 

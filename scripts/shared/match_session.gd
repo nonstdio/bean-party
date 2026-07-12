@@ -25,8 +25,11 @@ signal echo_completed(from_peer_id: int, message: String)
 signal ping_updated(peer_id: int, ping_ms: int)
 
 var _peer: MultiplayerPeer = null
-var _transport_adapter: TransportAdapter = TransportAdapterRegistry.create(
-	TransportAdapterRegistry.default_transport_id(),
+var _transport_adapter: TransportAdapter = (
+	TransportAdapterRegistry
+	. create(
+		TransportAdapterRegistry.default_transport_id(),
+	)
 )
 var _injected_transport_adapter: TransportAdapter = null
 var _state: SessionState = SessionState.IDLE
@@ -85,10 +88,7 @@ func is_peer_route_ready(peer_id: int) -> bool:
 		return false
 	if multiplayer.multiplayer_peer == null:
 		return false
-	if (
-		multiplayer.multiplayer_peer.get_connection_status()
-		!= MultiplayerPeer.CONNECTION_CONNECTED
-	):
+	if multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return false
 	return peer_id in multiplayer.get_peers()
 
@@ -127,8 +127,8 @@ func host(port: int = MatchConstants.DEFAULT_ENET_PORT) -> Error:
 
 
 func join(
-		address: String,
-		port: int = MatchConstants.DEFAULT_ENET_PORT,
+	address: String,
+	port: int = MatchConstants.DEFAULT_ENET_PORT,
 ) -> Error:
 	return join_with_transport(
 		TransportAdapterRegistry.default_transport_id(),
@@ -171,12 +171,10 @@ func join_with_transport(transport_id: String, options: Dictionary = {}) -> Erro
 
 
 func disconnect_session() -> void:
-	if (
-		is_server()
-		and is_session_established()
-		and not get_remote_peer_ids().is_empty()
-	):
-		_rpc_session_ended.rpc(SessionEndReason.HOST_LEFT, _default_end_message(SessionEndReason.HOST_LEFT))
+	if is_server() and is_session_established() and not get_remote_peer_ids().is_empty():
+		_rpc_session_ended.rpc(
+			SessionEndReason.HOST_LEFT, _default_end_message(SessionEndReason.HOST_LEFT)
+		)
 	_end_session(SessionEndReason.LOCAL_LEFT, _default_end_message(SessionEndReason.LOCAL_LEFT))
 
 
@@ -200,9 +198,7 @@ func get_session_peer_ids() -> Array[int]:
 func get_remote_peer_ids() -> Array[int]:
 	var peer_ids := get_session_peer_ids()
 	var own_id := multiplayer.get_unique_id()
-	return peer_ids.filter(func(peer_id: int) -> bool:
-		return peer_id != own_id
-	)
+	return peer_ids.filter(func(peer_id: int) -> bool: return peer_id != own_id)
 
 
 func get_ping_ms(peer_id: int) -> int:
@@ -248,7 +244,10 @@ func _process(delta: float) -> void:
 			_on_connection_failed()
 			return
 
-		if _peer != null and _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		if (
+			_peer != null
+			and _peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED
+		):
 			_on_connection_failed()
 			return
 
@@ -455,16 +454,21 @@ func _resolve_transport_adapter(transport_id: String) -> TransportAdapter:
 	if _injected_transport_adapter != null:
 		if _injected_transport_adapter.get_transport_id() != transport_id:
 			push_warning(
-				"Injected transport adapter id '%s' does not match requested '%s'."
-				% [_injected_transport_adapter.get_transport_id(), transport_id]
+				(
+					"Injected transport adapter id '%s' does not match requested '%s'."
+					% [_injected_transport_adapter.get_transport_id(), transport_id]
+				)
 			)
 		return _injected_transport_adapter
 	return TransportAdapterRegistry.create(transport_id)
 
 
 func _reset_transport_adapter() -> void:
-	_transport_adapter = TransportAdapterRegistry.create(
-		TransportAdapterRegistry.default_transport_id(),
+	_transport_adapter = (
+		TransportAdapterRegistry
+		. create(
+			TransportAdapterRegistry.default_transport_id(),
+		)
 	)
 
 

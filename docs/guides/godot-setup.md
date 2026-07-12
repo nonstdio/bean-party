@@ -77,6 +77,24 @@ Use `tools/godot.ps1 <task>` on Windows and `bash tools/godot.sh <task>` on macO
 
 Godot will create `.godot/` when it imports the project. That directory is ignored and must not be committed. If a fresh import is necessary, delete only the repository's `.godot/` directory; do not remove unrelated user files or use a broad cleanup command.
 
+## GDScript quality and repository guards
+
+The formatting, lint, and file-size checks require Python and the pinned development dependency in `requirements-dev.txt`. Create a repository-local virtual environment once:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements-dev.txt
+.\tools\quality.ps1 check
+```
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+bash tools/quality.sh check
+```
+
+The runners automatically use the repository-local virtual environment when present. `check` verifies `gdformat`, runs `gdlint`, enforces the 5 MiB per-file repository limit, and runs the guard's unit tests. Use `format` instead of `check` to rewrite project-owned GDScript before running the same remaining checks. Vendored code under `addons/` is excluded.
+
 After setup, use the [runtime debug harness guide](runtime-debug-harnesses.md) to exercise the main local/network architecture proofs or the separate local minigame harness.
 
 ## Adding tests

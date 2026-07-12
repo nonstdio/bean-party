@@ -83,9 +83,12 @@ func _create_identity_examples() -> void:
 		bean.name = "Bean%s" % String(StandardVisuals.IDENTITY_IDS[identity_index]).capitalize()
 		bean.position = Vector3(positions[identity_index], 0.0, 0.0)
 		add_child(bean)
-		StandardVisuals.apply_identity_material(
-			bean,
-			StandardVisuals.IDENTITY_MATERIALS[identity_index],
+		(
+			StandardVisuals
+			. apply_identity_material(
+				bean,
+				StandardVisuals.IDENTITY_MATERIALS[identity_index],
+			)
 		)
 		_bean_instances.append(bean)
 

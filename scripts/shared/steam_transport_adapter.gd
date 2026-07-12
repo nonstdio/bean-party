@@ -10,8 +10,10 @@ func get_transport_id() -> String:
 
 func create_server_peer(_options: Dictionary) -> MultiplayerPeer:
 	push_warning(
-		"Steam transport is not implemented. See %s for milestone 11 investigation results."
-		% INVESTIGATION_DOC
+		(
+			"Steam transport is not implemented. See %s for milestone 11 investigation results."
+			% INVESTIGATION_DOC
+		)
 	)
 	return null
 
@@ -27,5 +29,6 @@ func describe_capabilities() -> Dictionary:
 		"supports_room_code_join": false,
 		"supports_transfer_channels": false,
 		"max_transfer_channels": 1,
-		"notes": "Stub adapter only. Candidate integration is GodotSteam MultiplayerPeer after legal review.",
+		"notes":
+		"Stub adapter only. Candidate integration is GodotSteam MultiplayerPeer after legal review.",
 	}

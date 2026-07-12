@@ -14,9 +14,9 @@ func reset(minigame_instance_id: String = "") -> void:
 
 
 func register_player_avatar(
-		player_id: String,
-		spawn_tick: int,
-		position: Vector3,
+	player_id: String,
+	spawn_tick: int,
+	position: Vector3,
 ) -> String:
 	return spawn_entity(
 		"player_avatar",
@@ -31,11 +31,11 @@ func register_player_avatar(
 
 
 func spawn_entity(
-		entity_type: String,
-		owning_player_id: String,
-		spawn_tick: int,
-		gameplay_state: Dictionary = {},
-		spawn_message_id: String = "",
+	entity_type: String,
+	owning_player_id: String,
+	spawn_tick: int,
+	gameplay_state: Dictionary = {},
+	spawn_message_id: String = "",
 ) -> String:
 	if spawn_message_id != "" and _spawn_message_ids.has(spawn_message_id):
 		return String(_spawn_message_ids[spawn_message_id])
@@ -62,10 +62,10 @@ func spawn_entity(
 
 
 func despawn_entity(
-		network_entity_id: String,
-		despawn_tick: int,
-		reason: String = "",
-		despawn_message_id: String = "",
+	network_entity_id: String,
+	despawn_tick: int,
+	reason: String = "",
+	despawn_message_id: String = "",
 ) -> bool:
 	if despawn_message_id != "":
 		if _despawn_message_ids.has(despawn_message_id):
@@ -99,10 +99,10 @@ func get_player_avatar_id(player_id: String) -> String:
 
 
 func update_entity_transform(
-		network_entity_id: String,
-		position: Vector3,
-		orientation: Vector3 = Vector3.ZERO,
-		linear_velocity: Vector3 = Vector3.ZERO,
+	network_entity_id: String,
+	position: Vector3,
+	orientation: Vector3 = Vector3.ZERO,
+	linear_velocity: Vector3 = Vector3.ZERO,
 ) -> void:
 	if not _entities.has(network_entity_id):
 		return

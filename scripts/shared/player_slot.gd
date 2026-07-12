@@ -20,11 +20,11 @@ var slot_color: Color = Color.WHITE
 
 
 static func create(
-		player_id: String,
-		owning_peer_id: int,
-		local_player_index: int,
-		display_name: String,
-		slot_color: Color = Color.WHITE,
+	player_id: String,
+	owning_peer_id: int,
+	local_player_index: int,
+	display_name: String,
+	slot_color: Color = Color.WHITE,
 ) -> PlayerSlot:
 	var slot := PlayerSlot.new()
 	slot.player_id = player_id
@@ -72,9 +72,9 @@ static func from_dict(data: Dictionary) -> PlayerSlot:
 	slot.team_id = data.get("team_id")
 	slot.character_id = data.get("character_id")
 	slot.ready = bool(data.get("ready", false))
-	slot.connection_status = int(
-		data.get("connection_status", ConnectionStatus.CONNECTED)
-	) as ConnectionStatus
+	slot.connection_status = (
+		int(data.get("connection_status", ConnectionStatus.CONNECTED)) as ConnectionStatus
+	)
 	slot.slot_color = _color_from_array(data.get("slot_color", []))
 	return slot
 

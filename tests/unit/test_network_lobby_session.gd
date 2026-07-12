@@ -11,9 +11,7 @@ func test_pending_client_rpc_queues_until_transport_ready() -> void:
 	match_session._transport_adapter = EnetTransportAdapter.new()
 
 	var called := false
-	lobby._issue_client_rpc(func() -> void:
-		called = true
-	)
+	lobby._issue_client_rpc(func() -> void: called = true)
 
 	assert_false(called)
 	assert_eq(lobby._pending_client_rpcs.size(), 1)

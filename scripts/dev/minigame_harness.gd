@@ -52,12 +52,15 @@ func _create_context() -> MinigameContext:
 	for slot in _session.slots:
 		player_ids.append(slot.player_id)
 	_input_source = MinigameInputSource.new(player_ids)
-	return MinigameContext.create(
-		"harness-%d" % _instance_serial,
-		_session.slots,
-		{},
-		rng_seed,
-		_input_source,
+	return (
+		MinigameContext
+		. create(
+			"harness-%d" % _instance_serial,
+			_session.slots,
+			{},
+			rng_seed,
+			_input_source,
+		)
 	)
 
 

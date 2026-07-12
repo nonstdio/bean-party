@@ -1,0 +1,2 @@
+# Exact repository-relative paths approved by a maintainer to exceed 5 MiB.
+# Keep this empty unless an exception is reviewed before merge.

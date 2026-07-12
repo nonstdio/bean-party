@@ -92,19 +92,19 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	name_field.text = slot.display_name
 	name_field.placeholder_text = "Display name"
 	name_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_field.focus_exited.connect(func() -> void:
-		session.set_display_name(slot.player_id, name_field.text)
+	name_field.focus_exited.connect(
+		func() -> void: session.set_display_name(slot.player_id, name_field.text)
 	)
-	name_field.text_submitted.connect(func(new_text: String) -> void:
-		session.set_display_name(slot.player_id, new_text)
+	name_field.text_submitted.connect(
+		func(new_text: String) -> void: session.set_display_name(slot.player_id, new_text)
 	)
 	row.add_child(name_field)
 
 	var ready_toggle := CheckBox.new()
 	ready_toggle.text = "Ready"
 	ready_toggle.button_pressed = slot.ready
-	ready_toggle.toggled.connect(func(is_pressed: bool) -> void:
-		session.set_ready(slot.player_id, is_pressed)
+	ready_toggle.toggled.connect(
+		func(is_pressed: bool) -> void: session.set_ready(slot.player_id, is_pressed)
 	)
 	row.add_child(ready_toggle)
 
@@ -114,11 +114,12 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	var device_slot := session.get_local_device_slot(slot.player_id)
 	if device_slot >= 0:
 		controller_picker.select(mini(device_slot, _CONTROLLER_LABELS.size() - 1))
-	controller_picker.item_selected.connect(func(index: int) -> void:
-		if _syncing_controller_pickers:
-			return
-		if session.set_local_device_slot(slot.player_id, index):
-			_sync_all_controller_pickers()
+	controller_picker.item_selected.connect(
+		func(index: int) -> void:
+			if _syncing_controller_pickers:
+				return
+			if session.set_local_device_slot(slot.player_id, index):
+				_sync_all_controller_pickers()
 	)
 	row.set_meta(&"controller_picker", controller_picker)
 	row.add_child(controller_picker)
@@ -139,9 +140,7 @@ func _update_remove_button(row: HBoxContainer) -> void:
 		var remove_button := Button.new()
 		remove_button.name = &"RemoveButton"
 		remove_button.text = "Remove"
-		remove_button.pressed.connect(func() -> void:
-			session.remove_slot(player_id)
-		)
+		remove_button.pressed.connect(func() -> void: session.remove_slot(player_id))
 		row.add_child(remove_button)
 
 

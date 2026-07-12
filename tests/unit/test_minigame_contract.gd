@@ -41,25 +41,29 @@ func test_context_copies_shell_owned_players() -> void:
 
 
 func test_completed_result_supports_ties_and_scores() -> void:
-	var result := MinigameResult.completed(
-		[
-			PackedStringArray(["player_1", "player_2"]),
-			PackedStringArray(["player_3"]),
-		],
-		{"player_1": 5, "player_2": 5, "player_3": 2},
+	var result := (
+		MinigameResult
+		. completed(
+			[
+				PackedStringArray(["player_1", "player_2"]),
+				PackedStringArray(["player_3"]),
+			],
+			{"player_1": 5, "player_2": 5, "player_3": 2},
+		)
 	)
 
-	assert_true(
-		result.validate(PackedStringArray(["player_1", "player_2", "player_3"])).is_empty()
-	)
+	assert_true(result.validate(PackedStringArray(["player_1", "player_2", "player_3"])).is_empty())
 
 
 func test_result_rejects_missing_duplicate_and_unknown_players() -> void:
-	var result := MinigameResult.completed(
-		[
-			PackedStringArray(["player_1"]),
-			PackedStringArray(["player_1", "intruder"]),
-		]
+	var result := (
+		MinigameResult
+		. completed(
+			[
+				PackedStringArray(["player_1"]),
+				PackedStringArray(["player_1", "intruder"]),
+			]
+		)
 	)
 
 	var errors := result.validate(PackedStringArray(["player_1", "player_2"]))
@@ -153,10 +157,13 @@ func _create_context(session: OfflineMatchSession, instance_id: String) -> Minig
 	var player_ids := PackedStringArray()
 	for slot in session.slots:
 		player_ids.append(slot.player_id)
-	return MinigameContext.create(
-		instance_id,
-		session.slots,
-		{},
-		424242,
-		MinigameInputSource.new(player_ids),
+	return (
+		MinigameContext
+		. create(
+			instance_id,
+			session.slots,
+			{},
+			424242,
+			MinigameInputSource.new(player_ids),
+		)
 	)

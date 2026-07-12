@@ -20,9 +20,9 @@ func test_player_visual_uses_standard_bean_material_and_marker() -> void:
 
 	var controller := runner.get_active_controller()
 	controller._process(0.016)
-	var players_root := controller.get_node(
-		"ViewportContainer/SubViewport/Arena3D/PlayersRoot"
-	) as Node3D
+	var players_root := (
+		controller.get_node("ViewportContainer/SubViewport/Arena3D/PlayersRoot") as Node3D
+	)
 	assert_eq(players_root.get_child_count(), 2)
 	var first_visual := players_root.get_child(0) as Node3D
 	assert_not_null(first_visual.find_child("Body", true, false))
@@ -58,10 +58,13 @@ func _create_context() -> MinigameContext:
 	var player_ids := PackedStringArray()
 	for slot in session.slots:
 		player_ids.append(slot.player_id)
-	return MinigameContext.create(
-		"action-spike-presentation",
-		session.slots,
-		{},
-		12345,
-		MinigameInputSource.new(player_ids),
+	return (
+		MinigameContext
+		. create(
+			"action-spike-presentation",
+			session.slots,
+			{},
+			12345,
+			MinigameInputSource.new(player_ids),
+		)
 	)

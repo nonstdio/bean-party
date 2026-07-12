@@ -89,17 +89,21 @@ func _update_status() -> void:
 		return
 
 	if _network_session != null and _network_session.is_active:
-		var status := "Eliminate rivals. Snap %d hash %d" % [
-			_network_session.get_snapshot_serial(),
-			_network_session.get_snapshot_hash(),
-		]
+		var status := (
+			"Eliminate rivals. Snap %d hash %d"
+			% [
+				_network_session.get_snapshot_serial(),
+				_network_session.get_snapshot_hash(),
+			]
+		)
 		if _network_session.is_using_prediction():
 			var stats: Dictionary = _network_session.get_prediction_stats()
 			status += " · pred corrections %d" % int(stats.get("correction_count", 0))
 		_status.text = status
 	else:
 		_status.text = (
-			"Move: W/S forward/back · A/D turn · Jump: accept/space/u/kp enter · Fire: click/F/O/kp 0"
+			"Move: W/S forward/back · A/D turn · Jump: accept/space/u/kp enter "
+			+ "· Fire: click/F/O/kp 0"
 		)
 
 
@@ -125,7 +129,9 @@ func _sync_player_meshes() -> void:
 		var health := _resolve_player_health(player_id)
 		var material := _player_body_materials.get(player_id) as StandardMaterial3D
 		if material != null:
-			material.albedo_color = player.slot_color if health > 0 else player.slot_color.darkened(0.55)
+			material.albedo_color = (
+				player.slot_color if health > 0 else player.slot_color.darkened(0.55)
+			)
 			material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 			material.albedo_color.a = 1.0
 		_set_player_alive_visual(mesh_root, health > 0)
@@ -146,11 +152,16 @@ func _update_camera(delta: float) -> void:
 		_camera_yaw = target_yaw
 		_smoothed_focus_xz = Vector3(focus_position.x, 0.0, focus_position.z)
 	else:
-		_camera_yaw = lerp_angle(_camera_yaw, target_yaw, clampf(delta * CAMERA_YAW_SMOOTH, 0.0, 1.0))
+		_camera_yaw = lerp_angle(
+			_camera_yaw, target_yaw, clampf(delta * CAMERA_YAW_SMOOTH, 0.0, 1.0)
+		)
 	var focus_blend := clampf(delta * CAMERA_FOCUS_SMOOTH, 0.0, 1.0)
-	_smoothed_focus_xz = _smoothed_focus_xz.lerp(
-		Vector3(focus_position.x, 0.0, focus_position.z),
-		focus_blend,
+	_smoothed_focus_xz = (
+		_smoothed_focus_xz
+		. lerp(
+			Vector3(focus_position.x, 0.0, focus_position.z),
+			focus_blend,
+		)
 	)
 	var airborne := _is_focus_player_airborne(focus_player_id, focus_position)
 	var target_pivot_y := focus_position.y + 0.25 if airborne else CAMERA_PIVOT_HEIGHT
@@ -233,20 +244,28 @@ func _resolve_camera_yaw(player_id: String) -> float:
 
 
 func _resolve_camera_focus_position(player_id: String, context: MinigameContext) -> Vector3:
-	if _network_session != null and _network_session.is_active and _network_session.is_using_prediction():
+	if (
+		_network_session != null
+		and _network_session.is_active
+		and _network_session.is_using_prediction()
+	):
 		if _network_session.is_local_player(player_id):
 			return _network_session.get_local_camera_position(player_id)
 	return _resolve_player_position(player_id, context)
 
 
 func _is_focus_player_airborne(player_id: String, focus_position: Vector3) -> bool:
-	if _network_session != null and _network_session.is_active and _network_session.is_using_prediction():
+	if (
+		_network_session != null
+		and _network_session.is_active
+		and _network_session.is_using_prediction()
+	):
 		if _network_session.is_local_player(player_id):
 			return _network_session.is_local_player_airborne(player_id)
 	return HostActionSimulator.is_airborne(focus_position, 0.0)
 
 
-func _resolve_player_position(player_id: String, context: MinigameContext) -> Vector3:
+func _resolve_player_position(player_id: String, _context: MinigameContext) -> Vector3:
 	if _network_session != null and _network_session.is_active:
 		return _network_session.get_display_position(player_id)
 	return _offline_simulator.get_position(player_id)
@@ -279,14 +298,28 @@ func _tick_offline_simulator(delta: float) -> void:
 		var move := input_source.get_move_vector(player_id)
 		inputs[player_id] = {
 			"move": move,
-			"jump": input_source.get_action_strength(
-				player_id,
-				MinigameInputSource.ACTION_PRIMARY,
-			) > 0.5,
-			"fire": input_source.get_action_strength(
-				player_id,
-				MinigameInputSource.ACTION_SECONDARY,
-			) > 0.5,
+			"jump":
+			(
+				(
+					input_source
+					. get_action_strength(
+						player_id,
+						MinigameInputSource.ACTION_PRIMARY,
+					)
+				)
+				> 0.5
+			),
+			"fire":
+			(
+				(
+					input_source
+					. get_action_strength(
+						player_id,
+						MinigameInputSource.ACTION_SECONDARY,
+					)
+				)
+				> 0.5
+			),
 			"aim_yaw": _offline_simulator.get_yaw(player_id),
 		}
 
@@ -302,7 +335,9 @@ func _create_player_mesh(player_id: String, color: Color) -> Node3D:
 	bean.position.y = -CHARACTER_FOOT_OFFSET
 	root.add_child(bean)
 
-	var material := StandardVisuals.identity_material_for_color(color).duplicate() as StandardMaterial3D
+	var material := (
+		StandardVisuals.identity_material_for_color(color).duplicate() as StandardMaterial3D
+	)
 	StandardVisuals.apply_identity_material(bean, material)
 	_player_body_materials[player_id] = material
 

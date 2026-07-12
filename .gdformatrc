@@ -1,0 +1,7 @@
+# Keep formatter output compatible with the repository's tab-indented GDScript convention.
+excluded_directories: !!set
+  .git: null
+  addons: null
+line_length: 100
+safety_checks: null
+use_spaces: null

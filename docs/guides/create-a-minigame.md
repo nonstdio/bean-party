@@ -22,6 +22,8 @@ bash tools/new-minigame.sh bean-bumper "Bean Bumper"
 
 The command creates the required folder, manifest, README, scene, controller, and local test from `minigames/_template/`. Slugs must use lowercase kebab-case and become stable runtime identifiers.
 
+Review [`reference-tap`](../../minigames/reference-tap/README.md) after scaffolding. It is deliberately small, but it demonstrates the accepted controller, context, normalized-input, result, test, and teardown boundaries.
+
 ## 3. Implement through the contract
 
 The scene root **must** extend `MinigameController`. Implement `_on_minigame_setup()`, `_on_minigame_start()`, and `_on_minigame_abort()` as needed. Read setup data through `get_minigame_context()` and submit exactly one `MinigameResult` through `submit_minigame_result()`.
@@ -39,7 +41,29 @@ Minigames:
 
 The shell owns pause, retry, early exit, scene teardown, and translation from outcomes to board rewards.
 
+### Asset size and audio formats
+
+Every committed file must be at most **5 MiB** (`5 × 1024 × 1024` bytes). This is a repository-health limit, not a final runtime or platform asset budget. It applies to editable sources and runtime exports, including images, models, audio, and video. If an original or appropriately licensed asset cannot reasonably fit, discuss a narrow exception with a maintainer before adding it; approved paths are recorded in `tools/file-size-allowlist.txt`. Do not introduce Git LFS without a reviewed repository-wide change.
+
+Choose audio formats by playback use instead of converting every sound to one format:
+
+- use WAV for short, frequently repeated sound effects where low playback CPU cost matters;
+- use Ogg Vorbis for music, speech, ambience, and long effects where compression materially reduces repository and build size;
+- trim silence, use mono when spatial stereo is unnecessary, and avoid sample rates above 48 kHz unless the source has a documented editing or runtime need.
+
+See [Godot 4.7 audio import guidance](https://docs.godotengine.org/en/4.7/tutorials/assets_pipeline/importing_audio_samples.html) for the format and import-setting tradeoffs. Keep original or appropriately licensed provenance in the minigame README regardless of format.
+
 ## 4. Run and test
+
+Run repository quality checks and their guard tests:
+
+```powershell
+.\tools\quality.ps1 check
+```
+
+```bash
+bash tools/quality.sh check
+```
 
 Run the complete repository checks:
 

@@ -25,12 +25,15 @@ func try_add_slot(peer_id: int, display_name: String = "") -> PlayerSlot:
 	var color_index := _first_unused_color_index()
 	color_index = color_index % MatchConstants.SLOT_COLORS.size()
 
-	var slot := PlayerSlot.create(
-		_allocate_player_id(),
-		peer_id,
-		local_index,
-		resolved_name,
-		MatchConstants.SLOT_COLORS[color_index],
+	var slot := (
+		PlayerSlot
+		. create(
+			_allocate_player_id(),
+			peer_id,
+			local_index,
+			resolved_name,
+			MatchConstants.SLOT_COLORS[color_index],
+		)
 	)
 	slots.append(slot)
 	slots_structure_changed.emit()
@@ -66,9 +69,9 @@ func try_set_ready(requesting_peer_id: int, player_id: String, is_ready: bool) -
 
 
 func try_set_display_name(
-		requesting_peer_id: int,
-		player_id: String,
-		display_name: String,
+	requesting_peer_id: int,
+	player_id: String,
+	display_name: String,
 ) -> bool:
 	var slot := get_slot(player_id)
 	if slot == null or slot.owning_peer_id != requesting_peer_id:
@@ -109,8 +112,9 @@ func get_slots_for_peer(peer_id: int) -> Array[PlayerSlot]:
 	for slot in slots:
 		if slot.owning_peer_id == peer_id:
 			peer_slots.append(slot)
-	peer_slots.sort_custom(func(a: PlayerSlot, b: PlayerSlot) -> bool:
-		return a.local_player_index < b.local_player_index
+	peer_slots.sort_custom(
+		func(a: PlayerSlot, b: PlayerSlot) -> bool:
+			return a.local_player_index < b.local_player_index
 	)
 	return peer_slots
 

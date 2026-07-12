@@ -48,9 +48,9 @@ func reset_for_player_ids(player_ids: PackedStringArray) -> void:
 
 
 func tick(
-		inputs_by_player_id: Dictionary,
-		delta: float,
-		eligible_participants: Dictionary = {},
+	inputs_by_player_id: Dictionary,
+	delta: float,
+	eligible_participants: Dictionary = {},
 ) -> void:
 	if not winner_player_id.is_empty():
 		return
@@ -168,12 +168,12 @@ static func hash_positions(payload: Dictionary) -> int:
 
 
 static func apply_tank_move(
-		position: Vector3,
-		yaw: float,
-		move: Vector2,
-		vertical_velocity: float,
-		delta: float,
-		jump_pressed: bool,
+	position: Vector3,
+	yaw: float,
+	move: Vector2,
+	vertical_velocity: float,
+	delta: float,
+	jump_pressed: bool,
 ) -> Dictionary:
 	if absf(move.x) > 0.04:
 		yaw += move.x * TURN_SPEED * delta
@@ -207,12 +207,12 @@ static func apply_tank_move(
 
 ## Kept for callers that still use the old name during migration.
 static func apply_move(
-		position: Vector3,
-		move: Vector2,
-		vertical_velocity: float,
-		delta: float,
-		jump_pressed: bool,
-		yaw: float = 0.0,
+	position: Vector3,
+	move: Vector2,
+	vertical_velocity: float,
+	delta: float,
+	jump_pressed: bool,
+	yaw: float = 0.0,
 ) -> Dictionary:
 	return apply_tank_move(position, yaw, move, vertical_velocity, delta, jump_pressed)
 
@@ -241,13 +241,16 @@ func _try_hitscan(shooter_id: String, eligible_participants: Dictionary) -> void
 			continue
 		if not eligible_participants.is_empty() and not eligible_participants.has(target_id):
 			continue
-		if not ActionNetcodeHitscan.ray_hits_capsule(
-			origin,
-			direction,
-			get_position(target_id),
-			PLAYER_RADIUS,
-			PLAYER_HEIGHT,
-			HITSCAN_RANGE,
+		if not (
+			ActionNetcodeHitscan
+			. ray_hits_capsule(
+				origin,
+				direction,
+				get_position(target_id),
+				PLAYER_RADIUS,
+				PLAYER_HEIGHT,
+				HITSCAN_RANGE,
+			)
 		):
 			continue
 		var distance := origin.distance_to(get_position(target_id))
@@ -262,7 +265,9 @@ func _try_hitscan(shooter_id: String, eligible_participants: Dictionary) -> void
 	var remaining := int(health_by_player_id.get(best_target, 0)) - HITSCAN_DAMAGE
 	health_by_player_id[best_target] = maxi(0, remaining)
 	if remaining <= 0:
-		eliminations_by_player_id[shooter_id] = int(eliminations_by_player_id.get(shooter_id, 0)) + 1
+		eliminations_by_player_id[shooter_id] = (
+			int(eliminations_by_player_id.get(shooter_id, 0)) + 1
+		)
 
 
 func _check_last_player_standing(eligible_participants: Dictionary = {}) -> void:
@@ -318,12 +323,15 @@ func _result_from_entries(entries: Array) -> MinigameResult:
 func _score_entries(participant_ids: PackedStringArray) -> Array:
 	var entries: Array = []
 	for player_id in participant_ids:
-		entries.append(
-			{
-				"player_id": player_id,
-				"eliminations": int(eliminations_by_player_id.get(player_id, 0)),
-				"health": get_health(player_id),
-			}
+		(
+			entries
+			. append(
+				{
+					"player_id": player_id,
+					"eliminations": int(eliminations_by_player_id.get(player_id, 0)),
+					"health": get_health(player_id),
+				}
+			)
 		)
 	entries.sort_custom(
 		func(left: Dictionary, right: Dictionary) -> bool:

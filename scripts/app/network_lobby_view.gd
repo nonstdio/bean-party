@@ -78,14 +78,18 @@ func _update_chrome() -> void:
 
 func _build_status_text() -> String:
 	if _lobby_session.slots.is_empty():
-		return "Network lobby active. One player per screen; up to %d peers." % (
-			MatchConstants.MAX_PLAYERS
+		return (
+			"Network lobby active. One player per screen; up to %d peers."
+			% (MatchConstants.MAX_PLAYERS)
 		)
 
-	var ready_line := "%d of %d ready" % [
-		_lobby_session.ready_count(),
-		_lobby_session.slots.size(),
-	]
+	var ready_line := (
+		"%d of %d ready"
+		% [
+			_lobby_session.ready_count(),
+			_lobby_session.slots.size(),
+		]
+	)
 	var role := "host" if _match_session.is_server() else "client"
 	return "%s · %s · one player per screen" % [ready_line, role]
 
@@ -113,11 +117,11 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 		name_field.text = slot.display_name
 		name_field.placeholder_text = "Display name"
 		name_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_field.focus_exited.connect(func() -> void:
-			_commit_display_name(slot.player_id, name_field.text)
+		name_field.focus_exited.connect(
+			func() -> void: _commit_display_name(slot.player_id, name_field.text)
 		)
-		name_field.text_submitted.connect(func(new_text: String) -> void:
-			_commit_display_name(slot.player_id, new_text)
+		name_field.text_submitted.connect(
+			func(new_text: String) -> void: _commit_display_name(slot.player_id, new_text)
 		)
 		name_control = name_field
 	else:
@@ -133,11 +137,12 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	ready_toggle.text = "Ready"
 	ready_toggle.button_pressed = slot.ready
 	ready_toggle.disabled = not _lobby_session.owns_slot(slot.player_id)
-	ready_toggle.toggled.connect(func(is_pressed: bool) -> void:
-		if not _lobby_session.owns_slot(slot.player_id):
-			return
-		_commit_display_name_from_row(row, slot.player_id)
-		_lobby_session.request_set_ready(slot.player_id, is_pressed)
+	ready_toggle.toggled.connect(
+		func(is_pressed: bool) -> void:
+			if not _lobby_session.owns_slot(slot.player_id):
+				return
+			_commit_display_name_from_row(row, slot.player_id)
+			_lobby_session.request_set_ready(slot.player_id, is_pressed)
 	)
 	row.add_child(ready_toggle)
 

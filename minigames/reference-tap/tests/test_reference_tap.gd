@@ -17,10 +17,14 @@ func test_reference_tap_runs_through_contract_and_unloads() -> void:
 	assert_eq(legend.get_child_count(), 2)
 	assert_true(legend.get_child(0).get_child(0) is PlayerIdentityBadge)
 	assert_true(runner.start_active_minigame())
-	context.get_input_source().set_action_strength(
-		"player_2",
-		MinigameInputSource.ACTION_PRIMARY,
-		1.0,
+	(
+		context
+		. get_input_source()
+		. set_action_strength(
+			"player_2",
+			MinigameInputSource.ACTION_PRIMARY,
+			1.0,
+		)
 	)
 	runner.get_active_controller()._process(0.016)
 
@@ -41,7 +45,9 @@ func test_reference_tap_ties_everyone_on_timeout_at_all_supported_counts() -> vo
 		add_child_autofree(runner)
 		var context := _create_context(player_count, "timeout-%d" % player_count)
 		var results: Array[MinigameResult] = []
-		runner.minigame_finished.connect(func(result: MinigameResult) -> void: results.append(result))
+		runner.minigame_finished.connect(
+			func(result: MinigameResult) -> void: results.append(result)
+		)
 
 		assert_true(runner.load_minigame(manifest, context))
 		assert_true(runner.start_active_minigame())

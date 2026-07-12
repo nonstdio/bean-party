@@ -18,20 +18,14 @@ func test_slot_order_survives_round_trip() -> void:
 	var snapshot := MatchSnapshot.new()
 	snapshot.match_epoch = 1
 	snapshot.phase = MatchPhase.Phase.BOARD
-	snapshot.slots.append(
-		PlayerSlot.create("player_z", MatchConstants.OFFLINE_PEER_ID, 0, "Zed")
-	)
-	snapshot.slots.append(
-		PlayerSlot.create("player_a", MatchConstants.OFFLINE_PEER_ID, 1, "Amy")
-	)
+	snapshot.slots.append(PlayerSlot.create("player_z", MatchConstants.OFFLINE_PEER_ID, 0, "Zed"))
+	snapshot.slots.append(PlayerSlot.create("player_a", MatchConstants.OFFLINE_PEER_ID, 1, "Amy"))
 	snapshot.pending_board_rewards = [
 		{"beans": 2, "player_id": "player_z", "reason": "first"},
 		{"beans": 1, "player_id": "player_a", "reason": "second"},
 	]
 
-	var decoded := MatchSnapshotSerializer.deserialize(
-		MatchSnapshotSerializer.serialize(snapshot)
-	)
+	var decoded := MatchSnapshotSerializer.deserialize(MatchSnapshotSerializer.serialize(snapshot))
 
 	assert_eq(decoded.slots[0].player_id, "player_z")
 	assert_eq(decoded.slots[1].player_id, "player_a")

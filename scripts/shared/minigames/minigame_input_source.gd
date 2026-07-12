@@ -87,10 +87,14 @@ func is_action_just_pressed(player_id: String, action: StringName) -> bool:
 
 func get_move_vector(player_id: String) -> Vector2:
 	var vector := Vector2(
-		get_action_strength(player_id, ACTION_MOVE_RIGHT)
-			- get_action_strength(player_id, ACTION_MOVE_LEFT),
-		get_action_strength(player_id, ACTION_MOVE_DOWN)
-			- get_action_strength(player_id, ACTION_MOVE_UP),
+		(
+			get_action_strength(player_id, ACTION_MOVE_RIGHT)
+			- get_action_strength(player_id, ACTION_MOVE_LEFT)
+		),
+		(
+			get_action_strength(player_id, ACTION_MOVE_DOWN)
+			- get_action_strength(player_id, ACTION_MOVE_UP)
+		),
 	)
 	return vector.limit_length(1.0)
 

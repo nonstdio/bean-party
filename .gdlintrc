@@ -1,0 +1,9 @@
+# Architecture metrics and declaration ordering remain review concerns; mechanical rules are enforced.
+disable:
+  - class-definitions-order
+  - max-public-methods
+  - max-returns
+excluded_directories: !!set
+  .git: null
+  addons: null
+max-line-length: 100

@@ -58,14 +58,11 @@ func _refresh() -> void:
 
 	_start_flow_button.visible = _match_session.is_server()
 	_start_flow_button.disabled = (
-		_phase_session.current_phase != MatchPhase.Phase.BOARD
-		or _phase_session.is_flow_active()
+		_phase_session.current_phase != MatchPhase.Phase.BOARD or _phase_session.is_flow_active()
 	)
 
 	_end_round_button.visible = _match_session.is_server()
-	_end_round_button.disabled = (
-		_phase_session.current_phase != MatchPhase.Phase.ACTIVE_MINIGAME
-	)
+	_end_round_button.disabled = (_phase_session.current_phase != MatchPhase.Phase.ACTIVE_MINIGAME)
 
 	_return_board_button.visible = _match_session.is_server()
 	_return_board_button.disabled = (
@@ -114,10 +111,13 @@ func _build_briefing_ready_button(slot: PlayerSlot) -> Button:
 
 func _refresh_briefing_ready_button(button: Button, slot: PlayerSlot) -> void:
 	var is_ready := _phase_session.get_briefing_ready(slot.player_id)
-	button.text = "%s briefing ready: %s" % [
-		slot.display_name,
-		"yes" if is_ready else "no",
-	]
+	button.text = (
+		"%s briefing ready: %s"
+		% [
+			slot.display_name,
+			"yes" if is_ready else "no",
+		]
+	)
 
 
 func _clear_briefing_ready_buttons() -> void:
@@ -136,8 +136,11 @@ func _build_phase_detail() -> String:
 	if _phase_session.current_phase == MatchPhase.Phase.COUNTDOWN:
 		parts.append("countdown %d" % _phase_session.countdown_seconds_remaining)
 	if _phase_session.is_late_joiner():
-		parts.append(
-			"match already in progress; wait for the host to finish this round (late join unsupported)"
+		(
+			parts
+			. append(
+				"match already in progress; wait for the host to finish this round (late join unsupported)"
+			)
 		)
 	if parts.is_empty():
 		return "Host can start the networked minigame flow from the board phase."
