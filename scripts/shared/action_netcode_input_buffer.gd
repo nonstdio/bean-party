@@ -18,12 +18,15 @@ func record_input(player_id: String, input_tick: int, payload: Dictionary) -> vo
 			insert_index = index
 			break
 
-	history.insert(
-		insert_index,
-		{
-			"tick": input_tick,
-			"payload": payload.duplicate(true),
-		}
+	(
+		history
+		. insert(
+			insert_index,
+			{
+				"tick": input_tick,
+				"payload": payload.duplicate(true),
+			}
+		)
 	)
 	_history_by_player[player_id] = history
 	var latest: int = int(_latest_tick_by_player.get(player_id, 0))

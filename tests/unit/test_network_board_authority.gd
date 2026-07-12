@@ -44,7 +44,11 @@ func test_rejects_advance_for_wrong_player_id() -> void:
 	var slots := _make_slots()
 	board.reset_for_slots(slots)
 
-	var inactive_id := slots[1].player_id if slots[0].player_id == board.board_stub.active_player_id else slots[0].player_id
+	var inactive_id := (
+		slots[1].player_id
+		if slots[0].player_id == board.board_stub.active_player_id
+		else slots[0].player_id
+	)
 	assert_false(board.try_advance_turn(slots[1].owning_peer_id, inactive_id))
 	assert_eq(board.board_stub.turn_index, 0)
 

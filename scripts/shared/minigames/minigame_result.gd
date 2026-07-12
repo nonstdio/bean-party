@@ -15,9 +15,9 @@ var diagnostics: Dictionary = {}
 
 
 static func completed(
-		placement_groups: Array,
-		scores: Dictionary = {},
-		diagnostic_values: Dictionary = {},
+	placement_groups: Array,
+	scores: Dictionary = {},
+	diagnostic_values: Dictionary = {},
 ) -> MinigameResult:
 	var result := MinigameResult.new()
 	result.status = Status.COMPLETED
@@ -61,7 +61,9 @@ func validate(participant_ids: PackedStringArray) -> PackedStringArray:
 	for rank_index in placements.size():
 		var group: Variant = placements[rank_index]
 		if not (group is PackedStringArray) or group.is_empty():
-			errors.append("Placement rank %d must contain at least one player id." % (rank_index + 1))
+			errors.append(
+				"Placement rank %d must contain at least one player id." % (rank_index + 1)
+			)
 			continue
 		for player_id in group:
 			var resolved_id := String(player_id)

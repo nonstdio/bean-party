@@ -115,9 +115,7 @@ func test_set_display_name_does_not_emit_structure_changed() -> void:
 	var session := OfflineMatchSession.new()
 	var slot := session.add_local_slot("Original")
 	var structure_changes := [0]
-	session.slots_structure_changed.connect(func() -> void:
-		structure_changes[0] += 1
-	)
+	session.slots_structure_changed.connect(func() -> void: structure_changes[0] += 1)
 
 	session.set_display_name(slot.player_id, "Renamed")
 
@@ -130,12 +128,8 @@ func test_set_ready_emits_session_state_not_structure() -> void:
 	var slot := session.add_local_slot("Ready Bean")
 	var structure_changes := [0]
 	var state_changes := [0]
-	session.slots_structure_changed.connect(func() -> void:
-		structure_changes[0] += 1
-	)
-	session.session_state_changed.connect(func() -> void:
-		state_changes[0] += 1
-	)
+	session.slots_structure_changed.connect(func() -> void: structure_changes[0] += 1)
+	session.session_state_changed.connect(func() -> void: state_changes[0] += 1)
 
 	session.set_ready(slot.player_id, true)
 

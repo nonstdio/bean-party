@@ -103,9 +103,7 @@ func request_add_local_slot(display_name: String = "") -> void:
 	if is_authority():
 		_host_apply_add_slot(_local_peer_id(), display_name)
 	else:
-		_issue_client_rpc(func() -> void:
-			_rpc_request_add_slot.rpc_id(1, display_name)
-		)
+		_issue_client_rpc(func() -> void: _rpc_request_add_slot.rpc_id(1, display_name))
 
 
 func request_remove_local_slot(player_id: String) -> void:
@@ -115,9 +113,7 @@ func request_remove_local_slot(player_id: String) -> void:
 	if is_authority():
 		_host_apply_remove_slot(_local_peer_id(), player_id)
 	else:
-		_issue_client_rpc(func() -> void:
-			_rpc_request_remove_slot.rpc_id(1, player_id)
-		)
+		_issue_client_rpc(func() -> void: _rpc_request_remove_slot.rpc_id(1, player_id))
 
 
 func request_set_ready(player_id: String, is_ready: bool) -> void:
@@ -127,16 +123,14 @@ func request_set_ready(player_id: String, is_ready: bool) -> void:
 	if is_authority():
 		_host_apply_set_ready(_local_peer_id(), player_id, is_ready)
 	else:
-		_issue_client_rpc(func() -> void:
-			_rpc_request_set_ready.rpc_id(1, player_id, is_ready)
-		)
+		_issue_client_rpc(func() -> void: _rpc_request_set_ready.rpc_id(1, player_id, is_ready))
 
 
 func request_reclaim_slot(
-		player_id: String,
-		match_epoch: int,
-		recovery_session_id: String,
-		reconnect_token: String,
+	player_id: String,
+	match_epoch: int,
+	recovery_session_id: String,
+	reconnect_token: String,
 ) -> void:
 	if not is_networked():
 		return
@@ -150,14 +144,18 @@ func request_reclaim_slot(
 			reconnect_token,
 		)
 	else:
-		_issue_client_rpc(func() -> void:
-			_rpc_request_reclaim_slot.rpc_id(
-				1,
-				player_id,
-				match_epoch,
-				recovery_session_id,
-				reconnect_token,
-			)
+		_issue_client_rpc(
+			func() -> void:
+				(
+					_rpc_request_reclaim_slot
+					. rpc_id(
+						1,
+						player_id,
+						match_epoch,
+						recovery_session_id,
+						reconnect_token,
+					)
+				)
 		)
 
 
@@ -173,8 +171,8 @@ func request_set_display_name(player_id: String, display_name: String) -> void:
 	if is_authority():
 		_host_apply_set_display_name(_local_peer_id(), player_id, display_name)
 	else:
-		_issue_client_rpc(func() -> void:
-			_rpc_request_set_display_name.rpc_id(1, player_id, display_name)
+		_issue_client_rpc(
+			func() -> void: _rpc_request_set_display_name.rpc_id(1, player_id, display_name)
 		)
 
 
@@ -342,16 +340,19 @@ func _capture_reconnect_state() -> void:
 		var reconnect_token := String(credential.get("reconnect_token", ""))
 		if recovery_session_id == "" or reconnect_token == "":
 			return
-		NetworkReconnectState.remember(
-			player_id,
-			phase_session.get_match_epoch(),
-			recovery_session_id,
-			reconnect_token,
-			match_session.get_transport_id(),
-			_reconnect_host_address(match_session),
-			match_session.get_last_join_port(),
-			_reconnect_signaling_url(match_session),
-			match_session.get_last_join_room_code(),
+		(
+			NetworkReconnectState
+			. remember(
+				player_id,
+				phase_session.get_match_epoch(),
+				recovery_session_id,
+				reconnect_token,
+				match_session.get_transport_id(),
+				_reconnect_host_address(match_session),
+				match_session.get_last_join_port(),
+				_reconnect_signaling_url(match_session),
+				match_session.get_last_join_room_code(),
+			)
 		)
 		return
 
@@ -406,12 +407,15 @@ func _ensure_local_slot() -> void:
 			and board_session.is_board_active()
 			and board_session.get_recovery_session_id() != ""
 			and match_session != null
-			and NetworkReconnectState.matches_target(
-				board_session.get_recovery_session_id(),
-				match_session.get_transport_id(),
-				match_session.get_last_join_address(),
-				match_session.get_last_join_port(),
-				match_session.get_last_join_room_code(),
+			and (
+				NetworkReconnectState
+				. matches_target(
+					board_session.get_recovery_session_id(),
+					match_session.get_transport_id(),
+					match_session.get_last_join_address(),
+					match_session.get_last_join_port(),
+					match_session.get_last_join_room_code(),
+				)
 			)
 		):
 			request_reclaim_slot(
@@ -481,11 +485,11 @@ func _host_apply_set_display_name(peer_id: int, player_id: String, display_name:
 
 
 func _host_apply_reclaim(
-		peer_id: int,
-		player_id: String,
-		match_epoch: int,
-		recovery_session_id: String,
-		reconnect_token: String,
+	peer_id: int,
+	player_id: String,
+	match_epoch: int,
+	recovery_session_id: String,
+	reconnect_token: String,
 ) -> void:
 	var board_session := _board_session()
 	var phase_session := _phase_session()
@@ -556,18 +560,21 @@ func _reject_reclaim(peer_id: int) -> void:
 
 
 func _push_reconnect_credential_to_peer(
-		peer_id: int,
-		player_id: String,
-		recovery_session_id: String,
-		reconnect_token: String,
+	peer_id: int,
+	player_id: String,
+	recovery_session_id: String,
+	reconnect_token: String,
 ) -> void:
 	if not _peer_is_connected(peer_id):
 		return
-	_rpc_assign_reconnect_credential.rpc_id(
-		peer_id,
-		player_id,
-		recovery_session_id,
-		reconnect_token,
+	(
+		_rpc_assign_reconnect_credential
+		. rpc_id(
+			peer_id,
+			player_id,
+			recovery_session_id,
+			reconnect_token,
+		)
 	)
 
 
@@ -698,10 +705,10 @@ func _rpc_request_set_display_name(player_id: String, display_name: String) -> v
 
 @rpc("any_peer", "call_remote", "reliable", 0)
 func _rpc_request_reclaim_slot(
-		player_id: String,
-		match_epoch: int,
-		recovery_session_id: String,
-		reconnect_token: String,
+	player_id: String,
+	match_epoch: int,
+	recovery_session_id: String,
+	reconnect_token: String,
 ) -> void:
 	if not is_authority():
 		return
@@ -716,9 +723,9 @@ func _rpc_request_reclaim_slot(
 
 @rpc("authority", "call_remote", "reliable", 0)
 func _rpc_assign_reconnect_credential(
-		player_id: String,
-		recovery_session_id: String,
-		reconnect_token: String,
+	player_id: String,
+	recovery_session_id: String,
+	reconnect_token: String,
 ) -> void:
 	_local_reconnect_credentials[player_id] = {
 		"recovery_session_id": recovery_session_id,

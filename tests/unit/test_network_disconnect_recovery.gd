@@ -60,9 +60,10 @@ func test_session_ended_on_server_disconnect() -> void:
 
 	session._state = MatchSession.SessionState.CONNECTED
 	var result := {"ended": false, "message": ""}
-	session.session_ended.connect(func(_reason: MatchSession.SessionEndReason, message: String) -> void:
-		result.ended = true
-		result.message = message
+	session.session_ended.connect(
+		func(_reason: MatchSession.SessionEndReason, message: String) -> void:
+			result.ended = true
+			result.message = message
 	)
 
 	session._on_server_disconnected()
@@ -127,70 +128,91 @@ func test_capture_reconnect_state_uses_local_device_slots_without_peer() -> void
 
 
 func test_reconnect_state_requires_matching_host_target() -> void:
-	NetworkReconnectState.remember(
-		"player_2",
-		1,
-		"recovery_a",
-		"token",
-		TransportAdapterRegistry.TRANSPORT_ENET,
-		"127.0.0.1",
-		7777,
+	(
+		NetworkReconnectState
+		. remember(
+			"player_2",
+			1,
+			"recovery_a",
+			"token",
+			TransportAdapterRegistry.TRANSPORT_ENET,
+			"127.0.0.1",
+			7777,
+		)
 	)
 	assert_true(
-		NetworkReconnectState.matches_target(
-			"recovery_a",
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			"127.0.0.1",
-			7777,
+		(
+			NetworkReconnectState
+			. matches_target(
+				"recovery_a",
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				"127.0.0.1",
+				7777,
+			)
 		)
 	)
 	assert_false(
-		NetworkReconnectState.matches_target(
-			"recovery_b",
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			"127.0.0.1",
-			7777,
+		(
+			NetworkReconnectState
+			. matches_target(
+				"recovery_b",
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				"127.0.0.1",
+				7777,
+			)
 		)
 	)
 	assert_false(
-		NetworkReconnectState.matches_target(
-			"recovery_a",
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			"10.0.0.1",
-			7777,
+		(
+			NetworkReconnectState
+			. matches_target(
+				"recovery_a",
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				"10.0.0.1",
+				7777,
+			)
 		)
 	)
 	NetworkReconnectState.clear()
 
 
 func test_reconnect_state_requires_matching_webrtc_target() -> void:
-	NetworkReconnectState.remember(
-		"player_2",
-		1,
-		"recovery_a",
-		"token",
-		TransportAdapterRegistry.TRANSPORT_WEBRTC,
-		"",
-		-1,
-		"ws://127.0.0.1:9080",
-		"room123",
-	)
-	assert_true(
-		NetworkReconnectState.matches_target(
+	(
+		NetworkReconnectState
+		. remember(
+			"player_2",
+			1,
 			"recovery_a",
+			"token",
 			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			"ws://127.0.0.1:9080",
+			"",
 			-1,
+			"ws://127.0.0.1:9080",
 			"room123",
 		)
 	)
+	assert_true(
+		(
+			NetworkReconnectState
+			. matches_target(
+				"recovery_a",
+				TransportAdapterRegistry.TRANSPORT_WEBRTC,
+				"ws://127.0.0.1:9080",
+				-1,
+				"room123",
+			)
+		)
+	)
 	assert_false(
-		NetworkReconnectState.matches_target(
-			"recovery_a",
-			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			"ws://127.0.0.1:9080",
-			-1,
-			"other",
+		(
+			NetworkReconnectState
+			. matches_target(
+				"recovery_a",
+				TransportAdapterRegistry.TRANSPORT_WEBRTC,
+				"ws://127.0.0.1:9080",
+				-1,
+				"other",
+			)
 		)
 	)
 	NetworkReconnectState.clear()
@@ -243,9 +265,7 @@ func test_atomic_reclaim_rolls_back_board_when_phase_fails() -> void:
 
 	assert_true(board_authority.reclaim_slot_for_peer("player_2", 9))
 	assert_true(lobby.reclaim_slot_for_peer("player_2", 9))
-	assert_false(
-		PlayerSlotConnectivity.reclaim_slot(phase_authority.match_slots, "player_2", 9)
-	)
+	assert_false(PlayerSlotConnectivity.reclaim_slot(phase_authority.match_slots, "player_2", 9))
 
 	PlayerSlotConnectivity.copy_slots_into(lobby.slots, lobby_backup)
 	PlayerSlotConnectivity.copy_slots_into(board_authority.match_slots, board_backup)

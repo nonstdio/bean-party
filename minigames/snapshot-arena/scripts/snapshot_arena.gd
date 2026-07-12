@@ -50,17 +50,23 @@ func _update_status() -> void:
 		return
 
 	if _network_session != null and _network_session.is_active:
-		var status := "Reach the center goal. Snap %d hash %d" % [
-			_network_session.get_snapshot_serial(),
-			_network_session.get_snapshot_hash(),
-		]
+		var status := (
+			"Reach the center goal. Snap %d hash %d"
+			% [
+				_network_session.get_snapshot_serial(),
+				_network_session.get_snapshot_hash(),
+			]
+		)
 		if _network_session.is_using_prediction():
 			var stats: Dictionary = _network_session.get_prediction_stats()
-			status += " · pred corrections %d (last %.1fpx max %.1fpx)" % [
-				int(stats.get("correction_count", 0)),
-				float(stats.get("last_correction_distance", 0.0)),
-				float(stats.get("max_correction_distance", 0.0)),
-			]
+			status += (
+				" · pred corrections %d (last %.1fpx max %.1fpx)"
+				% [
+					int(stats.get("correction_count", 0)),
+					float(stats.get("last_correction_distance", 0.0)),
+					float(stats.get("max_correction_distance", 0.0)),
+				]
+			)
 		_status.text = status
 	else:
 		_status.text = "Reach the center goal with move inputs."
@@ -73,10 +79,13 @@ func _on_arena_draw() -> void:
 
 	var arena_size := HostSnapshotSimulator.ARENA_SIZE
 	_arena.draw_rect(Rect2(Vector2.ZERO, arena_size), Color(0.08, 0.12, 0.16))
-	_arena.draw_circle(
-		HostSnapshotSimulator.GOAL_CENTER,
-		HostSnapshotSimulator.GOAL_RADIUS,
-		Color(0.28, 0.78, 0.48, 0.35),
+	(
+		_arena
+		. draw_circle(
+			HostSnapshotSimulator.GOAL_CENTER,
+			HostSnapshotSimulator.GOAL_RADIUS,
+			Color(0.28, 0.78, 0.48, 0.35),
+		)
 	)
 
 	for player in context.get_players():
@@ -85,11 +94,14 @@ func _on_arena_draw() -> void:
 			position - PLAYER_MARKER_SIZE * 0.5,
 			PLAYER_MARKER_SIZE,
 		)
-		_arena.draw_texture_rect(
-			StandardVisuals.identity_icon_for_color(player.slot_color),
-			marker_rect,
-			false,
-			player.slot_color,
+		(
+			_arena
+			. draw_texture_rect(
+				StandardVisuals.identity_icon_for_color(player.slot_color),
+				marker_rect,
+				false,
+				player.slot_color,
+			)
 		)
 
 
@@ -97,10 +109,16 @@ func _resolve_player_position(player_id: String, context: MinigameContext) -> Ve
 	if _network_session != null and _network_session.is_active:
 		return _network_session.get_display_position(player_id)
 
-	return _offline_positions.get(
-		player_id,
-		_spawn_position_for_player(player_id, context),
-	) as Vector2
+	return (
+		(
+			_offline_positions
+			. get(
+				player_id,
+				_spawn_position_for_player(player_id, context),
+			)
+		)
+		as Vector2
+	)
 
 
 func _tick_offline_positions(delta: float) -> void:
@@ -111,10 +129,16 @@ func _tick_offline_positions(delta: float) -> void:
 	var input_source := context.get_input_source()
 	for player_id in context.get_player_ids():
 		var move: Vector2 = input_source.get_move_vector(player_id)
-		var current: Vector2 = _offline_positions.get(
-			player_id,
-			_spawn_position_for_player(player_id, context),
-		) as Vector2
+		var current: Vector2 = (
+			(
+				_offline_positions
+				. get(
+					player_id,
+					_spawn_position_for_player(player_id, context),
+				)
+			)
+			as Vector2
+		)
 		current += move * HostSnapshotSimulator.MOVE_SPEED * delta
 		current.x = clampf(
 			current.x,
@@ -128,7 +152,10 @@ func _tick_offline_positions(delta: float) -> void:
 		)
 		_offline_positions[player_id] = current
 
-		if current.distance_to(HostSnapshotSimulator.GOAL_CENTER) <= HostSnapshotSimulator.GOAL_RADIUS:
+		if (
+			current.distance_to(HostSnapshotSimulator.GOAL_CENTER)
+			<= HostSnapshotSimulator.GOAL_RADIUS
+		):
 			_finish_with_winner(player_id)
 			return
 
@@ -148,9 +175,12 @@ func _finish_with_winner(winner_id: String) -> void:
 	var simulator := HostSnapshotSimulator.new()
 	simulator.reset_for_player_ids(context.get_player_ids())
 	for player_id in context.get_player_ids():
-		simulator.positions_by_player_id[player_id] = _offline_positions.get(
-			player_id,
-			simulator.get_position(player_id),
+		simulator.positions_by_player_id[player_id] = (
+			_offline_positions
+			. get(
+				player_id,
+				simulator.get_position(player_id),
+			)
 		)
 	simulator.winner_player_id = winner_id
 	submit_minigame_result(simulator.build_result(context.get_player_ids()))

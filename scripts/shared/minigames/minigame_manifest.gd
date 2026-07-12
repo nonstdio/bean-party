@@ -38,8 +38,10 @@ func validate() -> PackedStringArray:
 
 	if contract_version != CONTRACT_VERSION:
 		errors.append(
-			"Unsupported local minigame contract version %d; expected %d."
-			% [contract_version, CONTRACT_VERSION]
+			(
+				"Unsupported local minigame contract version %d; expected %d."
+				% [contract_version, CONTRACT_VERSION]
+			)
 		)
 
 	if not is_valid_slug(String(minigame_id)):
@@ -51,7 +53,12 @@ func validate() -> PackedStringArray:
 	if minimum_players < 2 or minimum_players > MatchConstants.MAX_PLAYERS:
 		errors.append("Minimum players must be between 2 and %d." % MatchConstants.MAX_PLAYERS)
 	if maximum_players < minimum_players or maximum_players > MatchConstants.MAX_PLAYERS:
-		errors.append("Maximum players must be at least the minimum and no more than %d." % MatchConstants.MAX_PLAYERS)
+		errors.append(
+			(
+				"Maximum players must be at least the minimum and no more than %d."
+				% MatchConstants.MAX_PLAYERS
+			)
+		)
 	if format not in SUPPORTED_FORMATS:
 		errors.append("Unsupported minigame format: %s" % format)
 	if capability not in SUPPORTED_CAPABILITIES:
@@ -59,7 +66,9 @@ func validate() -> PackedStringArray:
 	elif capability == CAPABILITY_LOCAL_ONLY and not String(sync_profile).is_empty():
 		errors.append("A local-only minigame must not declare a networking sync profile.")
 	elif capability == CAPABILITY_NETWORK_CAPABLE and sync_profile not in SUPPORTED_SYNC_PROFILES:
-		errors.append("A network-capable minigame must declare a supported provisional sync profile.")
+		errors.append(
+			"A network-capable minigame must declare a supported provisional sync profile."
+		)
 
 	return errors
 

@@ -63,9 +63,7 @@ static func from_dict(data: Dictionary) -> BoardStub:
 	var stub := BoardStub.new()
 	stub.turn_index = int(data.get("turn_index", 0))
 	stub.active_player_id = String(data.get("active_player_id", ""))
-	stub.beans_by_player_id = _intify_player_dictionary(
-		data.get("beans_by_player_id", {})
-	)
+	stub.beans_by_player_id = _intify_player_dictionary(data.get("beans_by_player_id", {}))
 	stub.board_position_by_player_id = _intify_player_dictionary(
 		data.get("board_position_by_player_id", {})
 	)

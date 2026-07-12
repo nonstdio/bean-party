@@ -158,11 +158,14 @@ func _issue_recovery_credentials_for_peer(peer_id: int) -> void:
 		if slot.owning_peer_id != peer_id:
 			continue
 		var token := _issue_token_for_player(slot.player_id)
-		lobby_session._push_reconnect_credential_to_peer(
-			peer_id,
-			slot.player_id,
-			_recovery_session_id,
-			token,
+		(
+			lobby_session
+			. _push_reconnect_credential_to_peer(
+				peer_id,
+				slot.player_id,
+				_recovery_session_id,
+				token,
+			)
 		)
 
 
@@ -229,9 +232,12 @@ func get_recovery_session_id() -> String:
 func verify_reconnect_token(player_id: String, reconnect_token: String) -> bool:
 	if not is_authority():
 		return false
-	return NetworkMatchRecovery.tokens_match(
-		String(_reconnect_token_hashes_by_player_id.get(player_id, "")),
-		reconnect_token,
+	return (
+		NetworkMatchRecovery
+		. tokens_match(
+			String(_reconnect_token_hashes_by_player_id.get(player_id, "")),
+			reconnect_token,
+		)
 	)
 
 
@@ -303,11 +309,14 @@ func _issue_recovery_credentials_to_peers() -> void:
 		if slot.owning_peer_id == MatchConstants.OFFLINE_PEER_ID:
 			continue
 		var token := _issue_token_for_player(slot.player_id)
-		lobby_session._push_reconnect_credential_to_peer(
-			slot.owning_peer_id,
-			slot.player_id,
-			_recovery_session_id,
-			token,
+		(
+			lobby_session
+			. _push_reconnect_credential_to_peer(
+				slot.owning_peer_id,
+				slot.player_id,
+				_recovery_session_id,
+				token,
+			)
 		)
 
 
@@ -334,10 +343,10 @@ func _sync_board_from_authority() -> void:
 
 
 func _apply_remote_board_state(
-		payload: Dictionary,
-		slots_payload: Array,
-		is_active: bool,
-		recovery_session_id: String = "",
+	payload: Dictionary,
+	slots_payload: Array,
+	is_active: bool,
+	recovery_session_id: String = "",
 ) -> void:
 	_authority = null
 	_is_active = is_active
@@ -370,23 +379,29 @@ func _export_board_slots() -> Array:
 func _broadcast_board_sync() -> void:
 	if _authority == null:
 		return
-	_rpc_apply_board_sync.rpc(
-		_authority.export_board_state(),
-		_export_board_slots(),
-		true,
-		_recovery_session_id,
+	(
+		_rpc_apply_board_sync
+		. rpc(
+			_authority.export_board_state(),
+			_export_board_slots(),
+			true,
+			_recovery_session_id,
+		)
 	)
 
 
 func _push_board_sync_to_peer(peer_id: int) -> void:
 	if _authority == null:
 		return
-	_rpc_apply_board_sync.rpc_id(
-		peer_id,
-		_authority.export_board_state(),
-		_export_board_slots(),
-		true,
-		_recovery_session_id,
+	(
+		_rpc_apply_board_sync
+		. rpc_id(
+			peer_id,
+			_authority.export_board_state(),
+			_export_board_slots(),
+			true,
+			_recovery_session_id,
+		)
 	)
 
 
@@ -411,9 +426,9 @@ func _rpc_request_advance_turn(player_id: String) -> void:
 
 @rpc("authority", "call_remote", "reliable", 0)
 func _rpc_apply_board_sync(
-		payload: Dictionary,
-		slots_payload: Array,
-		is_active: bool,
-		recovery_session_id: String = "",
+	payload: Dictionary,
+	slots_payload: Array,
+	is_active: bool,
+	recovery_session_id: String = "",
 ) -> void:
 	_apply_remote_board_state(payload, slots_payload, is_active, recovery_session_id)

@@ -58,11 +58,7 @@ func _refresh() -> void:
 		"match_epoch %d · last snapshot at %s"
 		% [
 			controller.match_epoch,
-			(
-				MatchPhase.to_key(_stored_snapshot.phase)
-				if _stored_snapshot != null
-				else "none"
-			),
+			MatchPhase.to_key(_stored_snapshot.phase) if _stored_snapshot != null else "none",
 		]
 	)
 	_advance_button.disabled = controller.get_valid_transitions().is_empty()

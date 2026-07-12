@@ -14,6 +14,8 @@ This directory contains the durable design, architecture, operating guidance, re
 
 ### Minigame authors
 
+Friends who are new to the repository can start with [Friend minigame contributor onboarding](guides/friend-minigame-onboarding.md), including copyable proposal and implementation prompts.
+
 1. Read the [game design target](design/game.md) and [creative direction](design/creative-direction.md).
 2. Use the [minigame design guide](design/minigames.md) to prepare and review the idea.
 3. Open a [minigame proposal](../.github/ISSUE_TEMPLATE/minigame-proposal.yml) and receive approval before substantial implementation intended for integration.
@@ -125,6 +127,7 @@ Do not add owner or last-reviewed metadata until the project has a defined owner
 ### Guides
 
 - [Godot setup for agents](guides/godot-setup.md)
+- [Friend minigame contributor onboarding](guides/friend-minigame-onboarding.md)
 - [Create a minigame](guides/create-a-minigame.md)
 - [Runtime debug harnesses](guides/runtime-debug-harnesses.md)
 - [WebRTC setup](guides/webrtc-setup.md)

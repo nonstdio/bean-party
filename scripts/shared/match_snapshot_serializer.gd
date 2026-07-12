@@ -1,6 +1,7 @@
 class_name MatchSnapshotSerializer
 extends RefCounted
 
+
 static func serialize(snapshot: MatchSnapshot) -> String:
 	var payload: Dictionary = _sort_value(_snapshot_to_dict(snapshot))
 	return JSON.stringify(payload)
@@ -33,9 +34,7 @@ static func _snapshot_to_dict(snapshot: MatchSnapshot) -> Dictionary:
 
 	return {
 		"board_stub": board_payload,
-		"final_scores_by_player_id": _intify_dictionary(
-			snapshot.final_scores_by_player_id
-		),
+		"final_scores_by_player_id": _intify_dictionary(snapshot.final_scores_by_player_id),
 		"match_epoch": snapshot.match_epoch,
 		"match_settings": _intify_dictionary(snapshot.match_settings),
 		"minigame_outcome_applied": snapshot.minigame_outcome_applied,
@@ -56,9 +55,7 @@ static func _snapshot_from_dict(data: Dictionary) -> MatchSnapshot:
 	snapshot.phase = MatchPhase.from_key(String(data.get("phase", "Lobby")))
 	snapshot.rng_seed = int(str(data.get("rng_seed", "0")))
 	snapshot.rng_state = int(str(data.get("rng_state", "0")))
-	snapshot.match_settings = _intify_dictionary(
-		data.get("match_settings", {}).duplicate(true)
-	)
+	snapshot.match_settings = _intify_dictionary(data.get("match_settings", {}).duplicate(true))
 	snapshot.selected_minigame_id = String(data.get("selected_minigame_id", ""))
 	snapshot.teams_by_player_id = data.get("teams_by_player_id", {}).duplicate(true)
 	snapshot.minigame_outcome_applied = bool(data.get("minigame_outcome_applied", false))

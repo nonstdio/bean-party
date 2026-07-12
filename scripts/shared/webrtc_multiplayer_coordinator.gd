@@ -32,10 +32,10 @@ func get_lobby_code() -> String:
 
 
 func _begin(
-		signaling_url: String,
-		room_code: String,
-		ice_servers: Array,
-		is_host: bool,
+	signaling_url: String,
+	room_code: String,
+	ice_servers: Array,
+	is_host: bool,
 ) -> void:
 	stop()
 	_ice_servers = ice_servers
@@ -149,10 +149,10 @@ func _on_session_description_created(type: String, data: String, peer_id: int) -
 
 
 func _on_ice_candidate_created(
-		mid_name: String,
-		index_name: int,
-		sdp_name: String,
-		peer_id: int,
+	mid_name: String,
+	index_name: int,
+	sdp_name: String,
+	peer_id: int,
 ) -> void:
 	_signaling.send_candidate(peer_id, mid_name, index_name, sdp_name)
 

@@ -127,8 +127,8 @@ func test_unknown_echo_reply_is_ignored() -> void:
 	assert_eq(session.host(_test_port), OK)
 
 	var completed := false
-	session.echo_completed.connect(func(_from_peer_id: int, _message: String) -> void:
-		completed = true
+	session.echo_completed.connect(
+		func(_from_peer_id: int, _message: String) -> void: completed = true
 	)
 
 	session._rpc_echo_reply("unexpected", 99999)
@@ -147,8 +147,8 @@ func test_echo_reply_requires_matching_sender_and_message() -> void:
 		"message": "hello",
 	}
 	var completed := false
-	session.echo_completed.connect(func(_from_peer_id: int, _message: String) -> void:
-		completed = true
+	session.echo_completed.connect(
+		func(_from_peer_id: int, _message: String) -> void: completed = true
 	)
 
 	session._rpc_echo_reply("wrong-message", nonce)
@@ -207,9 +207,12 @@ func test_failed_webrtc_host_does_not_leave_coordinator_child() -> void:
 	var session := MatchSession.new()
 	add_child_autofree(session)
 	assert_eq(
-		session.host_with_transport(
-			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			{"signaling_url": "ws://127.0.0.1:9080"},
+		(
+			session
+			. host_with_transport(
+				TransportAdapterRegistry.TRANSPORT_WEBRTC,
+				{"signaling_url": "ws://127.0.0.1:9080"},
+			)
 		),
 		ERR_CANT_CREATE,
 	)

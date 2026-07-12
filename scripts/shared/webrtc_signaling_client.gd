@@ -81,11 +81,21 @@ func send_answer(peer_id: int, answer: String) -> Error:
 
 
 func _send_message(type: int, id: int, data: String = "") -> Error:
-	return _ws.send_text(JSON.stringify({
-		"type": type,
-		"id": id,
-		"data": data,
-	}))
+	return (
+		_ws
+		. send_text(
+			(
+				JSON
+				. stringify(
+					{
+						"type": type,
+						"id": id,
+						"data": data,
+					}
+				)
+			)
+		)
+	)
 
 
 func _parse_message(raw_message: String) -> bool:
@@ -97,7 +107,11 @@ func _parse_message(raw_message: String) -> bool:
 		return false
 
 	var message := parsed as Dictionary
-	if not message.has("type") or not message.has("id") or typeof(message.get("data")) != TYPE_STRING:
+	if (
+		not message.has("type")
+		or not message.has("id")
+		or typeof(message.get("data")) != TYPE_STRING
+	):
 		return false
 
 	var type := int(message.type)

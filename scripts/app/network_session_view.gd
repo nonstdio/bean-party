@@ -96,14 +96,19 @@ func _host_webrtc() -> void:
 	var signaling_url := _read_signaling_url()
 	if signaling_url == "":
 		return
-	var error := _match_session.host_with_transport(
-		TransportAdapterRegistry.TRANSPORT_WEBRTC,
-		{"signaling_url": signaling_url},
+	var error := (
+		_match_session
+		. host_with_transport(
+			TransportAdapterRegistry.TRANSPORT_WEBRTC,
+			{"signaling_url": signaling_url},
+		)
 	)
 	if error == OK:
 		_status_label.text = "Connecting to signaling and creating room..."
 	elif error == ERR_CANT_CREATE:
-		_status_label.text = "WebRTC host failed. Install webrtc-native (see docs/guides/webrtc-setup.md)."
+		_status_label.text = (
+			"WebRTC host failed. Install webrtc-native " + "(see docs/guides/webrtc-setup.md)."
+		)
 	else:
 		_status_label.text = "WebRTC host failed (%d)." % error
 	_refresh()
@@ -123,9 +128,7 @@ func _on_join_pressed() -> void:
 		return
 	var error := _match_session.join(address, port)
 	_status_label.text = (
-		"Joining %s:%d..." % [address, port]
-		if error == OK
-		else "Join failed (%d)." % error
+		"Joining %s:%d..." % [address, port] if error == OK else "Join failed (%d)." % error
 	)
 	_refresh()
 
@@ -138,23 +141,28 @@ func _join_webrtc() -> void:
 	if room_code == "":
 		_status_label.text = "Enter a room code to join."
 		return
-	var error := _match_session.join_with_transport(
-		TransportAdapterRegistry.TRANSPORT_WEBRTC,
-		{
-			"signaling_url": signaling_url,
-			"room_code": room_code,
-		},
+	var error := (
+		_match_session
+		. join_with_transport(
+			TransportAdapterRegistry.TRANSPORT_WEBRTC,
+			{
+				"signaling_url": signaling_url,
+				"room_code": room_code,
+			},
+		)
 	)
 	if error == OK:
 		_status_label.text = "Joining room %s..." % room_code
 	elif error == ERR_CANT_CREATE:
-		_status_label.text = "WebRTC join failed. Install webrtc-native (see docs/guides/webrtc-setup.md)."
+		_status_label.text = (
+			"WebRTC join failed. Install webrtc-native " + "(see docs/guides/webrtc-setup.md)."
+		)
 	else:
 		_status_label.text = "WebRTC join failed (%d)." % error
 	_refresh()
 
 
-func _on_session_ended(reason: MatchSession.SessionEndReason, message: String) -> void:
+func _on_session_ended(_reason: MatchSession.SessionEndReason, message: String) -> void:
 	_status_label.text = message
 	_apply_pending_reconnect_target()
 	_refresh()

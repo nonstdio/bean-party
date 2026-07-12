@@ -28,10 +28,15 @@ func test_registry_creates_webrtc_adapter() -> void:
 
 
 func test_webrtc_adapter_normalizes_options() -> void:
-	var normalized := WebRtcTransportAdapter.normalize_options({
-		"signaling_url": "ws://example.test:9080",
-		"room_code": "abc123",
-	})
+	var normalized := (
+		WebRtcTransportAdapter
+		. normalize_options(
+			{
+				"signaling_url": "ws://example.test:9080",
+				"room_code": "abc123",
+			}
+		)
+	)
 	assert_eq(normalized.get("signaling_url"), "ws://example.test:9080")
 	assert_eq(normalized.get("room_code"), "abc123")
 	assert_false((normalized.get("ice_servers") as Array).is_empty())
@@ -45,9 +50,12 @@ func test_match_session_webrtc_join_requires_room_code() -> void:
 	var session := MatchSession.new()
 	add_child_autofree(session)
 	assert_eq(
-		session.join_with_transport(
-			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			{"signaling_url": "ws://127.0.0.1:9080"},
+		(
+			session
+			. join_with_transport(
+				TransportAdapterRegistry.TRANSPORT_WEBRTC,
+				{"signaling_url": "ws://127.0.0.1:9080"},
+			)
 		),
 		ERR_INVALID_PARAMETER,
 	)
@@ -61,9 +69,12 @@ func test_match_session_webrtc_fails_without_extension() -> void:
 	var session := MatchSession.new()
 	add_child_autofree(session)
 	assert_eq(
-		session.host_with_transport(
-			TransportAdapterRegistry.TRANSPORT_WEBRTC,
-			{"signaling_url": "ws://127.0.0.1:9080"},
+		(
+			session
+			. host_with_transport(
+				TransportAdapterRegistry.TRANSPORT_WEBRTC,
+				{"signaling_url": "ws://127.0.0.1:9080"},
+			)
 		),
 		ERR_CANT_CREATE,
 	)
@@ -91,9 +102,12 @@ func test_match_session_host_with_enet_transport() -> void:
 	var session := MatchSession.new()
 	add_child_autofree(session)
 	assert_eq(
-		session.host_with_transport(
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			{"port": _test_port},
+		(
+			session
+			. host_with_transport(
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				{"port": _test_port},
+			)
 		),
 		OK,
 	)
@@ -128,16 +142,22 @@ func test_match_session_join_with_enet_transport() -> void:
 	add_child_autofree(host_session)
 	add_child_autofree(client_session)
 	assert_eq(
-		host_session.host_with_transport(
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			{"port": _test_port},
+		(
+			host_session
+			. host_with_transport(
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				{"port": _test_port},
+			)
 		),
 		OK,
 	)
 	assert_eq(
-		client_session.join_with_transport(
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			{"address": "127.0.0.1", "port": _test_port},
+		(
+			client_session
+			. join_with_transport(
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				{"address": "127.0.0.1", "port": _test_port},
+			)
 		),
 		OK,
 	)
@@ -153,9 +173,12 @@ func test_set_transport_adapter_is_used_by_host_with_transport() -> void:
 	add_child_autofree(session)
 	session.set_transport_adapter(adapter)
 	assert_eq(
-		session.host_with_transport(
-			TransportAdapterRegistry.TRANSPORT_ENET,
-			{"port": _test_port},
+		(
+			session
+			. host_with_transport(
+				TransportAdapterRegistry.TRANSPORT_ENET,
+				{"port": _test_port},
+			)
 		),
 		OK,
 	)

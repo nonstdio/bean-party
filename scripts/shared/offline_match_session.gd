@@ -21,20 +21,21 @@ func add_local_slot(display_name: String = "", preferred_color_index: int = -1) 
 	var local_index := slots.size()
 	var resolved_name := display_name if display_name != "" else "Player %d" % (local_index + 1)
 	var color_index := (
-		preferred_color_index
-		if preferred_color_index >= 0
-		else _first_unused_color_index()
+		preferred_color_index if preferred_color_index >= 0 else _first_unused_color_index()
 	)
 	color_index = color_index % MatchConstants.SLOT_COLORS.size()
 	var device_slot := _first_unused_device_slot()
 	var player_id := _allocate_player_id()
 
-	var slot := PlayerSlot.create(
-		player_id,
-		MatchConstants.OFFLINE_PEER_ID,
-		local_index,
-		resolved_name,
-		MatchConstants.SLOT_COLORS[color_index],
+	var slot := (
+		PlayerSlot
+		. create(
+			player_id,
+			MatchConstants.OFFLINE_PEER_ID,
+			local_index,
+			resolved_name,
+			MatchConstants.SLOT_COLORS[color_index],
+		)
 	)
 	slots.append(slot)
 	_local_device_slots[player_id] = device_slot
@@ -128,9 +129,9 @@ func export_local_device_slots() -> Dictionary:
 
 
 func load_slots(
-		slots_to_load: Array[PlayerSlot],
-		device_slots: Dictionary = {},
-		next_player_serial: int = -1,
+	slots_to_load: Array[PlayerSlot],
+	device_slots: Dictionary = {},
+	next_player_serial: int = -1,
 ) -> void:
 	slots.clear()
 	_local_device_slots.clear()

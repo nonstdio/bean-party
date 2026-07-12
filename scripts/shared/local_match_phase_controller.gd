@@ -12,7 +12,8 @@ const _VALID_TRANSITIONS: Dictionary = {
 	MatchPhase.Phase.COUNTDOWN: [MatchPhase.Phase.ACTIVE_MINIGAME],
 	MatchPhase.Phase.ACTIVE_MINIGAME: [MatchPhase.Phase.RESULTS],
 	MatchPhase.Phase.RESULTS: [MatchPhase.Phase.RETURN_TO_BOARD],
-	MatchPhase.Phase.RETURN_TO_BOARD: [
+	MatchPhase.Phase.RETURN_TO_BOARD:
+	[
 		MatchPhase.Phase.BOARD,
 		MatchPhase.Phase.MATCH_RESULTS,
 	],
@@ -134,9 +135,7 @@ func restore_from_snapshot(snapshot: MatchSnapshot) -> bool:
 	session.load_slots(snapshot.slots)
 	_restore_local_device_slots(preserved_device_slots, snapshot.slots)
 	board_stub = (
-		snapshot.board_stub.duplicate_stub()
-		if snapshot.board_stub != null
-		else BoardStub.new()
+		snapshot.board_stub.duplicate_stub() if snapshot.board_stub != null else BoardStub.new()
 	)
 
 	_rng.seed = snapshot.rng_seed
@@ -204,12 +203,15 @@ func _apply_stub_minigame_results() -> void:
 		return
 
 	var winner := session.slots[_rng.randi_range(0, session.slots.size() - 1)]
-	pending_board_rewards.append(
-		{
-			"beans": 3,
-			"player_id": winner.player_id,
-			"reason": "minigame_win",
-		}
+	(
+		pending_board_rewards
+		. append(
+			{
+				"beans": 3,
+				"player_id": winner.player_id,
+				"reason": "minigame_win",
+			}
+		)
 	)
 	minigame_outcome_applied = true
 
@@ -217,9 +219,12 @@ func _apply_stub_minigame_results() -> void:
 func _apply_pending_board_rewards() -> void:
 	for reward in pending_board_rewards:
 		if reward is Dictionary:
-			board_stub.award_beans(
-				String(reward.get("player_id", "")),
-				int(reward.get("beans", 0)),
+			(
+				board_stub
+				. award_beans(
+					String(reward.get("player_id", "")),
+					int(reward.get("beans", 0)),
+				)
 			)
 	pending_board_rewards.clear()
 
@@ -237,12 +242,15 @@ func _duplicate_snapshot(snapshot: MatchSnapshot) -> MatchSnapshot:
 
 
 func _restore_local_device_slots(
-		preserved_device_slots: Dictionary,
-		restored_slots: Array[PlayerSlot],
+	preserved_device_slots: Dictionary,
+	restored_slots: Array[PlayerSlot],
 ) -> void:
 	for slot in restored_slots:
 		if preserved_device_slots.has(slot.player_id):
-			session.set_local_device_slot(
-				slot.player_id,
-				int(preserved_device_slots[slot.player_id]),
+			(
+				session
+				. set_local_device_slot(
+					slot.player_id,
+					int(preserved_device_slots[slot.player_id]),
+				)
 			)

@@ -57,10 +57,11 @@ Follow [Runtime debug harnesses](../guides/runtime-debug-harnesses.md) for the r
 - Follow the [standard asset guide](../guides/standard-assets.md) for the canonical catalog, mixed Blender/GLB handoff, lifecycle states, and contributor gallery.
 - Keep `.uid` sidecar files untracked under the current ignore policy; Godot may regenerate them locally.
 - Use tabs for GDScript indentation and LF line endings. The repository’s `.editorconfig` and `.gitattributes` state this explicitly.
+- Keep every committed file at or below 5 MiB unless a maintainer records a narrow path exception in `tools/file-size-allowlist.txt` before merge.
 
 ## Running and validating
 
-Follow [Godot setup for agents](../guides/godot-setup.md) for the pinned engine and terminal-first workflow. Run `powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS and Linux; `all` imports the project headlessly and then runs the GUT suite. Use `validate` or `test` in place of `all` when only one action is needed.
+Follow [Godot setup for agents](../guides/godot-setup.md) for the pinned engine and terminal-first workflow. Run `powershell -ExecutionPolicy Bypass -File .\tools\quality.ps1 check` plus `powershell -ExecutionPolicy Bypass -File .\tools\godot.ps1 all` on Windows, or `bash tools/quality.sh check` plus `bash tools/godot.sh all` on macOS and Linux. The quality runner checks project-owned GDScript and repository file sizes; the Godot runner imports the project headlessly and runs the GUT suite. Use `validate` or `test` in place of the Godot runner's `all` when only one action is needed.
 
 Install Godot 4.7 stable, then either import `project.godot` through the Project Manager or run:
 

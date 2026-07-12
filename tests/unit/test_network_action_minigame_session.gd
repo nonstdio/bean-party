@@ -16,23 +16,29 @@ func test_host_consumes_buffered_inputs_in_tick_order() -> void:
 	assert_true(session.start_minigame(slots, "action_test"))
 
 	var player_id := "player_1"
-	session._host_apply_remote_input(
-		1,
-		player_id,
-		Vector2(0.0, -1.0),
-		false,
-		false,
-		0.0,
-		1,
+	(
+		session
+		. _host_apply_remote_input(
+			1,
+			player_id,
+			Vector2(0.0, -1.0),
+			false,
+			false,
+			0.0,
+			1,
+		)
 	)
-	session._host_apply_remote_input(
-		1,
-		player_id,
-		Vector2(0.0, 1.0),
-		false,
-		false,
-		0.0,
-		2,
+	(
+		session
+		. _host_apply_remote_input(
+			1,
+			player_id,
+			Vector2(0.0, 1.0),
+			false,
+			false,
+			0.0,
+			2,
+		)
 	)
 
 	var first := session._consume_simulation_inputs()
@@ -96,7 +102,8 @@ func test_snapshot_reconciliation_resets_yaw_before_replay() -> void:
 	]
 
 	var payload := {
-		player_id: {
+		player_id:
+		{
 			"x": 0.0,
 			"y": 1.0,
 			"z": 0.0,
@@ -110,4 +117,3 @@ func test_snapshot_reconciliation_resets_yaw_before_replay() -> void:
 	session._apply_snapshot_payload(1, payload)
 
 	assert_gt(absf(float(session._predicted_yaw[player_id]) - 1.5), 0.5)
-

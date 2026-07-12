@@ -1,7 +1,8 @@
 class_name TransportMessageLanes
 extends RefCounted
 
-## Logical message lanes from [Networking architecture](../../docs/architecture/networking.md#transport-message-lanes).
+## Logical message lanes from Networking architecture:
+## ../../docs/architecture/networking.md#transport-message-lanes
 ## RPC `@rpc(..., transfer_channel)` annotations use channel 0 plus lane transfer modes.
 ## See [WebRTC implementation notes](../../docs/guides/webrtc-implementation-notes.md).
 
@@ -41,6 +42,7 @@ const ENET_CHANNEL_BY_LANE := {
 	Lane.WORLD_SNAPSHOT: CHANNEL_WORLD_SNAPSHOT,
 	Lane.COSMETIC: CHANNEL_COSMETIC_ENET,
 }
+
 
 static func lane_name(lane: Lane) -> String:
 	return String(LANE_NAMES.get(lane, "unknown"))

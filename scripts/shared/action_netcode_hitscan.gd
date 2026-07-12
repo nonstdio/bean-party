@@ -3,12 +3,12 @@ extends RefCounted
 
 
 static func ray_hits_capsule(
-		origin: Vector3,
-		direction: Vector3,
-		capsule_base: Vector3,
-		radius: float,
-		height: float,
-		max_distance: float,
+	origin: Vector3,
+	direction: Vector3,
+	capsule_base: Vector3,
+	radius: float,
+	height: float,
+	max_distance: float,
 ) -> bool:
 	if direction.length_squared() <= 0.0001 or max_distance <= 0.0:
 		return false
@@ -33,12 +33,18 @@ static func ray_hits_capsule(
 		segment_t = clampf(segment_offset_projection / segment_length_sq, 0.0, 1.0)
 	else:
 		ray_distance = clampf(
-			(mixed * segment_offset_projection - ray_offset_projection * segment_length_sq) / denominator,
+			(
+				(mixed * segment_offset_projection - ray_offset_projection * segment_length_sq)
+				/ denominator
+			),
 			0.0,
 			max_distance,
 		)
 		segment_t = clampf(
-			(ray_projection * segment_offset_projection - mixed * ray_offset_projection) / denominator,
+			(
+				(ray_projection * segment_offset_projection - mixed * ray_offset_projection)
+				/ denominator
+			),
 			0.0,
 			1.0,
 		)

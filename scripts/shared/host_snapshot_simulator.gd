@@ -26,11 +26,10 @@ static func apply_move(position: Vector2, move: Vector2, delta: float) -> Vector
 	return next
 
 
-
 func tick(
-		inputs_by_player_id: Dictionary,
-		delta: float,
-		eligible_winners: Dictionary = {},
+	inputs_by_player_id: Dictionary,
+	delta: float,
+	eligible_winners: Dictionary = {},
 ) -> void:
 	if not winner_player_id.is_empty():
 		return
@@ -111,11 +110,14 @@ func _rank_by_goal_distance(participant_ids: PackedStringArray) -> PackedStringA
 	var entries: Array = []
 	for player_id in participant_ids:
 		var position := get_position(player_id)
-		entries.append(
-			{
-				"player_id": player_id,
-				"distance": position.distance_to(GOAL_CENTER),
-			}
+		(
+			entries
+			. append(
+				{
+					"player_id": player_id,
+					"distance": position.distance_to(GOAL_CENTER),
+				}
+			)
 		)
 	entries.sort_custom(
 		func(left: Dictionary, right: Dictionary) -> bool:

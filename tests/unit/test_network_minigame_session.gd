@@ -37,8 +37,7 @@ func test_host_minigame_session_submits_matching_result() -> void:
 	var slots := _make_slots()
 	var received: Array = []
 	minigame_session.minigame_result_ready.connect(
-		func(result: MinigameResult) -> void:
-			received.append(result)
+		func(result: MinigameResult) -> void: received.append(result)
 	)
 
 	assert_true(minigame_session.start_minigame(slots, "minigame_test"))
@@ -127,15 +126,20 @@ func test_early_win_broadcasts_final_snapshot() -> void:
 	assert_true(host_session.start_minigame(slots, "minigame_test"))
 
 	host_session._simulator.winner_player_id = slots[0].player_id
-	host_session._simulator.positions_by_player_id[slots[0].player_id] = HostSnapshotSimulator.GOAL_CENTER
+	host_session._simulator.positions_by_player_id[slots[0].player_id] = (
+		HostSnapshotSimulator.GOAL_CENTER
+	)
 	var starting_serial := host_session.get_snapshot_serial()
 
 	host_session._host_tick(0.01)
 
 	assert_gt(host_session.get_snapshot_serial(), starting_serial)
-	client_session._apply_snapshot_payload(
-		host_session.get_snapshot_serial(),
-		host_session._simulator.export_positions(),
+	(
+		client_session
+		. _apply_snapshot_payload(
+			host_session.get_snapshot_serial(),
+			host_session._simulator.export_positions(),
+		)
 	)
 	assert_eq(client_session.get_snapshot_hash(), host_session.get_snapshot_hash())
 
@@ -204,10 +208,14 @@ func test_prediction_replays_unacked_inputs_after_delayed_snapshot() -> void:
 	client_session._local_player_ids = PackedStringArray([slots[1].player_id])
 	client_session._predicted_positions[player_id] = Vector2(100.0, 100.0)
 	client_session._display_positions[player_id] = Vector2(100.0, 100.0)
-	client_session._input_source.set_action_strength(
-		slots[1].player_id,
-		MinigameInputSource.ACTION_MOVE_RIGHT,
-		1.0,
+	(
+		client_session
+		. _input_source
+		. set_action_strength(
+			slots[1].player_id,
+			MinigameInputSource.ACTION_MOVE_RIGHT,
+			1.0,
+		)
 	)
 
 	for _i in 5:
@@ -254,10 +262,14 @@ func test_client_predict_local_moves_display_position() -> void:
 	client_session._local_player_ids = PackedStringArray([slots[1].player_id])
 	client_session._predicted_positions[slots[1].player_id] = Vector2(100.0, 100.0)
 	client_session._display_positions[slots[1].player_id] = Vector2(100.0, 100.0)
-	client_session._input_source.set_action_strength(
-		slots[1].player_id,
-		MinigameInputSource.ACTION_MOVE_RIGHT,
-		1.0,
+	(
+		client_session
+		. _input_source
+		. set_action_strength(
+			slots[1].player_id,
+			MinigameInputSource.ACTION_MOVE_RIGHT,
+			1.0,
+		)
 	)
 
 	client_session._client_predict_local(0.1)

@@ -121,12 +121,15 @@ func start_minigame(slots: Array[PlayerSlot], minigame_instance_id: String) -> b
 	_init_predicted_positions()
 	_publish_authoritative_snapshot(0, _simulator.export_positions())
 
-	var context := MinigameContext.create(
-		minigame_instance_id,
-		_slots,
-		{},
-		hash(minigame_instance_id),
-		_input_source,
+	var context := (
+		MinigameContext
+		. create(
+			minigame_instance_id,
+			_slots,
+			{},
+			hash(minigame_instance_id),
+			_input_source,
+		)
 	)
 	if not _runner.load_minigame(manifest, context):
 		stop_minigame()
@@ -179,9 +182,12 @@ func get_display_position(player_id: String) -> Vector3:
 func get_local_visual_position(player_id: String) -> Vector3:
 	if not is_local_player(player_id):
 		return get_display_position(player_id)
-	var position: Vector3 = _predicted_positions.get(
-		player_id,
-		_display_positions.get(player_id, Vector3.ZERO),
+	var position: Vector3 = (
+		_predicted_positions
+		. get(
+			player_id,
+			_display_positions.get(player_id, Vector3.ZERO),
+		)
 	)
 	position.y = maxf(position.y, 1.0)
 	return position
@@ -297,37 +303,55 @@ func _poll_local_device_input() -> void:
 	for player_id in _local_player_ids:
 		var device_slot := _local_device_slot_for_player(player_id)
 		var move := MinigameLocalDeviceInput.read_move_vector(device_slot)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_LEFT,
-			1.0 if move.x < -0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_LEFT,
+				1.0 if move.x < -0.5 else 0.0,
+			)
 		)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_RIGHT,
-			1.0 if move.x > 0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_RIGHT,
+				1.0 if move.x > 0.5 else 0.0,
+			)
 		)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_UP,
-			1.0 if move.y < -0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_UP,
+				1.0 if move.y < -0.5 else 0.0,
+			)
 		)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_MOVE_DOWN,
-			1.0 if move.y > 0.5 else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_MOVE_DOWN,
+				1.0 if move.y > 0.5 else 0.0,
+			)
 		)
 		var jump_pressed := MinigameLocalDeviceInput.read_jump_just_pressed(device_slot)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_PRIMARY,
-			1.0 if jump_pressed else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_PRIMARY,
+				1.0 if jump_pressed else 0.0,
+			)
 		)
 		var fire_pressed := MinigameLocalDeviceInput.read_fire_pressed(device_slot)
-		_input_source.set_action_strength(
-			player_id,
-			MinigameInputSource.ACTION_SECONDARY,
-			1.0 if fire_pressed else 0.0,
+		(
+			_input_source
+			. set_action_strength(
+				player_id,
+				MinigameInputSource.ACTION_SECONDARY,
+				1.0 if fire_pressed else 0.0,
+			)
 		)
 
 
@@ -360,8 +384,13 @@ func _sample_local_inputs_for_sim_step(sim_step: float) -> void:
 	for player_id in _local_player_ids:
 		var player_key := String(player_id)
 		var move := _input_source.get_move_vector(player_key)
-		var jump := _input_source.get_action_strength(player_key, MinigameInputSource.ACTION_PRIMARY) > 0.5
-		var fire := _input_source.get_action_strength(player_key, MinigameInputSource.ACTION_SECONDARY) > 0.5
+		var jump := (
+			_input_source.get_action_strength(player_key, MinigameInputSource.ACTION_PRIMARY) > 0.5
+		)
+		var fire := (
+			_input_source.get_action_strength(player_key, MinigameInputSource.ACTION_SECONDARY)
+			> 0.5
+		)
 		var aim_yaw := _resolve_aim_yaw(player_key, move)
 		var input_tick := _advance_local_input_tick(player_key)
 		var payload := {"move": move, "jump": jump, "fire": fire, "aim_yaw": aim_yaw}
@@ -378,15 +407,18 @@ func _send_sampled_input_to_host(player_key: String, input_tick: int, payload: D
 	var move: Vector2 = payload.get("move", Vector2.ZERO)
 	if not move is Vector2:
 		move = Vector2.ZERO
-	_rpc_submit_input.rpc_id(
-		1,
-		player_key,
-		move.x,
-		move.y,
-		bool(payload.get("jump", false)),
-		bool(payload.get("fire", false)),
-		float(payload.get("aim_yaw", 0.0)),
-		input_tick,
+	(
+		_rpc_submit_input
+		. rpc_id(
+			1,
+			player_key,
+			move.x,
+			move.y,
+			bool(payload.get("jump", false)),
+			bool(payload.get("fire", false)),
+			float(payload.get("aim_yaw", 0.0)),
+			input_tick,
+		)
 	)
 
 	var history: Array = _local_input_history.get(player_key, [])
@@ -406,15 +438,18 @@ func _send_sampled_input_to_host(player_key: String, input_tick: int, payload: D
 		var redo_move: Vector2 = redo_payload.get("move", Vector2.ZERO)
 		if not redo_move is Vector2:
 			redo_move = Vector2.ZERO
-		_rpc_submit_input.rpc_id(
-			1,
-			player_key,
-			redo_move.x,
-			redo_move.y,
-			bool(redo_payload.get("jump", false)),
-			bool(redo_payload.get("fire", false)),
-			float(redo_payload.get("aim_yaw", 0.0)),
-			redo_tick,
+		(
+			_rpc_submit_input
+			. rpc_id(
+				1,
+				player_key,
+				redo_move.x,
+				redo_move.y,
+				bool(redo_payload.get("jump", false)),
+				bool(redo_payload.get("fire", false)),
+				float(redo_payload.get("aim_yaw", 0.0)),
+				redo_tick,
+			)
 		)
 		redundant_sent += 1
 
@@ -496,21 +531,27 @@ func _apply_predicted_input_step(player_key: String, payload: Dictionary, step: 
 	if not move is Vector2:
 		move = Vector2.ZERO
 	var jump := bool(payload.get("jump", false))
-	var position: Vector3 = _predicted_positions.get(
-		player_key,
-		_display_positions.get(player_key, Vector3.ZERO),
+	var position: Vector3 = (
+		_predicted_positions
+		. get(
+			player_key,
+			_display_positions.get(player_key, Vector3.ZERO),
+		)
 	)
 	var yaw: float = float(
 		_predicted_yaw.get(player_key, _display_state.get(player_key, {}).get("yaw", 0.0))
 	)
 	var vertical_velocity: float = float(_predicted_vertical_velocity.get(player_key, 0.0))
-	var applied: Dictionary = HostActionSimulator.apply_tank_move(
-		position,
-		yaw,
-		move,
-		vertical_velocity,
-		step,
-		jump,
+	var applied: Dictionary = (
+		HostActionSimulator
+		. apply_tank_move(
+			position,
+			yaw,
+			move,
+			vertical_velocity,
+			step,
+			jump,
+		)
 	)
 	position = applied.get("position", position)
 	yaw = float(applied.get("yaw", yaw))
@@ -526,9 +567,12 @@ func _sync_entity_registry_from_simulator() -> void:
 		var entity_id := _entity_registry.get_player_avatar_id(player_id)
 		if entity_id == "":
 			continue
-		_entity_registry.update_entity_transform(
-			entity_id,
-			_simulator.get_position(player_id),
+		(
+			_entity_registry
+			. update_entity_transform(
+				entity_id,
+				_simulator.get_position(player_id),
+			)
 		)
 
 
@@ -646,9 +690,12 @@ func _apply_snapshot_payload(serial: int, payload: Dictionary) -> void:
 			else:
 				predicted_after.y = lerpf(predicted_after.y, target.y, AUTHORITY_BLEND_RATE)
 			_predicted_positions[player_key] = predicted_after
-			_prediction_tracker.record_correction(
-				Vector2(predicted_before.x, predicted_before.z),
-				Vector2(predicted_after.x, predicted_after.z),
+			(
+				_prediction_tracker
+				. record_correction(
+					Vector2(predicted_before.x, predicted_before.z),
+					Vector2(predicted_after.x, predicted_after.z),
+				)
 			)
 			_display_positions[player_key] = get_local_visual_position(player_key)
 		elif not _display_positions.has(player_key):
@@ -708,13 +755,13 @@ func _predicts_local_player(player_id: String) -> bool:
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 0)
 func _rpc_submit_input(
-		player_id: String,
-		move_x: float,
-		move_y: float,
-		jump: bool,
-		fire: bool,
-		aim_yaw: float,
-		input_tick: int,
+	player_id: String,
+	move_x: float,
+	move_y: float,
+	jump: bool,
+	fire: bool,
+	aim_yaw: float,
+	input_tick: int,
 ) -> void:
 	if not is_authority():
 		return
@@ -730,28 +777,31 @@ func _rpc_submit_input(
 
 
 func _host_apply_remote_input(
-		peer_id: int,
-		player_id: String,
-		move: Vector2,
-		jump: bool,
-		fire: bool,
-		aim_yaw: float,
-		input_tick: int,
+	peer_id: int,
+	player_id: String,
+	move: Vector2,
+	jump: bool,
+	fire: bool,
+	aim_yaw: float,
+	input_tick: int,
 ) -> void:
 	if not _peer_owns_player(peer_id, player_id):
 		return
 	if not _player_id_is_participating(player_id):
 		return
 	var player_key := String(player_id)
-	_input_buffer.record_input(
-		player_key,
-		input_tick,
-		{
-			"move": move,
-			"jump": jump,
-			"fire": fire,
-			"aim_yaw": aim_yaw,
-		},
+	(
+		_input_buffer
+		. record_input(
+			player_key,
+			input_tick,
+			{
+				"move": move,
+				"jump": jump,
+				"fire": fire,
+				"aim_yaw": aim_yaw,
+			},
+		)
 	)
 
 
@@ -767,14 +817,19 @@ func _advance_local_input_tick(player_key: String) -> int:
 	return next_tick
 
 
-func _record_local_input(player_key: String, input_tick: int, payload: Dictionary, delta: float) -> void:
+func _record_local_input(
+	player_key: String, input_tick: int, payload: Dictionary, delta: float
+) -> void:
 	var history: Array = _local_input_history.get(player_key, [])
-	history.append(
-		{
-			"tick": input_tick,
-			"payload": payload.duplicate(true),
-			"delta": delta,
-		}
+	(
+		history
+		. append(
+			{
+				"tick": input_tick,
+				"payload": payload.duplicate(true),
+				"delta": delta,
+			}
+		)
 	)
 	_local_input_history[player_key] = history
 
@@ -797,13 +852,16 @@ func _replay_unacked_inputs(player_key: String, acked_input_tick: int) -> void:
 			move = Vector2.ZERO
 		var jump := bool(payload.get("jump", false))
 		var step_delta: float = 1.0 / SIM_TICK_HZ
-		var applied: Dictionary = HostActionSimulator.apply_tank_move(
-			position,
-			yaw,
-			move,
-			vertical_velocity,
-			step_delta,
-			jump,
+		var applied: Dictionary = (
+			HostActionSimulator
+			. apply_tank_move(
+				position,
+				yaw,
+				move,
+				vertical_velocity,
+				step_delta,
+				jump,
+			)
 		)
 		position = applied.get("position", position)
 		yaw = float(applied.get("yaw", yaw))

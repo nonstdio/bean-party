@@ -25,8 +25,6 @@ func _apply_identity() -> void:
 	var display_index := StandardVisuals.fallback_identity_index(identity_index)
 	_icon.texture = StandardVisuals.IDENTITY_ICONS[display_index]
 	_icon.modulate = (
-		StandardVisuals.IDENTITY_COLORS[identity_index]
-		if identity_index >= 0
-		else _slot_color
+		StandardVisuals.IDENTITY_COLORS[identity_index] if identity_index >= 0 else _slot_color
 	)
 	tooltip_text = String(StandardVisuals.IDENTITY_IDS[display_index]).capitalize()

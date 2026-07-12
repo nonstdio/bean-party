@@ -10,11 +10,11 @@ var _input_source: MinigameInputSource
 
 
 static func create(
-		minigame_instance_id: String,
-		players: Array[PlayerSlot],
-		teams_by_player_id: Dictionary,
-		rng_seed: int,
-		input_source: MinigameInputSource,
+	minigame_instance_id: String,
+	players: Array[PlayerSlot],
+	teams_by_player_id: Dictionary,
+	rng_seed: int,
+	input_source: MinigameInputSource,
 ) -> MinigameContext:
 	var context := MinigameContext.new()
 	context._minigame_instance_id = minigame_instance_id

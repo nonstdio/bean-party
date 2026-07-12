@@ -13,15 +13,15 @@ static var pending_room_code: String = ""
 
 
 static func remember(
-		player_id: String,
-		match_epoch: int,
-		recovery_session_id: String,
-		reconnect_token: String,
-		transport_id: String,
-		host_address: String = "",
-		host_port: int = -1,
-		signaling_url: String = "",
-		room_code: String = "",
+	player_id: String,
+	match_epoch: int,
+	recovery_session_id: String,
+	reconnect_token: String,
+	transport_id: String,
+	host_address: String = "",
+	host_port: int = -1,
+	signaling_url: String = "",
+	room_code: String = "",
 ) -> void:
 	if player_id == "" or recovery_session_id == "" or reconnect_token == "":
 		return
@@ -53,11 +53,11 @@ static func has_pending() -> bool:
 
 
 static func matches_target(
-		recovery_session_id: String,
-		transport_id: String,
-		join_address: String,
-		join_port: int,
-		room_code: String = "",
+	recovery_session_id: String,
+	transport_id: String,
+	join_address: String,
+	join_port: int,
+	room_code: String = "",
 ) -> bool:
 	if not has_pending():
 		return false

@@ -11,8 +11,7 @@ func get_transport_id() -> String:
 func create_server_peer(_options: Dictionary) -> MultiplayerPeer:
 	if not WebRtcAvailability.is_extension_loaded():
 		push_warning(
-			"WebRTC transport requires the webrtc-native GDExtension. See %s."
-			% INVESTIGATION_DOC
+			"WebRTC transport requires the webrtc-native GDExtension. See %s." % INVESTIGATION_DOC
 		)
 		return null
 
@@ -33,15 +32,15 @@ func describe_capabilities() -> Dictionary:
 		"supports_room_code_join": true,
 		"supports_transfer_channels": WebRtcAvailability.is_extension_loaded(),
 		"max_transfer_channels": 3,
-		"notes": "Internet transport via WebRTC ICE. Requires webrtc-native and a signaling server.",
+		"notes":
+		"Internet transport via WebRTC ICE. Requires webrtc-native and a signaling server.",
 	}
 
 
 static func normalize_options(options: Dictionary) -> Dictionary:
 	return {
-		"signaling_url": String(
-			options.get("signaling_url", MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL)
-		),
+		"signaling_url":
+		String(options.get("signaling_url", MatchConstants.DEFAULT_WEBRTC_SIGNALING_URL)),
 		"room_code": String(options.get("room_code", "")),
 		"ice_servers": default_ice_servers(options),
 	}

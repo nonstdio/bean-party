@@ -47,7 +47,9 @@ func test_input_rpcs_use_channel_zero_and_unreliable_ordered() -> void:
 		add_child_autofree(node)
 		var config := _rpc_config(node, entry[1])
 		assert_eq(int(config.get("channel", -1)), TransportMessageLanes.CHANNEL_RPC)
-		assert_eq(int(config.get("transfer_mode", -1)), MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED)
+		assert_eq(
+			int(config.get("transfer_mode", -1)), MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED
+		)
 
 
 func test_snapshot_rpcs_use_channel_zero_and_unreliable() -> void:

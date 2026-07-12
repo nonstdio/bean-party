@@ -8,17 +8,21 @@ func test_hitscan_damages_target_in_line() -> void:
 	simulator.positions_by_player_id["shooter"] = Vector3(0.0, 1.0, 0.0)
 	simulator.positions_by_player_id["target"] = Vector3(0.0, 1.0, -8.0)
 	simulator.yaw_by_player_id["shooter"] = 0.0
-	simulator.tick(
-		{
-			"shooter": {
-				"move": Vector2.ZERO,
-				"jump": false,
-				"fire": true,
-				"aim_yaw": 0.0,
+	(
+		simulator
+		. tick(
+			{
+				"shooter":
+				{
+					"move": Vector2.ZERO,
+					"jump": false,
+					"fire": true,
+					"aim_yaw": 0.0,
+				},
 			},
-		},
-		1.0 / 30.0,
-		{"shooter": true, "target": true},
+			1.0 / 30.0,
+			{"shooter": true, "target": true},
+		)
 	)
 	assert_eq(simulator.get_health("target"), 50)
 
@@ -31,7 +35,8 @@ func test_last_player_standing_wins() -> void:
 	simulator.positions_by_player_id["target"] = Vector3(0.0, 1.0, -8.0)
 	simulator.yaw_by_player_id["shooter"] = 0.0
 	var fire_input := {
-		"shooter": {
+		"shooter":
+		{
 			"move": Vector2.ZERO,
 			"jump": false,
 			"fire": true,
@@ -51,17 +56,21 @@ func test_inactive_player_cannot_be_damaged() -> void:
 	simulator.positions_by_player_id["shooter"] = Vector3(0.0, 1.0, 0.0)
 	simulator.positions_by_player_id["target"] = Vector3(0.0, 1.0, -8.0)
 	simulator.yaw_by_player_id["shooter"] = 0.0
-	simulator.tick(
-		{
-			"shooter": {
-				"move": Vector2.ZERO,
-				"jump": false,
-				"fire": true,
-				"aim_yaw": 0.0,
+	(
+		simulator
+		. tick(
+			{
+				"shooter":
+				{
+					"move": Vector2.ZERO,
+					"jump": false,
+					"fire": true,
+					"aim_yaw": 0.0,
+				},
 			},
-		},
-		1.0 / 30.0,
-		{"shooter": true},
+			1.0 / 30.0,
+			{"shooter": true},
+		)
 	)
 	assert_eq(simulator.get_health("target"), HostActionSimulator.MAX_HEALTH)
 
@@ -80,16 +89,20 @@ func test_turn_left_rotates_without_translation() -> void:
 	var simulator := HostActionSimulator.new()
 	simulator.reset_for_player_ids(PackedStringArray(["player_1"]))
 	var start := simulator.get_position("player_1")
-	simulator.tick(
-		{
-			"player_1": {
-				"move": Vector2(-1.0, 0.0),
-				"jump": false,
-				"fire": false,
+	(
+		simulator
+		. tick(
+			{
+				"player_1":
+				{
+					"move": Vector2(-1.0, 0.0),
+					"jump": false,
+					"fire": false,
+				},
 			},
-		},
-		0.5,
-		{"player_1": true},
+			0.5,
+			{"player_1": true},
+		)
 	)
 	assert_true(simulator.get_yaw("player_1") < 0.0)
 	assert_almost_eq(simulator.get_position("player_1"), start, Vector3(0.01, 0.01, 0.01))
@@ -100,16 +113,20 @@ func test_forward_moves_along_facing() -> void:
 	simulator.reset_for_player_ids(PackedStringArray(["player_1"]))
 	simulator.yaw_by_player_id["player_1"] = 0.0
 	var start := simulator.get_position("player_1")
-	simulator.tick(
-		{
-			"player_1": {
-				"move": Vector2(0.0, -1.0),
-				"jump": false,
-				"fire": false,
+	(
+		simulator
+		. tick(
+			{
+				"player_1":
+				{
+					"move": Vector2(0.0, -1.0),
+					"jump": false,
+					"fire": false,
+				},
 			},
-		},
-		0.5,
-		{"player_1": true},
+			0.5,
+			{"player_1": true},
+		)
 	)
 	var delta := simulator.get_position("player_1") - start
 	assert_true(delta.z < 0.0)
@@ -125,7 +142,8 @@ func test_inactive_alive_player_does_not_block_last_standing() -> void:
 	simulator.yaw_by_player_id["shooter"] = 0.0
 	simulator.health_by_player_id["inactive"] = HostActionSimulator.MAX_HEALTH
 	var fire_input := {
-		"shooter": {
+		"shooter":
+		{
 			"move": Vector2.ZERO,
 			"jump": false,
 			"fire": true,
@@ -150,6 +168,4 @@ func test_equal_scores_produce_tie_placement_group() -> void:
 	assert_eq(result.placements[0], PackedStringArray(["player_a", "player_b"]))
 	assert_eq(result.placements[1], PackedStringArray(["player_c"]))
 	assert_eq(result.scores_by_player_id["player_a"], result.scores_by_player_id["player_b"])
-	assert_true(
-		result.validate(player_ids).is_empty()
-	)
+	assert_true(result.validate(player_ids).is_empty())

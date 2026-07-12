@@ -28,6 +28,7 @@ What does this change add or improve for players or contributors?
 
 - [ ] I tested the documented behavior.
 - [ ] I tested with the intended player count, or explained why that was not possible.
+- [ ] I ran `tools/quality.ps1 check` on Windows or `bash tools/quality.sh check` on macOS/Linux.
 - [ ] I ran `tools/godot.ps1 all` on Windows or `bash tools/godot.sh all` on macOS/Linux.
 - [ ] I created or updated the canonical documentation for durable behavior, interfaces, conventions, setup requirements, or decisions affected by this change, or explained why no documentation change is needed.
 - [ ] I corrected relevant documentation errors I found and disclosed any unresolved gaps or discrepancies above.

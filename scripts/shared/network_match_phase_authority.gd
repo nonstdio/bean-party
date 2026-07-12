@@ -238,12 +238,15 @@ func _apply_minigame_results() -> void:
 	if winner_id == "" or _slot_for_player_id(winner_id) == null:
 		winner_id = match_slots[_rng.randi_range(0, match_slots.size() - 1)].player_id
 
-	pending_board_rewards.append(
-		{
-			"beans": 3,
-			"player_id": winner_id,
-			"reason": "minigame_win",
-		}
+	(
+		pending_board_rewards
+		. append(
+			{
+				"beans": 3,
+				"player_id": winner_id,
+				"reason": "minigame_win",
+			}
+		)
 	)
 	minigame_outcome_applied = true
 
@@ -257,9 +260,12 @@ func _apply_pending_board_rewards() -> void:
 	_applied_reward_ids[reward_application_id] = true
 	for reward in pending_board_rewards:
 		if reward is Dictionary:
-			board_stub.award_beans(
-				String(reward.get("player_id", "")),
-				int(reward.get("beans", 0)),
+			(
+				board_stub
+				. award_beans(
+					String(reward.get("player_id", "")),
+					int(reward.get("beans", 0)),
+				)
 			)
 	pending_board_rewards.clear()
 
