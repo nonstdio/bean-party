@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
 	[Parameter(Position = 0)]
-	[ValidateSet("validate", "test", "all")]
+	[ValidateSet("validate", "test", "all", "editor", "project")]
 	[string]$Task = "all"
 )
 
@@ -55,6 +55,22 @@ function Get-ConsoleVariant {
 	return $Path
 }
 
+function Get-GuiVariant {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string]$Path
+	)
+
+	if ($Path -match "_console\.exe$") {
+		$guiPath = $Path -replace "_console\.exe$", ".exe"
+		if (Test-Path -LiteralPath $guiPath -PathType Leaf) {
+			return $guiPath
+		}
+	}
+
+	return $Path
+}
+
 function Invoke-Godot {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -91,9 +107,27 @@ try {
 		Invoke-Godot -Arguments @("--headless", "--path", $RepoRoot, "-s", "res://addons/gut/gut_cmdln.gd", "-gconfig=res://.gutconfig.json", "-gexit")
 	}
 
+	function Invoke-Editor {
+		$guiBinary = Get-GuiVariant -Path $script:GodotBinary
+		& $guiBinary --path $RepoRoot --editor
+		if ($LASTEXITCODE -ne 0) {
+			throw "Godot editor exited with code $LASTEXITCODE."
+		}
+	}
+
+	function Invoke-Project {
+		$guiBinary = Get-GuiVariant -Path $script:GodotBinary
+		& $guiBinary --path $RepoRoot
+		if ($LASTEXITCODE -ne 0) {
+			throw "Godot project run exited with code $LASTEXITCODE."
+		}
+	}
+
 	switch ($Task) {
 		"validate" { Invoke-Validation }
 		"test" { Invoke-Tests }
+		"editor" { Invoke-Editor }
+		"project" { Invoke-Project }
 		"all" {
 			Invoke-Validation
 			Invoke-Tests

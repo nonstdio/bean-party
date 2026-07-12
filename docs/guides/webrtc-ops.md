@@ -45,6 +45,43 @@ Deployment artifacts: `Dockerfile`, `railway.toml`, `.env.example`, and `tools/s
 
 **Domain policy:** use Railway's generated public domain only. Record the real `wss://` and `https://` URLs after deployment; do not commit invented hostnames.
 
+### Online staging launcher (Windows)
+
+After Railway exposes a public hostname, use `tools/run-online-staging.ps1` to validate the deployment and launch Bean Party against staging **without** writing user-level or machine-level environment variables. The script sets `BEAN_PARTY_SIGNALING_URL`, `BEAN_PARTY_ICE_CONFIG_URL`, and related online flags only for the launched child process.
+
+```powershell
+# Godot editor against staging (checks /healthz and /readyz first)
+powershell -ExecutionPolicy Bypass -File .\tools\run-online-staging.ps1 `
+  -Domain bean-party-signaling.up.railway.app `
+  -Mode Editor
+
+# Run the project from source with the same staging endpoints
+powershell -ExecutionPolicy Bypass -File .\tools\run-online-staging.ps1 `
+  -Domain bean-party-signaling.up.railway.app `
+  -Mode Project
+
+# Run an exported Windows build (EXE + webrtc-native DLL in the same folder)
+powershell -ExecutionPolicy Bypass -File .\tools\run-online-staging.ps1 `
+  -Domain bean-party-signaling.up.railway.app `
+  -Mode Export `
+  -ExecutablePath C:\path\to\BeanParty.exe
+```
+
+`-Domain` accepts a hostname only. Do not pass a scheme, path, query string, or placeholder such as `YOUR-RAILWAY-DOMAIN`.
+
+Optional flags:
+
+- `-SkipHealthCheck` — skip `/healthz` and `/readyz` probes (use only when debugging connectivity separately)
+- `tools/run-online-staging.cmd` — CMD shim that forwards to the PowerShell script
+
+Manual launcher checks (no Pester in this repository):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\run-online-staging.tests.ps1
+```
+
+In the debug shell, select **WebRTC (internet)**, host or join with a room code, and run the echo test once two instances are connected.
+
 **TURN warning:** Railway hosts HTTP/WebSocket signaling only. coturn or another managed TURN provider must run on infrastructure with the required UDP/TCP/TLS relay ports. The signaling deployment proves room negotiation, not restrictive-NAT reliability.
 
 ### Operator checklist
