@@ -93,6 +93,30 @@ func test_explicit_options_override_env_and_files() -> void:
 	assert_eq(resolved.get("ice_config_url"), "https://override.example.test/v1/ice")
 
 
+func test_env_false_boolean_overrides_user_true() -> void:
+	var resolved := OnlineServiceConfig.resolve({
+		"development_mode": false,
+		"_test_user_config": {
+			"allow_stun_only_fallback": true,
+		},
+		"_test_env": {
+			OnlineServiceConfig.ENV_ALLOW_STUN_ONLY_FALLBACK: "false",
+		},
+	})
+	assert_false(resolved.get("allow_stun_only_fallback"))
+
+
+func test_boolean_env_value_parsing_is_shared() -> void:
+	var resolved := {
+		"development_mode": true,
+		"allow_stun_only_fallback": true,
+	}
+	OnlineServiceConfig._apply_boolean_env_value(resolved, "development_mode", "no")
+	OnlineServiceConfig._apply_boolean_env_value(resolved, "allow_stun_only_fallback", "0")
+	assert_false(resolved.get("development_mode"))
+	assert_false(resolved.get("allow_stun_only_fallback"))
+
+
 func test_explicit_false_boolean_overrides_env_true() -> void:
 	var resolved := OnlineServiceConfig.resolve({
 		"development_mode": false,

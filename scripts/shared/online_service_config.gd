@@ -130,17 +130,25 @@ static func _apply_test_env_overrides(resolved: Dictionary, env: Dictionary) -> 
 		if protocol != "" and protocol.is_valid_int():
 			resolved["signaling_protocol_version"] = int(protocol)
 	if env.has(ENV_DEVELOPMENT_MODE):
-		var dev_mode := String(env.get(ENV_DEVELOPMENT_MODE, "")).strip_edges().to_lower()
-		if dev_mode in ["1", "true", "yes"]:
-			resolved["development_mode"] = true
-		elif dev_mode in ["0", "false", "no"]:
-			resolved["development_mode"] = false
+		_apply_boolean_env_value(
+			resolved,
+			"development_mode",
+			String(env.get(ENV_DEVELOPMENT_MODE, "")),
+		)
 	if env.has(ENV_ALLOW_STUN_ONLY_FALLBACK):
-		var fallback := String(env.get(ENV_ALLOW_STUN_ONLY_FALLBACK, "")).strip_edges().to_lower()
-		if fallback in ["1", "true", "yes"]:
-			resolved["allow_stun_only_fallback"] = true
-		elif fallback in ["0", "false", "no"]:
-			resolved["allow_stun_only_fallback"] = false
+		_apply_boolean_env_value(
+			resolved,
+			"allow_stun_only_fallback",
+			String(env.get(ENV_ALLOW_STUN_ONLY_FALLBACK, "")),
+		)
+
+
+static func _apply_boolean_env_value(resolved: Dictionary, key: String, raw_value: String) -> void:
+	var normalized := raw_value.strip_edges().to_lower()
+	if normalized in ["1", "true", "yes"]:
+		resolved[key] = true
+	elif normalized in ["0", "false", "no"]:
+		resolved[key] = false
 
 
 static func _project_config_path() -> String:
@@ -162,12 +170,18 @@ static func _apply_env_overrides(resolved: Dictionary) -> void:
 	var protocol := OS.get_environment(ENV_PROTOCOL_VERSION).strip_edges()
 	if protocol != "" and protocol.is_valid_int():
 		resolved["signaling_protocol_version"] = int(protocol)
-	var dev_mode := OS.get_environment(ENV_DEVELOPMENT_MODE).strip_edges().to_lower()
-	if dev_mode in ["1", "true", "yes"]:
-		resolved["development_mode"] = true
-	var fallback := OS.get_environment(ENV_ALLOW_STUN_ONLY_FALLBACK).strip_edges().to_lower()
-	if fallback in ["1", "true", "yes"]:
-		resolved["allow_stun_only_fallback"] = true
+	if OS.get_environment(ENV_DEVELOPMENT_MODE) != "":
+		_apply_boolean_env_value(
+			resolved,
+			"development_mode",
+			OS.get_environment(ENV_DEVELOPMENT_MODE),
+		)
+	if OS.get_environment(ENV_ALLOW_STUN_ONLY_FALLBACK) != "":
+		_apply_boolean_env_value(
+			resolved,
+			"allow_stun_only_fallback",
+			OS.get_environment(ENV_ALLOW_STUN_ONLY_FALLBACK),
+		)
 
 
 static func _apply_file_overrides(resolved: Dictionary, path: String) -> void:

@@ -278,9 +278,12 @@ test("inactive rooms expire", async () => {
     const host = await connectClient(wsUrl);
     host.send(JSON.stringify({ type: 0, id: 1, data: "" }));
     await waitForJoinMessage(host);
-    host.close();
+    const closePromise = waitForClose(host);
     await new Promise((resolve) => setTimeout(resolve, 120));
+    app.registry.cleanupExpiredRooms();
     assert.equal(app.registry.lobbies.size, 0);
+    const closed = await closePromise;
+    assert.match(closed.reason, /room expired/i);
   });
 });
 
