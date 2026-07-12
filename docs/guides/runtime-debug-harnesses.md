@@ -20,10 +20,10 @@ To exercise the network slice on one machine:
 
 ### WebRTC session (internet / NAT)
 
-WebRTC requires the [webrtc-native GDExtension](webrtc-setup.md) and a running signaling server (`tools/signaling/`).
+WebRTC requires the [webrtc-native GDExtension](webrtc-setup.md) on every desktop peer and a running signaling server (`tools/signaling/`) for contributor spikes. Windows playtesters should use the packaged [BeanParty-Windows.zip](../../README.md#download-the-latest-windows-test-build) instead of installing the extension manually.
 
 1. Start signaling: `cd tools/signaling && npm install && npm start` (default `ws://127.0.0.1:9080`).
-2. Run two game instances with webrtc-native installed.
+2. Run two game instances with webrtc-native available (editor checkout or extracted Windows test build).
 3. Select transport **WebRTC (internet)**.
 4. Host: leave room code empty and select `Host`. Copy the displayed room code.
 5. Join: enter the signaling URL and room code, then select `Join`.

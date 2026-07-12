@@ -27,7 +27,11 @@ Agents should first follow [Godot setup for agents](docs/guides/godot-setup.md),
 
 ### Download the latest Windows test build
 
-Windows playtesters can download [BeanParty.exe](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty.exe) and run the current `main` branch without installing Godot. This is an automated, unsigned development build, so Windows SmartScreen may ask the player to confirm that they want to run it. The download is replaced only after a new `main` build exports successfully.
+Windows playtesters can download [BeanParty-Windows.zip](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty-Windows.zip), extract it, and run `BeanParty.exe` from the current `main` branch without installing Godot, Node.js, or webrtc-native. The ZIP includes the pinned webrtc-native GDExtension libraries required for WebRTC transport on every peer.
+
+`BeanParty.exe` alone is not a supported WebRTC-capable download: the native extension ships as separate files beside the executable. Verify the download with `BeanParty-Windows.zip.sha256` from the same [latest Windows prerelease](https://github.com/nonstdio/bean-party/releases/tag/latest-windows).
+
+This is an automated, unsigned development build, so Windows SmartScreen may ask the player to confirm that they want to run it. The download is replaced only after a new `main` build exports successfully. Production signaling and TURN relay infrastructure are not included.
 
 This convenience build does not establish Windows as the project's final supported release target. Contributors who need the editor, tests, or local minigame harness should use the source workflow below.
 
@@ -52,25 +56,27 @@ ENet requires every peer to reach the host directly on the LAN. It does not trav
 
 ### Internet host (WebRTC)
 
-**One-time setup on the host machine:**
+WebRTC requires the webrtc-native GDExtension on **every desktop peer** that selects WebRTC transport. Windows playtesters receive it automatically in [BeanParty-Windows.zip](https://github.com/nonstdio/bean-party/releases/download/latest-windows/BeanParty-Windows.zip); contributors install it manually for local development (see below).
 
-1. Install the [webrtc-native GDExtension](docs/guides/webrtc-setup.md#install-webrtc-native-desktop). On Windows, from the repository root:
+**Contributor setup for local WebRTC spikes:**
+
+1. Install the pinned [webrtc-native GDExtension](docs/guides/webrtc-setup.md#install-webrtc-native-for-contributors). On Windows, from the repository root:
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\tools\setup-webrtc-native.ps1
    ```
    Restart Godot after installing the extension.
-2. Install [Node.js](https://nodejs.org/) 18+ and start the signaling server:
+2. Install [Node.js](https://nodejs.org/) 18+ and start the **development-only** signaling server:
    ```bash
    cd tools/signaling
    npm install
    npm start
    ```
-   Default signaling URL: `ws://127.0.0.1:9080`.
+   Default signaling URL: `ws://127.0.0.1:9080`. This local server is for architecture spikes, not production matchmaking.
 
 **Each session:**
 
-1. Keep the signaling server running.
-2. Run the game (`F5` in the editor, or an exported build that includes webrtc-native).
+1. Keep the signaling server running (contributor/local testing only).
+2. Run the game (`F5` in the editor, or extract and run the Windows test build ZIP).
 3. Select transport **WebRTC (internet)**.
 4. Enter the signaling URL (`ws://127.0.0.1:9080` for local testing; use a reachable `wss://` URL when friends join from other networks).
 5. Leave **room code** empty and select **Host**. Copy the room code shown in the status line.

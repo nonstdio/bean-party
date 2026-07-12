@@ -27,6 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Install pinned webrtc-native extension
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE\tools\install-webrtc-native.ps1"
+
       - name: Cache verified Godot export toolchain
         id: godot-cache
         uses: actions/cache@v4
@@ -98,16 +103,32 @@ jobs:
           if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
             throw "Godot completed without producing $executable."
           }
-          $hash = (Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  BeanParty.exe" | Out-File -FilePath "build\windows\BeanParty.exe.sha256" -Encoding ascii
+
+      - name: List exported runtime files
+        shell: pwsh
+        run: |
+          Get-ChildItem -LiteralPath "build\windows" -Recurse -File |
+            Sort-Object FullName |
+            ForEach-Object { $_.FullName.Substring((Resolve-Path "build\windows").Path.Length + 1) }
+
+      - name: Package Windows release ZIP
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE\tools\package-windows-release.ps1" -ExportDirectory "build\windows"
+
+      - name: Smoke test exported WebRTC packaging
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE\tools\smoke-webrtc-export.ps1" -ExportDirectory "build\windows"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: bean-party-windows-${{ github.sha }}
           path: |
-            build/windows/BeanParty.exe
-            build/windows/BeanParty.exe.sha256
+            build/windows/**
+            build/BeanParty-Windows.zip
+            build/BeanParty-Windows.zip.sha256
           if-no-files-found: error
           retention-days: 14
 
@@ -123,6 +144,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: bean-party-windows-${{ github.sha }}
+          path: release
 
       - name: Create or update rolling prerelease
         shell: bash
@@ -133,13 +155,21 @@ jobs:
           tag="latest-windows"
           title="Latest Windows test build"
           short_sha="${GITHUB_SHA:0:7}"
-          notes="Automated unsigned test build from [${short_sha}](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}). Download \`BeanParty.exe\` and run it without installing Godot. Windows SmartScreen may warn because this development build is not code-signed."
+          notes=$(cat <<EOF
+          Automated unsigned test build from [${short_sha}](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}).
+
+          Download \`BeanParty-Windows.zip\`, extract it, and run \`BeanParty.exe\`. The package includes the pinned webrtc-native GDExtension required for WebRTC transport. Players do not need to install Godot, Node.js, or webrtc-native manually.
+
+          \`BeanParty.exe\` alone is not a supported WebRTC-capable download because the native extension libraries ship beside the executable.
+
+          Windows SmartScreen may warn because this development build is not code-signed. Production signaling and TURN infrastructure are not part of this rolling build.
+          EOF
+          )
 
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$tag" BeanParty.exe BeanParty.exe.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$tag" release/BeanParty-Windows.zip release/BeanParty-Windows.zip.sha256 --clobber --repo "$GITHUB_REPOSITORY"
             gh release edit "$tag" --title "$title" --notes "$notes" --prerelease --repo "$GITHUB_REPOSITORY"
             gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$GITHUB_SHA" -F force=true >/dev/null
           else
-            gh release create "$tag" BeanParty.exe BeanParty.exe.sha256 --target "$GITHUB_SHA" --title "$title" --notes "$notes" --prerelease --repo "$GITHUB_REPOSITORY"
+            gh release create "$tag" release/BeanParty-Windows.zip release/BeanParty-Windows.zip.sha256 --target "$GITHUB_SHA" --title "$title" --notes "$notes" --prerelease --repo "$GITHUB_REPOSITORY"
           fi
-
