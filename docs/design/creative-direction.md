@@ -45,13 +45,22 @@ The target is playful intensity, not sweetness, military realism, polished game-
 For Bean Party:
 
 - Start every player character from one original, unmistakably bean-like primary mass with very few anatomical details.
-- Keep appendages and facial detail subordinate to the body silhouette. Avoid human proportions, realistic anatomy, and busy surface detail.
-- Build identity in layers: player color or pattern, one strong head or face treatment, footwear or another lower-body cue, and an optional activity-specific attachment.
-- Make held or worn objects visually simpler than realistic replicas but more mechanically specific than the body. The contrast between “simple bean” and “purpose-built apparatus” is part of the joke.
+- Construct the default body as a constant-width cylinder with hemispherical caps and a shallow curved centerline. Do not use an egg, scaled sphere, tapered ellipsoid, or uniformly pillowy mascot body.
+- The default anatomy is the body, two eyes, two short shins, and two shoes. Do not add arms, hands, or a mouth, including on activity-specific variants.
+- Use small white oblate hemispheres for the eyes, embedded partway into the body, with black circular pupils on their exposed faces. Keep the eyes subordinate to the capsule silhouette.
+- Give each shin continuous contact with both the body and its shoe. Shoes should read as footwear through a low toe, heel, sole, and slight outward stance rather than as oval feet or broad blocks.
+- Build identity in layers: player color or pattern, the shared eye treatment, footwear or another lower-body cue, and an optional activity-specific attachment.
+- Attach held or worn objects through reviewed body-side, equipment, or costume anchors rather than modeled hands. Keep equipment visually simpler than realistic replicas but more mechanically specific than the body. The contrast between “simple bean” and “purpose-built apparatus” is part of the joke.
 - Let cosmetics bend the silhouette without hiding the underlying player pose, team, facing, or state.
 - Design a new character shape and attachment system. Do not trace *Bean Battles* proportions, reproduce its default face, or recreate a known cosmetic.
 
 At party-game camera distance, player identity must survive motion, overlapping effects, and color-vision differences. Every player needs at least one non-color identifier such as a pattern, icon, number, outline treatment, or stable accessory zone.
+
+### Approved prototype rest posture
+
+The approved static-prototype target uses a shallow forward-facing C curve in side view. In the neutral rest pose, the top and bottom of the body sit forward of the middle; the character must not read as a straight capsule leaning forward or as an upper body bending backward. Backward curvature is reserved for authored poses such as looking up, recoil, launch anticipation, or recovery.
+
+The approved proportions and curvature remain prototype standards rather than final rig limits. Preserve the construction and posture relationship when tuning dimensions: constant-width cylindrical middle, hemispherical caps, restrained forward rest curve, small eye domes, no mouth or upper limbs, and slim shoes with intersecting shins. The [standard asset guide](../guides/standard-assets.md#approved-bean-prototype-target) records the current authoring measurements.
 
 ### Environments: ordinary places as toy-like arenas
 
@@ -117,6 +126,7 @@ The community guide describes mid-air strafing, climbing, parkour, dashes, grena
 For Bean Party:
 
 - Give idle and locomotion enough body bob, lean, and foot activity to keep the simple body alive.
+- Treat the forward-facing C curve as the neutral rest posture. The future rig may straighten it or bend it backward for looking up and other readable actions, then return cleanly to the approved rest silhouette.
 - Make anticipation, contact, and recovery distinct. A player should see what is about to happen, feel the hit, and understand when control returns.
 - Favor short knockback, squash, wobble, spin, stumble, pop, or equipment loss over realistic injury animation.
 - Let some props create surprising but learnable movement: bounce, launch, drag, roll, tip, or carry.
@@ -238,6 +248,8 @@ Before approving a visual, audio, or presentation proposal, ask:
 A proposal does not need to resemble a *Bean Battles* screenshot. It should pass the same underlying taste test.
 
 ## Requirements for the future standard-asset effort
+
+The [canonical v0.1 standard asset kit](../guides/standard-assets.md) begins this effort with the approved static bean geometry, player identity cues, neutral presentation tokens, and a comparison gallery. Existing minigame prototypes reuse those assets where their format permits. This remains an early reusable foundation, not completion of the broader requirements below.
 
 The later asset project should derive and validate, at minimum:
 

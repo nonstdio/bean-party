@@ -1,0 +1,81 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/dev/standard_asset_gallery.gd" id="1_gallery"]
+[ext_resource type="Theme" path="res://assets/standard/ui/prototype-theme.tres" id="2_theme"]
+
+[sub_resource type="StandardMaterial3D" id="Material_ground"]
+albedo_color = Color(0.086275, 0.137255, 0.176471, 1)
+metallic = 0.0
+roughness = 0.92
+
+[sub_resource type="PlaneMesh" id="Plane_ground"]
+material = SubResource("Material_ground")
+size = Vector2(8, 5)
+
+[node name="StandardAssetGallery" type="Node3D"]
+script = ExtResource("1_gallery")
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("Plane_ground")
+
+[node name="DirectionalLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -28, 0)
+light_color = Color(1, 0.956863, 0.878431, 1)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+unique_name_in_owner = true
+
+[node name="Camera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+current = true
+fov = 55.0
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Margin" type="MarginContainer" parent="Overlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = -28.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="Layout" type="VBoxContainer" parent="Overlay/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Overlay/Margin/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+theme_type_variation = &"ShellTitle"
+text = "STANDARD ASSET GALLERY · v0.1"
+
+[node name="StateLabel" type="Label" parent="Overlay/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_type_variation = &"ShellPrimary"
+text = "Shared arena camera · full color"
+
+[node name="Help" type="Label" parent="Overlay/Margin/Layout"]
+layout_mode = 2
+theme_type_variation = &"ShellMuted"
+text = "1 close · 2 shared arena · 3 board distance · G grayscale"
+
+[node name="Spacer" type="Control" parent="Overlay/Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="IdentityRow" type="HBoxContainer" parent="Overlay/Margin/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 28

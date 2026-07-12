@@ -1,5 +1,7 @@
 extends VBoxContainer
 
+const _BADGE_SCENE := preload("res://scenes/shared/player_identity_badge.tscn")
+
 @onready var _match_session: MatchSession = %MatchSession
 @onready var _lobby_session: NetworkLobbySession = %NetworkLobbySession
 @onready var _slots_list: VBoxContainer = %NetworkSlotsList
@@ -94,10 +96,10 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	row.add_theme_constant_override("separation", 12)
 	row.set_meta(&"player_id", slot.player_id)
 
-	var swatch := ColorRect.new()
-	swatch.custom_minimum_size = Vector2(24, 24)
-	swatch.color = slot.slot_color
-	row.add_child(swatch)
+	var badge := _BADGE_SCENE.instantiate() as PlayerIdentityBadge
+	badge.set_slot_color(slot.slot_color)
+	row.set_meta(&"identity_badge", badge)
+	row.add_child(badge)
 
 	var peer_label := Label.new()
 	peer_label.text = _format_peer_label(slot)
@@ -177,6 +179,10 @@ func _format_ping_ms(ping_ms: int) -> String:
 
 
 func _refresh_slot_row(row: HBoxContainer, slot: PlayerSlot) -> void:
+	if row.has_meta(&"identity_badge"):
+		var badge: PlayerIdentityBadge = row.get_meta(&"identity_badge")
+		badge.set_slot_color(slot.slot_color)
+
 	if row.has_meta(&"peer_label"):
 		var peer_label: Label = row.get_meta(&"peer_label")
 		peer_label.text = _format_peer_label(slot)

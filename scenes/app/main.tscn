@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/main.gd" id="1_41s4j"]
 [ext_resource type="Script" path="res://scripts/app/network_session_view.gd" id="4_network"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/app/network_match_phase_view.gd" id="11_phase_view"]
 [ext_resource type="Script" path="res://scripts/shared/network_minigame_session.gd" id="12_minigame"]
 [ext_resource type="Script" path="res://scripts/shared/network_action_minigame_session.gd" id="13_action_minigame"]
+[ext_resource type="Theme" path="res://assets/standard/ui/prototype-theme.tres" id="14_theme"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -19,17 +20,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("14_theme")
 script = ExtResource("1_41s4j")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.0392157, 0.0705882, 0.101961, 1)
 mouse_filter = 2
+theme_type_variation = &"ShellBackground"
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -63,27 +65,27 @@ alignment = 1
 
 [node name="Title" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.917647, 0.423529, 0.176471, 1)
 theme_override_font_sizes/font_size = 72
+theme_type_variation = &"ShellTitle"
 text = "BEAN PARTY"
 horizontal_alignment = 1
 
-[node name="Divider" type="ColorRect" parent="Margin/Scroll/Content"]
+[node name="Divider" type="Panel" parent="Margin/Scroll/Content"]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
-color = Color(0.278431, 0.784314, 0.486275, 1)
+theme_type_variation = &"ShellDivider"
 
 [node name="Subtitle" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 26
+theme_type_variation = &"ShellPrimary"
 text = "Network debug shell"
 horizontal_alignment = 1
 
 [node name="Description" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 20
+theme_type_variation = &"ShellSecondary"
 text = "Host or join a session over ENet (LAN) or WebRTC (internet room code) to exercise the networked lobby, board, and minigame flow."
 horizontal_alignment = 1
 
@@ -126,8 +128,8 @@ script = ExtResource("7_lobby_view")
 
 [node name="NetworkLobbyTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
+theme_type_variation = &"ShellPrimary"
 text = "Network lobby"
 horizontal_alignment = 1
 
@@ -149,8 +151,8 @@ text = "Add local player"
 [node name="NetworkLobbyStatusLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkLobby"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 14
+theme_type_variation = &"ShellMuted"
 text = "Join or host to open the networked lobby."
 horizontal_alignment = 1
 
@@ -163,16 +165,16 @@ script = ExtResource("9_board_view")
 
 [node name="NetworkBoardTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
+theme_type_variation = &"ShellPrimary"
 text = "Network board stub"
 horizontal_alignment = 1
 
 [node name="NetworkBoardLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 16
+theme_type_variation = &"ShellSecondary"
 text = "Board idle."
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -180,8 +182,8 @@ autowrap_mode = 2
 [node name="NetworkBoardHashLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkBoard"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 14
+theme_type_variation = &"ShellMuted"
 text = "board hash 0"
 horizontal_alignment = 1
 
@@ -209,24 +211,24 @@ script = ExtResource("11_phase_view")
 
 [node name="NetworkPhaseTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
+theme_type_variation = &"ShellPrimary"
 text = "Network phase flow"
 horizontal_alignment = 1
 
 [node name="NetworkPhaseLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 16
+theme_type_variation = &"ShellPrimary"
 text = "Phase: Board"
 horizontal_alignment = 1
 
 [node name="NetworkPhaseDetailLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession/NetworkPhaseFlow"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 14
+theme_type_variation = &"ShellSecondary"
 text = "Host can start the networked minigame flow from the board phase."
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -259,8 +261,8 @@ text = "Return to board"
 
 [node name="NetworkTitle" type="Label" parent="Margin/Scroll/Content/NetworkSession"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.862745, 0.905882, 0.839216, 1)
 theme_override_font_sizes/font_size = 18
+theme_type_variation = &"ShellPrimary"
 text = "Network session (debug)"
 horizontal_alignment = 1
 
@@ -344,22 +346,22 @@ text = "Echo test"
 [node name="NetworkStatusLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.745098, 0.807843, 0.784314, 1)
 theme_override_font_sizes/font_size = 16
+theme_type_variation = &"ShellSecondary"
 text = "No active network session."
 horizontal_alignment = 1
 
 [node name="PeersLabel" type="Label" parent="Margin/Scroll/Content/NetworkSession"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 14
+theme_type_variation = &"ShellMuted"
 text = "Peers: none"
 horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="Margin/Scroll/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.529412, 0.639216, 0.611765, 1)
 theme_override_font_sizes/font_size = 16
+theme_type_variation = &"ShellMuted"
 text = "Press Esc to exit."
 horizontal_alignment = 1

@@ -1,7 +1,5 @@
 extends MinigameController
 
-const PLAYER_HEIGHT := 1.8
-const PLAYER_RADIUS := 0.45
 const CAMERA_FOV := 78.0
 const CAMERA_DISTANCE := 8.5
 const CAMERA_HEIGHT := 3.6
@@ -11,6 +9,10 @@ const CAMERA_YAW_SMOOTH := 7.0
 const CAMERA_FOCUS_SMOOTH := 14.0
 const CAMERA_PIVOT_HEIGHT := 1.25
 const CAMERA_PIVOT_Y_SMOOTH := 12.0
+const CHARACTER_FOOT_OFFSET := 0.055
+const _BEAN_SCENE: PackedScene = preload(
+	"res://assets/standard/characters/bean-static-prototype.glb"
+)
 
 @onready var _players_root: Node3D = %PlayersRoot
 @onready var _status: Label = %Status
@@ -23,6 +25,7 @@ const CAMERA_PIVOT_Y_SMOOTH := 12.0
 var _network_session: NetworkActionMinigameSession = null
 var _offline_simulator: HostActionSimulator = HostActionSimulator.new()
 var _player_meshes: Dictionary = {}
+var _player_body_materials: Dictionary = {}
 var _camera_initialized: bool = false
 var _camera_yaw: float = 0.0
 var _smoothed_focus_xz: Vector3 = Vector3.ZERO
@@ -107,7 +110,7 @@ func _sync_player_meshes() -> void:
 		var player_id := player.player_id
 		var mesh_root: Node3D = _player_meshes.get(player_id)
 		if mesh_root == null:
-			mesh_root = _create_player_mesh(player.slot_color)
+			mesh_root = _create_player_mesh(player_id, player.slot_color)
 			_players_root.add_child(mesh_root)
 			_player_meshes[player_id] = mesh_root
 
@@ -117,9 +120,8 @@ func _sync_player_meshes() -> void:
 		mesh_root.rotation.y = yaw
 
 		var health := _resolve_player_health(player_id)
-		var mesh_instance: MeshInstance3D = mesh_root.get_child(0) as MeshInstance3D
-		if mesh_instance != null and mesh_instance.material_override is StandardMaterial3D:
-			var material := mesh_instance.material_override as StandardMaterial3D
+		var material := _player_body_materials.get(player_id) as StandardMaterial3D
+		if material != null:
 			material.albedo_color = player.slot_color if health > 0 else player.slot_color.darkened(0.55)
 			material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED if health > 0 else BaseMaterial3D.TRANSPARENCY_ALPHA
 			material.albedo_color.a = 1.0 if health > 0 else 0.45
@@ -289,19 +291,37 @@ func _tick_offline_simulator(delta: float) -> void:
 		submit_minigame_result(_offline_simulator.build_result(context.get_player_ids()))
 
 
-func _create_player_mesh(color: Color) -> Node3D:
+func _create_player_mesh(player_id: String, color: Color) -> Node3D:
 	var root := Node3D.new()
-	var mesh_instance := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = PLAYER_RADIUS
-	capsule.height = PLAYER_HEIGHT
-	mesh_instance.mesh = capsule
-	mesh_instance.position.y = PLAYER_HEIGHT * 0.5
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	mesh_instance.material_override = material
-	root.add_child(mesh_instance)
+	var bean := _BEAN_SCENE.instantiate() as Node3D
+	bean.name = "Bean"
+	bean.position.y = -CHARACTER_FOOT_OFFSET
+	root.add_child(bean)
+
+	var material := StandardVisuals.identity_material_for_color(color).duplicate() as StandardMaterial3D
+	_apply_identity_material(bean, material)
+	_player_body_materials[player_id] = material
+
+	var marker := Sprite3D.new()
+	marker.name = "IdentityMarker"
+	marker.texture = StandardVisuals.identity_icon_for_color(color)
+	marker.modulate = color
+	marker.pixel_size = 0.0035
+	marker.position = Vector3(0.0, 1.95, 0.0)
+	marker.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	root.add_child(marker)
 	return root
+
+
+func _apply_identity_material(bean: Node, identity_material: StandardMaterial3D) -> void:
+	for node in bean.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := node as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for surface_index in mesh_instance.mesh.get_surface_count():
+			var source_material := mesh_instance.mesh.surface_get_material(surface_index)
+			if source_material != null and source_material.resource_name == "identity_primary":
+				mesh_instance.set_surface_override_material(surface_index, identity_material)
 
 
 func _clear_player_meshes() -> void:
@@ -309,6 +329,7 @@ func _clear_player_meshes() -> void:
 		var mesh_root: Node3D = _player_meshes[player_id]
 		mesh_root.queue_free()
 	_player_meshes.clear()
+	_player_body_materials.clear()
 
 
 func _find_network_session() -> NetworkActionMinigameSession:

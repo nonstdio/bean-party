@@ -1,5 +1,7 @@
 class_name MatchConstants
 
+const _STANDARD_VISUALS = preload("res://scripts/shared/presentation/standard_visuals.gd")
+
 const MAX_PLAYERS := 4
 ## Total network peers in a session, including the listen-server host.
 const MAX_PEERS := 4
@@ -9,9 +11,4 @@ const OFFLINE_PEER_ID := 1
 const DEFAULT_ENET_PORT := 7777
 const DEFAULT_WEBRTC_SIGNALING_URL := "ws://127.0.0.1:9080"
 
-const SLOT_COLORS: Array[Color] = [
-	Color(0.917647, 0.423529, 0.176471),
-	Color(0.278431, 0.784314, 0.486275),
-	Color(0.423529, 0.65098, 0.917647),
-	Color(0.847059, 0.34902, 0.454902),
-]
+const SLOT_COLORS: Array[Color] = _STANDARD_VISUALS.IDENTITY_COLORS

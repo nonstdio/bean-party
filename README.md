@@ -16,10 +16,11 @@ It takes structural inspiration from Mario Party-style board-and-minigame games,
 The project is in pre-production. We have selected **Godot 4.7 stable** with **GDScript** for the initial shared codebase. The repository currently contains:
 
 - a local 2–4 player `PlayerSlot` model, debug phase flow, board stub, and phase-boundary snapshot restore;
-- accepted local minigame contract version 1, a scaffold, a development harness, and the `reference-tap` executable example; and
-- an ENet debug slice covering host/join, a host-authoritative multi-local-player lobby, a board stub, and synchronized placeholder minigame phases through results and return to board.
+- accepted local minigame contract version 1, a scaffold, a development harness, and the `reference-tap` executable example;
+- an ENet debug slice covering host/join, a host-authoritative multi-local-player lobby, a board stub, and synchronized placeholder minigame phases through results and return to board; and
+- a canonical-prototype presentation kit with an approved static bean, four redundant player identities, shared shell tokens, and a developer asset gallery.
 
-These are contributor and architecture proofs, not a playable game or validated production netcode. The local minigame harness is not yet connected to the app's local or network match flows, and the network flow still uses an internal placeholder scene. [Decision 0003](docs/decisions/0003-peer-hosted-networking.md) therefore remains **Proposed**. See the [networking plan status](docs/plans/networking.md#milestone-overview) for implemented evidence and validation still outstanding. Target platforms, final art pipeline, licensing, and board economy remain open decisions.
+These are contributor and architecture proofs, not a playable game or validated production netcode. The local minigame harness is not yet connected to the app's local or network match flows, and the network flow still uses an internal placeholder scene. [Decision 0003](docs/decisions/0003-peer-hosted-networking.md) therefore remains **Proposed**. See the [networking plan status](docs/plans/networking.md#milestone-overview) for implemented evidence and validation still outstanding. Target platforms, final production art and audio standards, licensing, and board economy remain open decisions.
 
 ## Run the current project
 
@@ -93,6 +94,7 @@ Ideas, minigame concepts, art, music, code, and playtesting feedback are welcome
 - [Documentation index](docs/README.md) — where project documentation belongs and how it evolves.
 - [Game design target](docs/design/game.md) — what “Mario Party-style” means for this project.
 - [Creative direction](docs/design/creative-direction.md) — how to evoke Bean Battles without copying it.
+- [Standard asset guide](docs/guides/standard-assets.md) — reuse, inspect, author, export, and document the canonical prototype kit.
 - [Minigame design guide](docs/design/minigames.md) — how proposals become clear, testable minigame briefs.
 - [Create a minigame](docs/guides/create-a-minigame.md) — scaffold, implement, run, test, and prepare a local minigame for review.
 - [Runtime debug harnesses](docs/guides/runtime-debug-harnesses.md) — exercise the implemented local and ENet architecture proofs and understand their limits.

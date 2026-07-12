@@ -1,6 +1,7 @@
 extends MinigameController
 
 const PLAYER_RADIUS := 16.0
+const PLAYER_MARKER_SIZE := Vector2(40.0, 40.0)
 
 @onready var _arena: Control = %Arena
 @onready var _status: Label = %Status
@@ -80,15 +81,15 @@ func _on_arena_draw() -> void:
 
 	for player in context.get_players():
 		var position: Vector2 = _resolve_player_position(player.player_id, context)
-		_arena.draw_circle(position, PLAYER_RADIUS, player.slot_color)
-		_arena.draw_arc(
-			position,
-			PLAYER_RADIUS + 2.0,
-			0.0,
-			TAU,
-			32,
-			Color(0.95, 0.95, 0.95, 0.8),
-			2.0,
+		var marker_rect := Rect2(
+			position - PLAYER_MARKER_SIZE * 0.5,
+			PLAYER_MARKER_SIZE,
+		)
+		_arena.draw_texture_rect(
+			StandardVisuals.identity_icon_for_color(player.slot_color),
+			marker_rect,
+			false,
+			player.slot_color,
 		)
 
 

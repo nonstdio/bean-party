@@ -29,6 +29,7 @@ func test_snapshot_arena_submits_completed_result() -> void:
 	assert_eq(results[0].status, MinigameResult.Status.COMPLETED)
 	assert_eq(results[0].placements[0], PackedStringArray([winner_id]))
 	assert_true(runner.unload_minigame())
+	await get_tree().process_frame
 
 
 func _create_context(player_count: int, instance_id: String) -> MinigameContext:

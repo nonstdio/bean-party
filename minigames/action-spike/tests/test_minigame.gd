@@ -8,3 +8,46 @@ func test_manifest_satisfies_local_contract() -> void:
 	assert_not_null(manifest)
 	assert_true(manifest.validate().is_empty())
 	assert_eq(manifest.sync_profile, &"HOST_ACTION")
+
+
+func test_player_visual_uses_standard_bean_material_and_marker() -> void:
+	var runner := MinigameRunner.new()
+	add_child_autofree(runner)
+	var context := _create_context()
+	var manifest := load(MANIFEST_PATH) as MinigameManifest
+	assert_true(runner.load_minigame(manifest, context))
+	assert_true(runner.start_active_minigame())
+
+	var controller := runner.get_active_controller()
+	controller._process(0.016)
+	var players_root := controller.get_node(
+		"ViewportContainer/SubViewport/Arena3D/PlayersRoot"
+	) as Node3D
+	assert_eq(players_root.get_child_count(), 2)
+	var first_visual := players_root.get_child(0) as Node3D
+	assert_not_null(first_visual.find_child("Body", true, false))
+	assert_not_null(first_visual.find_child("IdentityMarker", true, false))
+
+	var body := first_visual.find_child("Body", true, false) as MeshInstance3D
+	var material := body.get_surface_override_material(0) as StandardMaterial3D
+	assert_not_null(material)
+	assert_eq(material.albedo_color, context.get_players()[0].slot_color)
+
+	assert_true(runner.unload_minigame())
+	await get_tree().process_frame
+
+
+func _create_context() -> MinigameContext:
+	var session := OfflineMatchSession.new()
+	session.add_local_slot("Player 1")
+	session.add_local_slot("Player 2")
+	var player_ids := PackedStringArray()
+	for slot in session.slots:
+		player_ids.append(slot.player_id)
+	return MinigameContext.create(
+		"action-spike-presentation",
+		session.slots,
+		{},
+		12345,
+		MinigameInputSource.new(player_ids),
+	)

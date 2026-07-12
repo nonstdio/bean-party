@@ -1,0 +1,6 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "Identity Circle"
+albedo_color = Color(0.337255, 0.705882, 0.913725, 1)
+roughness = 0.78

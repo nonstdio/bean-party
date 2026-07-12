@@ -18,7 +18,7 @@ The scene root extends `MinigameController`, reads only its supplied `MinigameCo
 
 ## Assets and provenance
 
-No external assets are used.
+The minigame reuses Bean Party's original [prototype theme and player identity badges](../../assets/standard/catalog.md). It uses no external assets.
 
 ## Validation
 

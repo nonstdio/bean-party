@@ -1,5 +1,6 @@
 extends VBoxContainer
 
+const _BADGE_SCENE := preload("res://scenes/shared/player_identity_badge.tscn")
 const _CONTROLLER_LABELS: Array[String] = [
 	"Controller 1",
 	"Controller 2",
@@ -83,10 +84,9 @@ func _build_slot_row(slot: PlayerSlot) -> HBoxContainer:
 	row.add_theme_constant_override("separation", 12)
 	row.set_meta(&"player_id", slot.player_id)
 
-	var swatch := ColorRect.new()
-	swatch.custom_minimum_size = Vector2(24, 24)
-	swatch.color = slot.slot_color
-	row.add_child(swatch)
+	var badge := _BADGE_SCENE.instantiate() as PlayerIdentityBadge
+	badge.set_slot_color(slot.slot_color)
+	row.add_child(badge)
 
 	var name_field := LineEdit.new()
 	name_field.text = slot.display_name

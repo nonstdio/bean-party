@@ -75,8 +75,8 @@ func test_local_device_slot_uses_lobby_assignment() -> void:
 
 
 func test_authoritative_snapshot_hash_matches_after_apply() -> void:
-	var host_session := NetworkMinigameSession.new()
-	var client_session := NetworkMinigameSession.new()
+	var host_session := autofree(NetworkMinigameSession.new()) as NetworkMinigameSession
+	var client_session := autofree(NetworkMinigameSession.new()) as NetworkMinigameSession
 	var payload := {
 		"player_a": {"x": 120.0, "y": 88.0},
 		"player_b": {"x": 500.0, "y": 360.0},
