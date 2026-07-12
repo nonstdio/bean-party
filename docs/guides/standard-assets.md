@@ -20,7 +20,7 @@ assets/
 
 Use lowercase kebab-case filenames and stable descriptive IDs. Do not put a prototype version in a canonical file path; record its lifecycle/version in the catalog so a reviewed replacement does not require consumers to rewire paths.
 
-Every catalog entry records its purpose, runtime path, editable source when applicable, status, authoring tool/version, and provenance. Third-party material additionally requires creator, source URL, and license. The initial kit is entirely original project work. The repository still has no content license, so do not assume these assets are reusable outside Bean Party.
+Every catalog entry records its purpose, runtime path, editable source when applicable, status, license, authoring tool/version, and provenance. Third-party material additionally requires creator and source URL. The initial kit is entirely original project work. Creative assets and editable art sources use CC BY 4.0, while Godot-native `.tres`, `.tscn`, and `.gd` files use MIT under the repository [license overview](../../LICENSE.md).
 
 `PlayerIdentityConstants` owns only the stable identity IDs and serialized colors needed by shared match state. `StandardVisuals` owns presentation-resource mappings such as icons and materials. Keep this dependency one-way so match and network code do not load presentation assets, including in a future headless process.
 

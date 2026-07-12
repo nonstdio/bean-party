@@ -36,7 +36,15 @@ Use Godot scenes and GDScript through local minigame contract version 1, documen
 
 Submit only material you created or have clear permission to use. Credit the creator and license for every non-original asset in the pull request. Do not extract or copy assets from Bean Battles, Mario Party, Steam, or other games. A reference can guide an original creation; it is not a source of reusable assets.
 
-The project has not selected a software or content license yet. Until one is added, do not assume repository material is available for reuse outside this project.
+Original creative contributions are licensed under CC BY 4.0. Third-party material retains its existing license and must be compatible with the project, clearly marked, and recorded in the relevant asset catalog or minigame README. The project-wide license does not turn third-party material into Bean Party-owned content.
+
+## Contribution licensing
+
+Bean Party uses MIT for software and project files and CC BY 4.0 for original documentation and creative content. Read the [license overview](LICENSE.md) and [licensing decision](docs/decisions/0006-project-licensing.md) for the exact boundary; Godot-native `.gd`, `.tscn`, and `.tres` files are software even when stored beside creative assets.
+
+By submitting a contribution, you represent that you have the right to submit it and agree to license it under the applicable project license. You retain copyright in your contribution. Bean Party does not require copyright assignment or a contributor license agreement.
+
+Do not submit work under terms that conflict with the applicable project license. If a contribution includes third-party material, identify its creator, source, and license explicitly instead of relying on the repository-wide license statement.
 
 ## Review and branch rules
 

@@ -39,4 +39,4 @@ A proposal must receive explicit approval before substantial implementation inte
 - The shell translates placements and scores into board rewards, so economy changes do not require editing minigames.
 - Local minigames do not access physical device assignments, raw networking peers, or another minigame directly.
 - Networking metadata may be declared for planning, but it does not make a minigame network-capable until the provisional networking contract is implemented and validated.
-- Licensing remains an explicitly deferred project decision. Existing originality, permission, and provenance requirements still apply.
+- Licensing was deferred by this decision and is now governed by [Decision 0006](0006-project-licensing.md). Originality, permission, and provenance requirements still apply.

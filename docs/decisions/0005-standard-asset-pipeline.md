@@ -5,7 +5,7 @@ Status: Accepted
 
 ## Context
 
-Bean Party needs reusable early assets before contributors independently create incompatible versions of the same player markers, materials, character proxies, and presentation tokens. These assets must remain editable without making Blender a runtime, test, or ordinary contributor dependency. The project content license and final production art pipeline remain open.
+Bean Party needs reusable early assets before contributors independently create incompatible versions of the same player markers, materials, character proxies, and presentation tokens. These assets must remain editable without making Blender a runtime, test, or ordinary contributor dependency. The content license was open when this pipeline was selected and is now governed by [Decision 0006](0006-project-licensing.md); the final production art pipeline remains open.
 
 ## Options considered
 
@@ -31,4 +31,4 @@ Godot 4.7 recommends glTF 2.0 for 3D interchange and notes that direct `.blend` 
 - A contributor changing Blender-authored geometry must use Blender 5.1.2, update the editable source, regenerate the GLB, and run the asset check.
 - Binary source and export changes are not meaningfully reviewable as text, so the pull request must include visual evidence and provenance notes.
 - Canonical prototype assets are the reuse default but may be replaced through review; this decision does not make their current appearance production-final.
-- Rigging, animation, attachment conventions, textures, audio, fonts, licensing, and final platform budgets remain undecided.
+- Rigging, animation, attachment conventions, textures, audio, fonts, and final platform budgets remain undecided. Project licensing is governed by [Decision 0006](0006-project-licensing.md).
